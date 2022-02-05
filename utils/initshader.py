@@ -14,9 +14,6 @@ from OpenGL.GL import GL_LINK_STATUS
 from OpenGL.GL import glLinkProgram
 
 
-
-
-
 def loadFile(path):
     s = ""
     with open(path) as f:

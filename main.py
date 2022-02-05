@@ -15,17 +15,14 @@ program = None
 window = None
 
 def render():
-    try:
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glClearColor(0.0, 0.0, 1.0, 1.0)
-        #glLoadIdentity()
-        #glutSwapBuffers()  # important for double buffering
-        glutWireTeapot(0.5)
-        glFlush()
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glClearColor(0.0, 0.0, 1.0, 1.0)
+    #glLoadIdentity()
+    glutSwapBuffers()  # important for double buffering
+    glutSolidTeapot(0.5)
+    glFlush()
 
-    except Exception as e:
-        print(e)
 
 def init():
 
