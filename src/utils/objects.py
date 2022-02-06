@@ -1,6 +1,8 @@
+from typing import Union
 from math import sqrt
-from utils.objectUtils import *
-from numpy import float32 as f32
+from math import isfinite
+
+from src.utils.objectUtils import *
 
 class Transform:
 
@@ -11,17 +13,16 @@ class Vector:
 
     def __init__(self, *args):
         self.elements = []
-
-        if type(args[0]).__name__ == list.__name__:
-            for i in range(0, len(args[0])):
-                self.elements.append(args[0][i])
-        else:
-            for i in args:
-                self.elements.append(i)
-
+        if len(args) != 0:
+            if type(args[0]).__name__ == list.__name__:
+                for i in range(0, len(args[0])):
+                    self.elements.append(float(args[0][i]))
+            else:
+                for i in args:
+                    self.elements.append(float(i))
 
     def __repr__(self):
-        return "What ever you did, you ended up using represent on a Vector"
+        return self.elements
 
     def __str__(self):
         return str(self.elements)
@@ -90,10 +91,12 @@ class Vector:
         if type(self).__name__ == other_type:
             other_len = len(other)
             if len(self) == other_len:
-                for i in range(other_len):
-                    result.append(self[i] * other[i])
+                res = []
+                res.append(self[1] * other[2] - self[2] * other[1])
+                res.append(self[2] * other[0] - self[0] * other[2])
+                res.append(self[0] * other[1] - self[1] * other[0])
 
-                return Vector(result)
+                return Vector(res)
             else:
                 raise Exception("Trying to multiply a matrix with a vector of different dimensions")
 
@@ -120,11 +123,11 @@ class Vector:
 
     def __truediv__(self, other):
         result = []
-        if int.__name__ == type(other).__name__:
+        other_type = type(other).__name__
+        if int.__name__ == other_type:
             for i in range(len(self)):
-                result[i].append(self[i] / other)
+                result.append(self.elements[i] / other)
             return Vector(result)
-
         raise Exception("Trying to multiply a matrix with a illegal type: ".format(other.__name__))
 
 class Matrix:
@@ -186,12 +189,10 @@ class Matrix:
         if type(self).__name__ == (type(other).__name__):
             if len(self) != len(other):
                 raise Exception("Trying to add matrices of different dimensions")
-                return self
 
             for i in range(len(self)):
                 if len(self[i]) != len(other[i]):
                     raise Exception("Trying to add matrices of different dimensions")
-                    return self
 
                 result.append([])
                 for j in range(len(other)):
@@ -277,22 +278,17 @@ class Matrix:
         raise Exception("Trying to multiply a matrix with a illegal type: ".format(other.__name__))
 
 
-
-def flatten(obj):
-    return [ x for x in obj]
-
-
-def transpose(obj):
+def transpose(m:Matrix):
     result = []
-    for i in range(len(obj)):
+    for i in range(len(m)):
         result.append([])
-        for j in range(len(obj[i])):
-            result[i].append(obj.m[j][i])
+        for j in range(len(m[i])):
+            result[i].append(m.m[j][i])
 
     return Matrix(result)
 
 
-def det(m):
+def det(m:Matrix):
      if (type(m).__name__) != Matrix.__name__: \
          raise Exception("Cant find determinant on a non Matrix")
      if len(m) == 2:
@@ -303,7 +299,7 @@ def det(m):
          return det4(m)
 
 
-def inverse(m):
+def inverse(m:Matrix):
     n = len(m)
     a = Matrix(n= n, m =2*n)
 
@@ -323,9 +319,9 @@ def inverse(m):
     return im
 
 
-def normalMatrix(matrix, as_lower_order = False):
+def normalMatrix(m: Matrix, as_lower_order = False):
 
-    a = inverse(transpose(matrix))
+    a = inverse(transpose(m))
     if not as_lower_order: return a
     else:
         l = len(a)
@@ -336,21 +332,49 @@ def normalMatrix(matrix, as_lower_order = False):
         return b
 
 
-def sizeOf(input):
-    inputType = type(input).__name__
-    if inputType not in [Matrix.__name__, Vector.__name__]:
-        raise Exception("attempted to sizeOf of unsupported datastructure")
-
-    inputSize = len(input)
+def sizeOf(Obj: Union[Vector, Matrix])->int:
+    inputType = type(Obj).__name__
+    inputSize = len(Obj)
     retdict = {
             Matrix.__name__: 4*inputSize*inputSize,
             Vector.__name__: 4*inputSize
            }
     ret = retdict.get(inputType)
-    if inputType not in [Matrix.__name__, Vector.__name__]:
-        raise Exception("attempted to sizeOf of unsupported datastructure2")
+    #if inputType not in [Matrix.__name__, Vector.__name__]:
+        #raise Exception("attempted to sizeOf of unsupported datastructure2")
+
     return ret
 
-t = Vector([1,2])
 
-print(sizeOf(t))
+def normalize(v: Vector, exclude_last_comp: bool = False) -> Vector:
+    vars = [x*x for x in v.elements]
+    length = 0.0
+    for i in vars:
+        length += i
+    length = sqrt(abs(length))
+
+    if not isfinite(float(length)):
+        raise Exception("normalize vector {} has zero length".format(v))
+
+    if exclude_last_comp: excep = 1
+    else: excep = 0
+
+    for i in range(len(v)-excep):
+        v[i] /= length
+
+    return Vector(v.elements)
+
+
+def dot(u: Vector, v: Vector) -> float:
+    if len(u) != len(v):
+        raise Exception("tried to dot vectors of different lengths")
+
+    ret = 0.0
+    for i in range(len(u)):
+        ret += u[i]*v[i]
+
+    return ret
+
+
+def length(v: Vector) -> float:
+    return sqrt(dot(v, v))

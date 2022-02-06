@@ -1,3 +1,6 @@
+
+
+
 def det2(m):
     return m[0][0] * m[1][1] - m[0][1] * m[1][0]
 
@@ -35,6 +38,7 @@ def det4(m):
     ]
     return m[0][0] * det3(m0) - m[0][1] * det3(m1) + m[0][2] * det3(m2) - m[0][3] * det3(m3)
 
+
 def set_identity(m, n):
     for i in range(0, n):
         for j in range(0, n):
@@ -42,6 +46,7 @@ def set_identity(m, n):
                 m[i][j + n] = 1
             else:
                 m[i][j + n] = 0
+
 
 def gaus_jordan(m, size):
     for i in range(0, size):
@@ -52,7 +57,14 @@ def gaus_jordan(m, size):
                 for k in range(2*size):
                     m[j][k] = m[j][k] - ratio * m[i][k]
 
+
 def row_operations_principal_diagonal(m, size):
     for i in range(0, size):
         for j in range(size, 2*size):
             m[i][j] = m[i][j]/m[i][i]
+
+
+def flatten(obj):
+    return [ x for x in obj]
+
+

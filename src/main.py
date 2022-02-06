@@ -1,10 +1,7 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
-from OpenGL.GLU import *
-from OpenGL.arrays import vbo
-from OpenGL.GL import shaders
 
-from utils.initshader import initShaders
+from src.utils.initshader import initShaders
 
 
 width, height = 800, 800
