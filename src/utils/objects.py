@@ -16,6 +16,11 @@ class Vector:
     def __repr__(self):
         return self.elements
 
+    def __neg__(self):
+        for i in range(len(self)):
+            self[i] = -self[i]
+        return self
+
     def __str__(self):
         return str(self.elements)
 
@@ -105,7 +110,7 @@ class Vector:
 
             return Vector(result)
 
-        elif int.__name__ == other_type:
+        elif other_type in [int.__name__ , float.__name__]:
             for i in range(len(self)):
                 result.append(self[i] * other)
 
@@ -124,15 +129,16 @@ class Vector:
         raise Exception("Trying to multiply a matrix with a illegal type: ".format(other.__name__))
 
 
+
 class Matrix:
 
-    def __init__(self, input = None, n = 4, m = None):
+    def __init__(self, inputData = None, n = 4, m = None):
         self.m = []
-        if input is not None and type(input) == list:
-            for i in range(len(input)):
+        if inputData is not None and type(inputData) == list:
+            for i in range(len(inputData)):
                 self.m.append([])
-                for j in range(len(input[i])):
-                    self.m[i].append(input[i][j])
+                for j in range(len(inputData[i])):
+                    self.m[i].append(inputData[i][j])
         else:
             for i in range(n):
                 self.m.append([])
@@ -217,9 +223,10 @@ class Matrix:
 
     def __mul__(self, other):
         result = []
-        other_len = len(other)
+
         other_type = type(other).__name__
         if type(self).__name__ == other_type:
+            other_len = len(other)
             if len(self) != other_len:
                 raise Exception("Trying to add matrices of different dimensions")
 
@@ -237,7 +244,7 @@ class Matrix:
 
             return Matrix(result)
 
-        elif int.__name__ == other_type:
+        elif other_type in [int.__name__ , float.__name__]:
             for i in range(len(self)):
                 result.append([])
                 for j in range(len(self)):
@@ -245,6 +252,7 @@ class Matrix:
             return Matrix(result)
 
         elif other_type in [Vector.__name__, list.__name__]:
+            other_len = len(other)
             result = []
             if len(self) == other_len:
                 for i in range(other_len):
@@ -284,8 +292,11 @@ class Transform:
         return [self.m[0][3],self.m[1][3],self.m[2][3]]
 
     def get_scale(self):
-        pass
+        sx = length([self.m[0][0], self.m[1][0], self.m[2][0]])
+        sy = length([self.m[0][1], self.m[1][1], self.m[2][1]])
+        sz = length([self.m[0][2], self.m[1][2], self.m[2][2]])
 
+        print(sx, sy,sz)
 
     def get_rotation(self):
         sy = math.sqrt(self.m[0][0]*self.m[0][0] + self.m[1][0] * self.m[1][0])
@@ -325,3 +336,9 @@ class ShadingGroup:
         self.objList.remove(obj)
 
 
+def length(v):
+    xx = v[0] * v[0]
+    yy = v[1] * v[1]
+    zz = v[2] * v[2]
+
+    return math.sqrt(xx + yy + zz)

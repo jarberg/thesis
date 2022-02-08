@@ -5,6 +5,7 @@ import math
 from src.utils.objects import Matrix
 from src.utils.objects import Vector
 
+
 EPSILON = 0.00000000000001
 EPISLON_LEN = abs(decimal.Decimal(str(EPSILON)).as_tuple().exponent)
 
@@ -190,12 +191,6 @@ def length(v: Vector) -> float:
     return math.sqrt(dot(v, v))
 
 
-def negate(v: Vector) -> Vector:
-    res = []
-    for i in range(len(v)):
-        res.append(-v[i])
-
-    return Vector(res)
 
 
 def look_at(eye, at, up) -> Matrix:
@@ -206,7 +201,7 @@ def look_at(eye, at, up) -> Matrix:
     n = normalize(v * up)
     u = normalize(n * v)
 
-    v = negate(v)
+    v = -v
 
     result = Matrix([
         [*n, -dot(n, eye)],
@@ -289,33 +284,32 @@ def rotate(axis):
 def rotateX(theta):
     c = math.cos(radians(theta))
     s = math.sin(radians(theta))
-    rz = Matrix(input=[ [1.0, 0.0, 0.0, 0.0],
-                        [ 0.0, c, s, 0.0],
-                        [0.0, -s, c, 0.0],
-                        [0.0, 0.0, 0.0, 1.0]
-                        ])
+    rz = Matrix(inputData=[[1.0, 0.0, 0.0, 0.0],
+                           [ 0.0, c, s, 0.0],
+                           [0.0, -s, c, 0.0],
+                           [0.0, 0.0, 0.0, 1.0]
+                           ])
     return rz
-
 
 def rotateY(theta):
     c = math.cos(radians(theta))
     s = math.sin(radians(theta))
-    rz = Matrix(input=[ [c, 0.0, -s, 0.0],
-                        [0.0, 1.0, 0.0, 0.0],
-                        [s, 0.0, c, 0.0],
-                        [0.0, 0.0, 0.0, 1.0]
-                        ])
+    rz = Matrix(inputData=[[c, 0.0, -s, 0.0],
+                           [0.0, 1.0, 0.0, 0.0],
+                           [s, 0.0, c, 0.0],
+                           [0.0, 0.0, 0.0, 1.0]
+                           ])
     return rz
 
 
 def rotateZ(theta):
     c = math.cos(radians(theta))
     s = math.sin(radians(theta))
-    rz = Matrix(input=[ [c, s, 0.0, 0.0],
-                        [-s, c, 0.0, 0.0,],
-                        [0.0, 0.0, 1.0, 0.0],
-                        [0.0, 0.0, 0.0, 1.0]
-                        ])
+    rz = Matrix(inputData=[[c, s, 0.0, 0.0],
+                           [-s, c, 0.0, 0.0,],
+                           [0.0, 0.0, 1.0, 0.0],
+                           [0.0, 0.0, 0.0, 1.0]
+                           ])
     return rz
 
 

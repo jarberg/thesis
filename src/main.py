@@ -7,8 +7,6 @@ from src.utils.objects import *
 
 width, height = 800, 800
 aspectRatio = width/height
-
-
 program = None
 window = None
 
@@ -40,10 +38,12 @@ def init():
 
 
 t = Transform()
+t.m = t.m*(Matrix(n=4)*0.01)
+t.get_scale()
+look_at(Vector([1,1,1]), Vector([0,0,0]), Vector([0,1,0]))
 
-
-t.m = rotate([20.111111111111111111111111,35.00000000001000000000000000000, 19.9999999])
+t.m = rotate([20.1111111111112161111111111, 35.000000000010060000001, 19.9999999])
 print([degrees(x) for x in t.get_rotation()])
 
-#t.get_rotation()
+t.get_rotation()
 
