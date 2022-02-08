@@ -1,13 +1,5 @@
-from typing import Union
-from math import sqrt
-from math import isfinite
+import math
 
-from src.utils.objectUtils import *
-
-class Transform:
-
-    def __init__(self):
-        pass
 
 class Vector:
 
@@ -35,7 +27,10 @@ class Vector:
             for j in range(len(self)):
                 if other[j] != self[j]: return False
 
-        else: return False
+            return True
+
+        else:
+            return False
 
     def __getitem__(self, item):
         return self.elements[item]
@@ -56,12 +51,10 @@ class Vector:
         if type(self).__name__ == (type(other).__name__):
             if len(self) != len(other):
                 raise Exception("Trying to add matrices of different dimensions")
-                return self
 
             for i in range(len(self)):
                 if len(self[i]) != len(other[i]):
                     raise Exception("Trying to add matrices of different dimensions")
-                    return self
 
                 result.append([])
                 for j in range(len(other)):
@@ -79,7 +72,7 @@ class Vector:
                 raise Exception("Trying to subtract vectors of different dimensions")
 
             for i in range(len(self)):
-                result[i].append(self[i] - other[i])
+                result.append(self[i] - other[i])
 
             return Vector(result)
 
@@ -130,16 +123,15 @@ class Vector:
             return Vector(result)
         raise Exception("Trying to multiply a matrix with a illegal type: ".format(other.__name__))
 
+
 class Matrix:
 
-    def __init__(self, input = None, n = 1, m = None):
+    def __init__(self, input = None, n = 4, m = None):
         self.m = []
         if input is not None and type(input) == list:
             for i in range(len(input)):
                 self.m.append([])
                 for j in range(len(input[i])):
-                    if len(input) != len(input[i]):
-                        print("Trying to create matrix with different row/colomns")
                     self.m[i].append(input[i][j])
         else:
             for i in range(n):
@@ -167,7 +159,9 @@ class Matrix:
         return "What ever you did, you ended up using represent on a Matrix"
 
     def __str__(self):
-        return str(self.m)
+        t = " \n".join([str(x) for x in self.m])
+
+        return t
 
     def __getitem__(self, item):
         return self.m[item]
@@ -278,103 +272,56 @@ class Matrix:
         raise Exception("Trying to multiply a matrix with a illegal type: ".format(other.__name__))
 
 
-def transpose(m:Matrix):
-    result = []
-    for i in range(len(m)):
-        result.append([])
-        for j in range(len(m[i])):
-            result[i].append(m.m[j][i])
+class Transform:
 
-    return Matrix(result)
+    def __init__(self, size=4):
+        self.m = Matrix(n=size)
 
+    def getTransform(self):
+        return self.m
 
-def det(m:Matrix):
-     if (type(m).__name__) != Matrix.__name__: \
-         raise Exception("Cant find determinant on a non Matrix")
-     if len(m) == 2:
-         return det2(m)
-     if len(m) == 3:
-         return det3(m)
-     if len(m) == 4:
-         return det4(m)
+    def get_position(self):
+        return [self.m[0][3],self.m[1][3],self.m[2][3]]
+
+    def get_scale(self):
+        pass
 
 
-def inverse(m:Matrix):
-    n = len(m)
-    a = Matrix(n= n, m =2*n)
+    def get_rotation(self):
+        sy = math.sqrt(self.m[0][0]*self.m[0][0] + self.m[1][0] * self.m[1][0])
 
-    for i in range(n):
-        for j in range(n):
-            a[i][j] = m[i][j]
+        singular = sy < 1e-6
 
-    set_identity(a, n)
-    gaus_jordan(a, n)
-    row_operations_principal_diagonal(a, n)
+        if not singular:
+            x = -math.atan2(self.m[2][1], self.m[2][2])
+            y = -math.atan2(-self.m[2][0], sy)
+            z = -math.atan2(self.m[1][0], self.m[0][0])
 
-    im = Matrix(n = n)
-    for i in range(n):
-        for j in range(n):
-            im[i][j] = a[i][j+n]
+        else:
+            x = math.atan2(-self.m[1][2], self.m[1][1])
+            y = math.atan2(-self.m[2][0], sy)
+            z = 0
 
-    return im
+        return [x, y, z]
 
-
-def normalMatrix(m: Matrix, as_lower_order = False):
-
-    a = inverse(transpose(m))
-    if not as_lower_order: return a
-    else:
-        l = len(a)
-        b = Matrix(n=l-1)
-        for i in range(l-1):
-            for j in range(l-1):
-                b[i][j] = a[i][j]
-        return b
+class Model(Transform):
+    pass
 
 
-def sizeOf(Obj: Union[Vector, Matrix])->int:
-    inputType = type(Obj).__name__
-    inputSize = len(Obj)
-    retdict = {
-            Matrix.__name__: 4*inputSize*inputSize,
-            Vector.__name__: 4*inputSize
-           }
-    ret = retdict.get(inputType)
-    #if inputType not in [Matrix.__name__, Vector.__name__]:
-        #raise Exception("attempted to sizeOf of unsupported datastructure2")
-
-    return ret
+class Shader:
+    pass
 
 
-def normalize(v: Vector, exclude_last_comp: bool = False) -> Vector:
-    vars = [x*x for x in v.elements]
-    length = 0.0
-    for i in vars:
-        length += i
-    length = sqrt(abs(length))
+class ShadingGroup:
 
-    if not isfinite(float(length)):
-        raise Exception("normalize vector {} has zero length".format(v))
+    def __init__(self, _shader: Shader):
+        self.shader = _shader
+        self.objList = []
 
-    if exclude_last_comp: excep = 1
-    else: excep = 0
+    def register_obj(self, obj):
+        self.objList.append(obj)
 
-    for i in range(len(v)-excep):
-        v[i] /= length
-
-    return Vector(v.elements)
+    def deregister_obj(self, obj):
+        self.objList.remove(obj)
 
 
-def dot(u: Vector, v: Vector) -> float:
-    if len(u) != len(v):
-        raise Exception("tried to dot vectors of different lengths")
-
-    ret = 0.0
-    for i in range(len(u)):
-        ret += u[i]*v[i]
-
-    return ret
-
-
-def length(v: Vector) -> float:
-    return sqrt(dot(v, v))
