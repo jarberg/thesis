@@ -1,7 +1,6 @@
 import unittest
-import decimal
-from src.utils.objects import *
-from src.utils.objectUtils import *
+from utils.objectUtils import *
+from utils.objects import *
 
 
 EPSILON = 0.000001

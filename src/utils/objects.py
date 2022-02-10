@@ -129,7 +129,6 @@ class Vector:
         raise Exception("Trying to multiply a matrix with a illegal type: ".format(other.__name__))
 
 
-
 class Matrix:
 
     def __init__(self, inputData = None, n = 4, m = None):
@@ -315,6 +314,7 @@ class Transform:
 
         return [x, y, z]
 
+
 class Model(Transform):
     pass
 
@@ -342,3 +342,8 @@ def length(v):
     zz = v[2] * v[2]
 
     return math.sqrt(xx + yy + zz)
+
+
+class Material:
+    def __init__(self, *args):
+        pass

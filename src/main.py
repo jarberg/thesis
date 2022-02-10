@@ -32,10 +32,11 @@ def init():
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
-    program = initShaders("shader/vertex-shader.glsl", "shader/fragment-shader.glsl")
+    program = initShaders("src/shader/vertex-shader.glsl", "src/shader/aa_f_shader.glsl")#"src/shader/fragment-shader.glsl")
     glUseProgram(program)
     glutMainLoop()
 
+init()
 
 t = Transform()
 t.m = t.m*(Matrix(n=4)*0.01)

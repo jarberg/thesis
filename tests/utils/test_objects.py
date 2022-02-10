@@ -1,5 +1,5 @@
 import unittest
-from src.utils.objects import *
+
 
 class TestVector1(unittest.TestCase):
     def setUp(self):
