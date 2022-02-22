@@ -2,8 +2,8 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 
 from src.utils.initshader import initShaders
-from src.utils.objectUtils import *
-from src.utils.objects import *
+from utils.objectUtils import *
+from utils.objects import *
 
 width, height = 800, 800
 aspectRatio = width/height
@@ -32,19 +32,30 @@ def init():
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
-    program = initShaders("src/shader/vertex-shader.glsl", "src/shader/aa_f_shader.glsl")#"src/shader/fragment-shader.glsl")
+    program = initShaders("src/shader/vertex-shader.glsl", "src/shader/fragment-shader.glsl")#"src/shader/fragment-shader.glsl")
     glUseProgram(program)
     glutMainLoop()
 
-init()
+#init()
 
 t = Transform()
-t.m = t.m*(Matrix(n=4)*0.01)
-t.get_scale()
-look_at(Vector([1,1,1]), Vector([0,0,0]), Vector([0,1,0]))
+t.m = t.m*(Matrix(n=4))
 
-t.m = rotate([20.1111111111112161111111111, 35.000000000010060000001, 19.9999999])
-print([degrees(x) for x in t.get_rotation()])
+t.set_position([1, 2, 3])
 
-t.get_rotation()
+print("pos ", t.get_position())
+print("rot ", t.get_rotation())
+print("sca ", t.get_scale(), "\n")
 
+t.set_rotation([45, 45, 0])
+
+print("pos ", t.get_position())
+print("rot ", t.get_rotation())
+print("sca ", t.get_scale(), "\n")
+
+t.set_scale([3, 2, 1])
+
+print("pos ", t.get_position())
+print("rot ", t.get_rotation())
+print("sca ", t.get_scale())
+print(t.m.m)

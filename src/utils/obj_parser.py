@@ -1,4 +1,3 @@
-import os
 from src.constants import *
 
 class ObjParser:
@@ -120,7 +119,7 @@ class StringParser:
     def getFloat(self):
         return float(self.getWord())
 
-from src.utils.objects import Material
+from utils.objects import Material
 
 
 class MTL_object:

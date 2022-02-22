@@ -1,3 +1,9 @@
+import math
+
+from utils.objectUtils import Vector
+from utils.objects import Transform
+
+
 class Stub_Matrix4:
 
     def __init__(self, n = 4, m = None):
@@ -46,6 +52,40 @@ class Stub_Matrix4:
     def __truediv__(self, other):
         return super().__truediv__(other)
 
+class Stub_Transform:
+
+    def __init__(self):
+        self.pos = [1,2,3]
+        self.rot = [45,45,0]
+        self.sca = [3,2,1]
+        self.m = [[1.5000000000000004, -1.0000000000000002, 0.7071067811865476, 2.0],
+                  [2.121320343559643, 1.4142135623730951, 0.0, 4.0],
+                  [-1.5000000000000004, 1.0000000000000002, 0.7071067811865476, 6.0],
+                  [0.0, 0.0, 0.0, 1.0]]
+
+    def get_transform(self):
+        return self.m
+
+    def get_position(self):
+        return self.pos
+
+    def get_scale(self):
+        return  self.sca
+
+    def get_rotation(self):
+        return self.rot
+
+    def set_scale(self, s: list):
+        scale = s
+
+    def _update_transform(self):
+        pass
+
+    def set_rotation(self, newRot: list or Vector):
+        self.rot = newRot
+
+    def set_position(self, newPos: list or Vector):
+        self.pos = newPos
 
 
 
