@@ -1,26 +1,24 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
+from PIL import Image, ImageOps
+import time
 
-from src.utils.initshader import initShaders
-from utils.objectUtils import *
-from utils.objects import *
+from opengl_interfacing.framebuffer import FrameBuffer
+from opengl_interfacing.initshader import initShaders
 
 width, height = 800, 800
-aspectRatio = width/height
+aspectRatio = width / height
 program = None
 window = None
-
-def render():
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glClearColor(0.0, 0.0, 1.0, 1.0)
-    #glLoadIdentity()
-    #glutSwapBuffers()  # important for double buffering
-    glutSolidTeapot(0.5)
-    glFlush()
+global count
+count = 0
 
 
 def init():
+    global start_time
+    global fps_counter
+    fps_counter = 0
+    start_time = time.time()
 
     glutInit()
     glutInitDisplayMode(GLUT_RGBA)
@@ -29,33 +27,51 @@ def init():
 
     window = glutCreateWindow("Opengl Window In Python")
 
+    global Fbo
+    Fbo = FrameBuffer(50, 50)
+
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
-    program = initShaders("src/shader/vertex-shader.glsl", "src/shader/fragment-shader.glsl")#"src/shader/fragment-shader.glsl")
+    program = initShaders("src/shader/vertex-shader.glsl", "src/shader/fragment-shader.glsl")
     glUseProgram(program)
     glutMainLoop()
 
-#init()
+    glUniform1f(glGetUniformLocation(program, "test.position"), [1, 1, 1])
 
-t = Transform()
-t.m = t.m*(Matrix(n=4))
+def save_current_framebuffer_as_png():
+    glPixelStorei(GL_PACK_ALIGNMENT, 1)
+    data = glReadPixels(0, 0, Fbo.width, Fbo.height, GL_RGBA, GL_UNSIGNED_BYTE)
+    image = Image.frombytes("RGBA", (Fbo.width, Fbo.height), data)
+    image = ImageOps.flip(image)  # in my case image is flipped top-bottom for some reason
+    image.save('glutout.png', 'PNG')
 
-t.set_position([1, 2, 3])
 
-print("pos ", t.get_position())
-print("rot ", t.get_rotation())
-print("sca ", t.get_scale(), "\n")
+def fps_update():
+    global fps_counter
+    global start_time
+    global time_per_frame
 
-t.set_rotation([45, 45, 0])
+    if (time.time() - start_time) > 1:
+        time_per_frame = 1 / fps_counter / (time.time() - start_time)
+        print("FPS: ", fps_counter / (time.time() - start_time))
+        fps_counter = 0
+        start_time = time.time()
+    fps_counter += 1
 
-print("pos ", t.get_position())
-print("rot ", t.get_rotation())
-print("sca ", t.get_scale(), "\n")
 
-t.set_scale([3, 2, 1])
+def render():
+    global count
 
-print("pos ", t.get_position())
-print("rot ", t.get_rotation())
-print("sca ", t.get_scale())
-print(t.m.m)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glClearColor(1.0, 0.0, 0.0, 1.0)
+
+    Fbo.bind(3)
+    glutSolidTeapot(0.5)
+    Fbo.unbind()
+
+
+    fps_update()
+
+
+init()

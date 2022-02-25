@@ -1,7 +1,6 @@
 import math
 
 from utils.objectUtils import Vector
-from utils.objects import Transform
 
 
 class Stub_Matrix4:
@@ -52,6 +51,37 @@ class Stub_Matrix4:
     def __truediv__(self, other):
         return super().__truediv__(other)
 
+
+class Stub_Matrix3:
+
+    def __init__(self):
+        self.m =[[1,0,0],
+                 [0,1,0],
+                 [0,0,1]]
+
+
+    def __eq__(self, other):
+        return False
+
+    def __getitem__(self, item):
+        return self.m[item]
+
+    def __setitem__(self, key, value):
+        self.m[key] = value
+
+    def __len__(self):
+        return len(self.m)
+
+    def __iter__(self):
+        for i in self.m:
+            for j in i:
+                yield j
+
+
+class Stub_Vector3:
+    pass
+
+
 class Stub_Transform:
 
     def __init__(self):
@@ -70,22 +100,22 @@ class Stub_Transform:
         return self.pos
 
     def get_scale(self):
-        return  self.sca
+        return self.sca
 
     def get_rotation(self):
         return self.rot
 
     def set_scale(self, s: list):
-        scale = s
+        pass
 
     def _update_transform(self):
         pass
 
     def set_rotation(self, newRot: list or Vector):
-        self.rot = newRot
+        pass
 
     def set_position(self, newPos: list or Vector):
-        self.pos = newPos
+        pass
 
 
 

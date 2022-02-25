@@ -1,5 +1,6 @@
 import math
-from src.utils.objectUtils import Matrix, degrees, quat_2_euler, to_quaternion, get_pointLight_radius
+from src.utils.objectUtils import Matrix, degrees, quat_2_euler, matrix_to_quaternion, get_pointLight_radius, \
+    Quaternion, euler_to_quaternion, quaternion_2_matrix
 from src.utils.objectUtils import Vector
 from src.utils.objectUtils import rotate
 
@@ -11,6 +12,7 @@ class Transform:
         self.S = Matrix(n=size)
         self.R = Matrix(n=size)
         self.m = Matrix(n=size)
+        self._update_transform()
 
     def getTransform(self):
         return self.m
@@ -30,8 +32,8 @@ class Transform:
 
     def get_rotation(self):
 
-        m = to_quaternion(self.R)
-        x,y,z = quat_2_euler(*m)
+        q = Quaternion(quats=matrix_to_quaternion(self.R.m))
+        x,y,z = quat_2_euler(q)
 
         return [degrees(x), degrees(y), degrees(z)]
 
@@ -46,9 +48,13 @@ class Transform:
 
     def set_rotation(self, newrot: list or Vector):
 
-        self.m *= rotate(newrot)
-        newrot = [math.radians(x) for x in newrot]
 
+        q = euler_to_quaternion(newrot)
+        self.R.m = quaternion_2_matrix(q).m
+
+        self._update_transform()
+        """
+        newrot = [x * math.pi / 180 for x in newrot]
         ch = math.cos(newrot[0])
         sh = math.sin(newrot[0])
         ca = math.cos(newrot[1])
@@ -66,15 +72,13 @@ class Transform:
         m21 = sh * sa * cb + ch * sb
         m22 = -sh * sa * sb + ch * cb
 
-        tx,ty,tz = self.get_position()
-        sx,sy,sz = self.get_scale()
-        self.R.m =[[m00*sx,m01,m02,tx],
-                   [m10,m11*sy,m12,ty],
-                   [m20,m21,m22*sz,tz],
+        self.R.m =[[m00,m01,m02,0],
+                   [m10,m11,m12,0],
+                   [m20,m21,m22,0],
                    [0,0,0,1]
                    ]
+        """
 
-        self._update_transform()
 
     def set_position(self, newPos: list or Vector):
         minval = min(len(self.m) - 1, 3)
@@ -114,16 +118,16 @@ class Attenuation:
 
 
 class BaseLight(Transform):
-    pass
 
+    def __init__(self):
+        super(BaseLight, self).__init__()
+        self.intensity = 1
+        self.colour = Vector(1, 1, 1)
 
 class PointLight(BaseLight):
-    const = 4 * math.pi
 
     def __init__(self):
         super(PointLight, self).__init__()
-        self.intensity = 1
-        self.colour = Vector(1, 1, 1)
         self.attenuation = Attenuation()
         self.radius = get_pointLight_radius(self)
 
@@ -135,4 +139,5 @@ class Shader:
 class Material:
     def __init__(self, *args):
         pass
+
 

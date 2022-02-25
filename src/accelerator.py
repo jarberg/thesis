@@ -3,7 +3,7 @@ import random
 
 import constants
 
-from utils.objectUtils import length
+from utils.objectUtils import vlength
 from utils.objectUtils import cross
 from utils.objectUtils import dot
 from utils.objectUtils import sub

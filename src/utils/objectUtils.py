@@ -2,9 +2,7 @@ import decimal
 from typing import Union
 import math
 
-
-EPSILON = 0.0000000000001
-EPISLON_LEN = abs(decimal.Decimal(str(EPSILON)).as_tuple().exponent)
+from constants import PI, EPSILON, EPISLON_LEN
 
 
 class Vector:
@@ -112,7 +110,7 @@ class Vector:
             else:
                 raise Exception("Trying to multiply a matrix with a vector of different dimensions")
 
-        elif other_type == Matrix.__name__:
+        elif "Matrix" in other_type:
             other_len = len(other)
             if len(self) != other_len:
                 raise Exception("Trying to add matrices of different dimensions")
@@ -293,6 +291,54 @@ class Matrix:
         raise Exception("Trying to multiply a matrix with a illegal type: ".format(other.__name__))
 
 
+class Quaternion:
+
+    def __init__(self, quats=None, euler=None, matrix=None):
+        if euler:
+            self.i, self.j, self.k, self.w = euler_to_quaternion(euler)
+        elif matrix:
+            self.i, self.j, self.k, self.w = matrix_to_quaternion(matrix)
+        elif quats:
+
+            self.i = quats[0]
+            self.j = quats[1]
+            self.k = quats[2]
+            self.w = quats[3]
+            d = normalize_q(self)
+            self.i /= d
+            self.j /= d
+            self.k /= d
+            self.w /= d
+        else:
+            self.i, self.j, self.k, self.w = (0, 0, 0, 1)
+
+    def __str__(self):
+        return str([self.w, self.i,self.j,self.k])
+
+    def __mul__(self, other):
+        other_type = type(other).__name__
+        if type(self).__name__ == other_type:
+            ret = Quaternion()
+            ret.w = self.w * other.w - self.i * other.i - self.j * other.j - self.k * other.k  # 1
+            ret.i = self.w * other.i + self.i * other.w + self.j * other.k - self.k * other.j  # i
+            ret.j = self.w * other.j - self.i * other.k + self.j * other.w + self.k * other.i  # j
+            ret.k = self.w * other.k + self.i * other.j - self.j * other.i + self.k * other.w   # k
+            return ret
+
+    def __truediv__(self, other):
+        other_type = type(other).__name__
+        if other_type in [float.__name__, int.__name__]:
+            self.w /= other
+            self.i /= other
+            self.j /= other
+            self.k /= other
+        return self
+
+    def __iter__(self):
+        for i in [self.i,self.j,self.k,self.w]:
+            yield i
+
+
 def length(v):
     xx = v[0] * v[0]
     yy = v[1] * v[1]
@@ -301,21 +347,21 @@ def length(v):
     return math.sqrt(xx + yy + zz)
 
 
-def sub(v1,v2):
+def sub(v1, v2):
     res = []
     for i in range(len(v1)):
-        res.append(v1[i]-v2[i])
+        res.append(v1[i] - v2[i])
     return res
 
 
 def div(vec, flo):
     res = []
     for i in range(len(vec)):
-        res.append(vec[i]/flo)
+        res.append(vec[i] / flo)
     return res
 
-def cross(v1,v2):
 
+def cross(v1, v2):
     if len(v1) == len(v2):
         res = []
         res.append(v1[1] * v2[2] - v1[2] * v2[1])
@@ -378,15 +424,15 @@ def gaus_jordan(m, size):
             raise Exception("MATHMATILCAL ERROR")
         for j in range(0, size):
             if i != j:
-                ratio = m[j][i]/m[i][i]
-                for k in range(2*size):
+                ratio = m[j][i] / m[i][i]
+                for k in range(2 * size):
                     m[j][k] = m[j][k] - ratio * m[i][k]
 
 
 def row_operations_principal_diagonal(m, size):
     for i in range(0, size):
-        for j in range(size, 2*size):
-            m[i][j] = m[i][j]/m[i][i]
+        for j in range(size, 2 * size):
+            m[i][j] = m[i][j] / m[i][i]
 
 
 def flatten(obj):
@@ -394,11 +440,11 @@ def flatten(obj):
 
 
 def radians(degrees):
-    return degrees * math.pi / 180.0
+    return degrees /180.0 *PI
 
 
 def degrees(radians):
-    return round(radians / math.pi * 180.0, EPISLON_LEN)
+    return round(radians / PI * 180 , EPISLON_LEN)
 
 
 def transpose(m: Matrix):
@@ -494,7 +540,7 @@ def normalize(v, exclude_last_comp: bool = False) -> Vector:
         return Vector(v.elements)
 
 
-def dot(u: Vector, v: Vector) -> float:
+def dot(u: Vector or list, v: Vector or list) -> float:
     if len(u) != len(v):
         raise Exception("tried to dot vectors of different lengths")
 
@@ -505,14 +551,12 @@ def dot(u: Vector, v: Vector) -> float:
     return ret
 
 
-def length(v: Vector) -> float:
+def vlength(v: Vector) -> float:
     ret = 0
     for i in range(len(v)):
-        ret += v[i]*v[i]
+        ret += v[i] * v[i]
 
     return math.sqrt(ret)
-
-
 
 
 def look_at(eye, at, up) -> Matrix:
@@ -574,7 +618,6 @@ def perspective(fovy, aspect, near, far) -> Matrix:
 
 
 def translate(input):
-
     m = Matrix(n=4)
     m[0][3] = input[0]
     m[1][3] = input[1]
@@ -584,9 +627,7 @@ def translate(input):
 
 
 def rotate(axis):
-
-    return rotateZ(axis[2])*rotateY(axis[1])*rotateX(axis[0])
-
+    return rotateZ(axis[2]) * rotateY(axis[1]) * rotateX(axis[0])
 
     """
     c = math.cos(radians(angle))
@@ -602,16 +643,16 @@ def rotate(axis):
     """
 
 
-
 def rotateX(theta):
     c = math.cos(radians(theta))
     s = math.sin(radians(theta))
     rz = Matrix(inputData=[[1.0, 0.0, 0.0, 0.0],
-                           [ 0.0, c, s, 0.0],
+                           [0.0, c, s, 0.0],
                            [0.0, -s, c, 0.0],
                            [0.0, 0.0, 0.0, 1.0]
                            ])
     return rz
+
 
 def rotateY(theta):
     c = math.cos(radians(theta))
@@ -628,7 +669,7 @@ def rotateZ(theta):
     c = math.cos(radians(theta))
     s = math.sin(radians(theta))
     rz = Matrix(inputData=[[c, s, 0.0, 0.0],
-                           [-s, c, 0.0, 0.0,],
+                           [-s, c, 0.0, 0.0, ],
                            [0.0, 0.0, 1.0, 0.0],
                            [0.0, 0.0, 0.0, 1.0]
                            ])
@@ -636,7 +677,6 @@ def rotateZ(theta):
 
 
 def scale(input):
-
     m = Matrix(n=4)
     m[0][0] = input[0]
     m[1][1] = input[1]
@@ -645,77 +685,149 @@ def scale(input):
     return m
 
 
-def to_quaternion(m):
+def euler_to_quaternion(euler_angles):
 
+    heading = radians(euler_angles[0])
+    attitude = radians(euler_angles[1])
+    bank = radians(euler_angles[2])
+
+    c1 = math.cos(heading/2)
+    s1 = math.sin(heading/2)
+    c2 = math.cos(attitude/2)
+    s2 = math.sin(attitude/2)
+    c3 = math.cos(bank/2)
+    s3 = math.sin(bank/2)
+
+    c1c2 = c1 * c2
+    s1s2 = s1 * s2
+
+    w = c1c2 * c3 - s1s2 * s3
+    x = c1c2 * s3 + s1s2 * c3
+    y = s1 * c2 * c3 + c1 * s2 * s3
+    z = c1 * s2 * c3 - s1 * c2 * s3
+
+    return Quaternion(quats=(x,y,z,w))
+
+
+def matrix_to_quaternion(m):
     trace = m[0][0] + m[1][1] + m[2][2]
 
     if trace > 0:
-        S = math.sqrt(trace + 1) * 2
+        S = 0.5 /math.sqrt(trace + 1.0)
+        qw = 0.25 / S
+        qx = (m[2][1] - m[1][2]) * S
+        qy = (m[0][2] - m[2][0]) * S
+        qz = (m[1][0] - m[0][1]) * S
+    elif m[0][0] > m[1][1] and m[0][0] > m[2][2]:
+        S = 2.0 * math.sqrt(1.0 + m[0][0] - m[1][1] - m[2][2])
         S1 = 1 / S
-        qw = 0.25 * S
-        qx = (m[2][1] - m[1][2]) * S1
-        qy = (m[0][2] - m[2][0]) * S1
-        qz = (m[1][0] - m[0][1]) * S1
 
-    elif m[0][0]> m[1][1] and [0][0] > m[2][2]:
-        S = math.sqrt(1.0 + m[0][0] - m[1][1]- m[2][2]) * 2
-        S1 = 1 / S
-        qw = 0.25 * S
-        qx = (m[2][1] - m[1][2]) * S1
-        qy = (m[0][1] - m[1][0]) * S1
+        qw = (m[2][1] - m[1][2]) * S1
+        qx = 0.25 * S
+        qy = (m[0][1] + m[1][0]) * S1
         qz = (m[0][1] - m[2][0]) * S1
-
-    elif m[1][1]>m[2][2]:
-        S = math.sqrt(1.0 + m[1][1] - [0][0] - m[2][2]) * 2
-        qw = (m[0][2] - m[2][0]) / S
-        qx = (m[0][1] + m[1][0]) / S
+    elif m[1][1] > m[2][2]:
+        S = math.sqrt(1.0 + m[1][1] - [0][0] - m[2][2]) * 2.0
+        S1 = 1 / S
+        qw = (m[0][2] - m[2][0]) * S1
+        qx = (m[0][1] + m[1][0]) * S1
         qy = 0.25 * S
-        qz = (m[1][2] + m[2][1]) / S
-
+        qz = (m[1][2] + m[2][1]) * S1
     else:
-        S = math.sqrt(1.0 + m[2][2] - m[0][0] - m[1][1]) * 2
-        qw = (m[1][0] - m[0][1]) / S
-        qx = (m[0][2] + m[2][0]) / S
-        qy = (m[1][2] + m[2][1]) / S
+        S = math.sqrt(1.0 + m[2][2] - m[0][0] - m[1][1]) *2
+        S1 = 1 / S
+
+        qw = (m[1][0] - m[0][1]) * S1
+        qx = (m[0][2] + m[2][0]) * S1
+        qy = (m[1][2] + m[2][1]) * S1
         qz = 0.25 * S
 
-    d = math.sqrt(qw*qw+qx*qx+qy*qy+qz*qz)
+    return [qx, qy, qz, qw]
 
-    return (qx/d,qy/d,qz/d,qw/d)
+def quaternion_2_matrix(q):
+    m = Matrix(n=4)
 
-def quat_2_euler(x,y,z,w):
+    sqw = q.w * q.w
+    sqx = q.i * q.i
+    sqy = q.j * q.j
+    sqz = q.k * q.k
 
-    test = x * y + z * w
+    invs = 1 / (sqx + sqy + sqz + sqw)
+    m00 = (sqx - sqy - sqz + sqw) * invs
+    m11 = (-sqx + sqy - sqz + sqw) * invs
+    m22 = (-sqx - sqy + sqz + sqw) * invs
+    tmp1 = q.i * q.j
+    tmp2 = q.k * q.w
+    m10 = 2.0 * (tmp1 + tmp2) * invs
+    m01 = 2.0 * (tmp1 - tmp2) * invs
+    tmp1 = q.i * q.k
+    tmp2 = q.j * q.w
+    m20 = 2.0 * (tmp1 - tmp2) * invs
+    m02 = 2.0 * (tmp1 + tmp2) * invs
+    tmp1 = q.j * q.k
+    tmp2 = q.i * q.w
+    m21 = 2.0 * (tmp1 + tmp2) * invs
+    m12 = 2.0 * (tmp1 - tmp2) * invs
 
-    if (test > 0.499999999): # singularity at north pole
-        heading = 2 * math.atan2(x, w)
+    m.m = [ [m00, m01, m02, 0],
+            [m10, m11, m12, 0],
+            [m20, m21, m22, 0],
+            [0, 0, 0, 1]]
+
+    return m
+
+def normalize_q(q):
+    return math.sqrt(q.w*q.w+q.i*q.i+q.j*q.j+q.k*q.k)
+
+
+def quat_2_euler(q:Quaternion):
+
+    d = normalize_q(q)
+
+    q=q/d
+
+    sqw = q.w * q.w
+    sqx = q.i * q.i
+    sqy = q.j * q.j
+    sqz = q.k * q.k
+
+    unit = sqx+sqy+sqz+sqw
+
+    test = q.i * q.j + q.k * q.w
+
+    if test > 0.4999999*unit:  # singularity at north pole
+        heading = 2 * math.atan2(q.i, q.w)
         attitude = math.pi / 2
         bank = 0
-        return(heading, attitude, bank)
+        return (heading, attitude, bank )
 
-    if (test < -0.49999999): # singularity at south pole
-        heading = -2 * math.atan2(x, w)
+    if test < -0.499999*unit:  # singularity at south pole
+        heading = -2 * math.atan2(q.i, q.w)
         attitude = - math.pi / 2
         bank = 0
-        return(heading, attitude, bank)
+        return (heading, attitude, bank )
+
+    sqx = q.i * q.i
+    sqy = q.j * q.j
+    sqz = q.k * q.k
 
 
-    sqx = x * x
-    sqy = y * y
-    sqz = z * z
-    heading = math.atan2(2 * y * w - 2 * x * z, 1 - 2 * sqy - 2 * sqz)
-    attitude = math.asin(2 * test)
-    bank = math.atan2(2 * x * w - 2 * y * z, 1 - 2 * sqx - 2 * sqz)
+    heading = math.atan2(2 * q.j * q.w - 2 * q.i * q.k, 1 - 2 * sqy - 2 * sqz)
+    tt = 2 * test
+    attitude = math.asin(tt/unit)
+    bank = math.atan2(2 * q.i * q.w - 2 * q.j * q.k, 1 - 2 * sqx - 2 * sqz)
 
-    return(heading,attitude,bank)
+    #heading = math.atan2(2 * q.j * q.w - 2 * q.i * q.k, sqx - sqy - sqz + sqw)
+    #attitude = math.asin(2 * test / unit)
+    #bank = math.atan2(2 * q.i * q.w - 2 * q.j * q.k, -sqx + sqy - sqz + sqw)
 
+    return (heading, attitude, bank )
 
 
 def within_radius(position, light):
     if type(light).__name__ == "PointLight":
-        if length(light - position) <= light.radius:
+        if vlength(light - position) <= light.radius:
             return True
-
 
 def get_pointLight_radius(pointLight):
     """
@@ -734,3 +846,4 @@ def get_pointLight_radius(pointLight):
 
     ret = (-linear + math.sqrt(linear * linear - 4 * exp * (const - colour_range * maxchannel * intensity))) / 2 * exp
     return ret
+
