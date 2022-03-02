@@ -1,7 +1,16 @@
-#version 120
+#version 330
+#extension GL_ARB_explicit_uniform_location : enable
+#extension GL_ARB_explicit_attrib_location : enable
 
-varying out vec3 FragPos;
+layout(location = 0) in vec4 a_Position;
+layout(location = 1) in vec2 InTexCoords;
+layout(location = 2) in mat4 projection;
+layout(location = 3) in mat4 obj_transform;
+
+out vec2 OutTexCoords;
+
 void main() {
-    FragPos = vec3(gl_Vertex[0],gl_Vertex[1],gl_Vertex[2]);
-    gl_Position = gl_Vertex;
+
+    OutTexCoords = InTexCoords;
+    gl_Position = obj_transform*a_Position;
 }

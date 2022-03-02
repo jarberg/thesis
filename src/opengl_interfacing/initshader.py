@@ -1,3 +1,5 @@
+import os
+
 from OpenGL.GL import glCreateShader
 from OpenGL.GL import glCreateProgram
 from OpenGL.GL import glShaderSource
@@ -13,10 +15,11 @@ from OpenGL.GL import glGetProgramInfoLog
 from OpenGL.GL import GL_LINK_STATUS
 from OpenGL.GL import glLinkProgram
 
+import constants
 
 def loadFile(path):
     s = ""
-    with open(path) as f:
+    with open(os.path.abspath(constants.ROOT_DIR + path).replace("\\", "/")) as f:
         s = " ".join([l for l in f])
     return s
 

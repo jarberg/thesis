@@ -9,6 +9,9 @@ from OpenGL.GL import GL_FRAMEBUFFER, glCreateRenderbuffers, glBindRenderbuffer,
     GL_DEPTH_BUFFER_BIT, glPopAttrib, glFlush
 from OpenGL.GL import glBindFramebuffer
 
+from opengl_interfacing import texture
+from opengl_interfacing.texture import Texture_Manager
+
 
 class FrameBuffer:
     def __init__(self, width, height):
@@ -17,21 +20,16 @@ class FrameBuffer:
         self.bound = False
 
         self.framebuffer = glGenFramebuffers(1)
-        print(self.framebuffer)
+
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 
-        self.texture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.texture)
-        GL.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.width, self.height, 0, GL_RGB, GL_UNSIGNED_BYTE, None)
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        self.texture = Texture_Manager().createNewTexture(size=[50, 50])
 
         self.renderbuffer = glGenRenderbuffers(1)
         glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
         glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT16, width, height)
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.renderbuffer)
 
-        GL.glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.texture, 0)
 
         status = GL.glCheckFramebufferStatus(GL_FRAMEBUFFER)
 
@@ -51,7 +49,7 @@ class FrameBuffer:
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
-    def bind(self, textureSlot):
+    def bind(self):
         if self.bound:
             return
         currentViewport = GL.glGetIntegerv(GL_VIEWPORT)
@@ -59,7 +57,7 @@ class FrameBuffer:
         self.unbindHeight = currentViewport[3]
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
         glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
-        self.bindTexture(textureSlot)
+        texture.bind(self.texture)
 
         GL.glViewport(0, 0, self.width, self.height)
         glClearColor(0.0, 1.0, 0.0, 1.0)
@@ -74,15 +72,6 @@ class FrameBuffer:
         GL.glViewport(0, 0, self.unbindWidth, self.unbindHeight)
         self.bound = False
 
-        glClearColor(1.0, 0.0, 0.0, 1.0)
+        glClearColor(0.3, 0.0, 0.3, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glFlush()
-
-
-
-    def bindTexture(self, textureSlot):
-        GL.glActiveTexture(GL.GL_TEXTURE0 + textureSlot)
-        GL.glBindTexture(GL_TEXTURE_2D, self.texture)
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)

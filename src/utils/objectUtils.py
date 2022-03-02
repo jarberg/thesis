@@ -2,6 +2,9 @@ import decimal
 from typing import Union
 import math
 
+from OpenGL import GL
+from OpenGL.raw.GL._types import GLfloat
+
 from constants import PI, EPSILON, EPISLON_LEN
 
 
@@ -313,7 +316,7 @@ class Quaternion:
             self.i, self.j, self.k, self.w = (0, 0, 0, 1)
 
     def __str__(self):
-        return str([self.w, self.i,self.j,self.k])
+        return str([self.w, self.i, self.j, self.k])
 
     def __mul__(self, other):
         other_type = type(other).__name__
@@ -322,7 +325,7 @@ class Quaternion:
             ret.w = self.w * other.w - self.i * other.i - self.j * other.j - self.k * other.k  # 1
             ret.i = self.w * other.i + self.i * other.w + self.j * other.k - self.k * other.j  # i
             ret.j = self.w * other.j - self.i * other.k + self.j * other.w + self.k * other.i  # j
-            ret.k = self.w * other.k + self.i * other.j - self.j * other.i + self.k * other.w   # k
+            ret.k = self.w * other.k + self.i * other.j - self.j * other.i + self.k * other.w  # k
             return ret
 
     def __truediv__(self, other):
@@ -335,7 +338,7 @@ class Quaternion:
         return self
 
     def __iter__(self):
-        for i in [self.i,self.j,self.k,self.w]:
+        for i in [self.i, self.j, self.k, self.w]:
             yield i
 
 
@@ -435,16 +438,24 @@ def row_operations_principal_diagonal(m, size):
             m[i][j] = m[i][j] / m[i][i]
 
 
+import ctypes
+import numpy
+import array
+
 def flatten(obj):
-    return [x for x in obj]
+    #data = []
+    #for i in obj:
+    #    for j in i:
+    #        data.append(float(j))
+    return numpy.array(obj, dtype=numpy.float32)
 
 
 def radians(degrees):
-    return degrees /180.0 *PI
+    return degrees / 180.0 * PI
 
 
 def degrees(radians):
-    return round(radians / PI * 180 , EPISLON_LEN)
+    return round(radians / PI * 180, EPISLON_LEN)
 
 
 def transpose(m: Matrix):
@@ -686,17 +697,16 @@ def scale(input):
 
 
 def euler_to_quaternion(euler_angles):
-
     heading = radians(euler_angles[0])
     attitude = radians(euler_angles[1])
     bank = radians(euler_angles[2])
 
-    c1 = math.cos(heading/2)
-    s1 = math.sin(heading/2)
-    c2 = math.cos(attitude/2)
-    s2 = math.sin(attitude/2)
-    c3 = math.cos(bank/2)
-    s3 = math.sin(bank/2)
+    c1 = math.cos(heading / 2)
+    s1 = math.sin(heading / 2)
+    c2 = math.cos(attitude / 2)
+    s2 = math.sin(attitude / 2)
+    c3 = math.cos(bank / 2)
+    s3 = math.sin(bank / 2)
 
     c1c2 = c1 * c2
     s1s2 = s1 * s2
@@ -706,14 +716,14 @@ def euler_to_quaternion(euler_angles):
     y = s1 * c2 * c3 + c1 * s2 * s3
     z = c1 * s2 * c3 - s1 * c2 * s3
 
-    return Quaternion(quats=(x,y,z,w))
+    return Quaternion(quats=(x, y, z, w))
 
 
 def matrix_to_quaternion(m):
     trace = m[0][0] + m[1][1] + m[2][2]
 
     if trace > 0:
-        S = 0.5 /math.sqrt(trace + 1.0)
+        S = 0.5 / math.sqrt(trace + 1.0)
         qw = 0.25 / S
         qx = (m[2][1] - m[1][2]) * S
         qy = (m[0][2] - m[2][0]) * S
@@ -734,7 +744,7 @@ def matrix_to_quaternion(m):
         qy = 0.25 * S
         qz = (m[1][2] + m[2][1]) * S1
     else:
-        S = math.sqrt(1.0 + m[2][2] - m[0][0] - m[1][1]) *2
+        S = math.sqrt(1.0 + m[2][2] - m[0][0] - m[1][1]) * 2
         S1 = 1 / S
 
         qw = (m[1][0] - m[0][1]) * S1
@@ -743,6 +753,7 @@ def matrix_to_quaternion(m):
         qz = 0.25 * S
 
     return [qx, qy, qz, qw]
+
 
 def quaternion_2_matrix(q):
     m = Matrix(n=4)
@@ -769,65 +780,65 @@ def quaternion_2_matrix(q):
     m21 = 2.0 * (tmp1 + tmp2) * invs
     m12 = 2.0 * (tmp1 - tmp2) * invs
 
-    m.m = [ [m00, m01, m02, 0],
-            [m10, m11, m12, 0],
-            [m20, m21, m22, 0],
-            [0, 0, 0, 1]]
+    m.m = [[m00, m01, m02, 0],
+           [m10, m11, m12, 0],
+           [m20, m21, m22, 0],
+           [0, 0, 0, 1]]
 
     return m
 
+
 def normalize_q(q):
-    return math.sqrt(q.w*q.w+q.i*q.i+q.j*q.j+q.k*q.k)
+    return math.sqrt(q.w * q.w + q.i * q.i + q.j * q.j + q.k * q.k)
 
 
-def quat_2_euler(q:Quaternion):
-
+def quat_2_euler(q: Quaternion):
     d = normalize_q(q)
 
-    q=q/d
+    q = q / d
 
     sqw = q.w * q.w
     sqx = q.i * q.i
     sqy = q.j * q.j
     sqz = q.k * q.k
 
-    unit = sqx+sqy+sqz+sqw
+    unit = sqx + sqy + sqz + sqw
 
     test = q.i * q.j + q.k * q.w
 
-    if test > 0.4999999*unit:  # singularity at north pole
+    if test > 0.4999999 * unit:  # singularity at north pole
         heading = 2 * math.atan2(q.i, q.w)
         attitude = math.pi / 2
         bank = 0
-        return (heading, attitude, bank )
+        return (heading, attitude, bank)
 
-    if test < -0.499999*unit:  # singularity at south pole
+    if test < -0.499999 * unit:  # singularity at south pole
         heading = -2 * math.atan2(q.i, q.w)
         attitude = - math.pi / 2
         bank = 0
-        return (heading, attitude, bank )
+        return (heading, attitude, bank)
 
     sqx = q.i * q.i
     sqy = q.j * q.j
     sqz = q.k * q.k
 
-
     heading = math.atan2(2 * q.j * q.w - 2 * q.i * q.k, 1 - 2 * sqy - 2 * sqz)
     tt = 2 * test
-    attitude = math.asin(tt/unit)
+    attitude = math.asin(tt / unit)
     bank = math.atan2(2 * q.i * q.w - 2 * q.j * q.k, 1 - 2 * sqx - 2 * sqz)
 
-    #heading = math.atan2(2 * q.j * q.w - 2 * q.i * q.k, sqx - sqy - sqz + sqw)
-    #attitude = math.asin(2 * test / unit)
-    #bank = math.atan2(2 * q.i * q.w - 2 * q.j * q.k, -sqx + sqy - sqz + sqw)
+    # heading = math.atan2(2 * q.j * q.w - 2 * q.i * q.k, sqx - sqy - sqz + sqw)
+    # attitude = math.asin(2 * test / unit)
+    # bank = math.atan2(2 * q.i * q.w - 2 * q.j * q.k, -sqx + sqy - sqz + sqw)
 
-    return (heading, attitude, bank )
+    return (heading, attitude, bank)
 
 
 def within_radius(position, light):
     if type(light).__name__ == "PointLight":
         if vlength(light - position) <= light.radius:
             return True
+
 
 def get_pointLight_radius(pointLight):
     """
@@ -846,4 +857,3 @@ def get_pointLight_radius(pointLight):
 
     ret = (-linear + math.sqrt(linear * linear - 4 * exp * (const - colour_range * maxchannel * intensity))) / 2 * exp
     return ret
-

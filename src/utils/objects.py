@@ -1,6 +1,11 @@
 import math
+
+import numpy
+from OpenGL import GL
+from OpenGL.raw.GL._types import GLfloat
+
 from src.utils.objectUtils import Matrix, degrees, quat_2_euler, matrix_to_quaternion, get_pointLight_radius, \
-    Quaternion, euler_to_quaternion, quaternion_2_matrix
+    Quaternion, euler_to_quaternion, quaternion_2_matrix, flatten
 from src.utils.objectUtils import Vector
 from src.utils.objectUtils import rotate
 
@@ -33,21 +38,20 @@ class Transform:
     def get_rotation(self):
 
         q = Quaternion(quats=matrix_to_quaternion(self.R.m))
-        x,y,z = quat_2_euler(q)
+        x, y, z = quat_2_euler(q)
 
         return [degrees(x), degrees(y), degrees(z)]
 
     def set_scale(self, s: list):
-        scale = [1,1,1]
+        scale = [1, 1, 1]
         for i in range(len(self.m) - 1):
             self.S[i][i] = s[i]
         self._update_transform()
 
     def _update_transform(self):
-        self.m = (self.T*self.R)*self.S
+        self.m = (self.T * self.R) * self.S
 
     def set_rotation(self, newrot: list or Vector):
-
 
         q = euler_to_quaternion(newrot)
         self.R.m = quaternion_2_matrix(q).m
@@ -79,7 +83,6 @@ class Transform:
                    ]
         """
 
-
     def set_position(self, newPos: list or Vector):
         minval = min(len(self.m) - 1, 3)
         for i in range(min(minval, 3)):
@@ -89,25 +92,66 @@ class Transform:
 
 class Model(Transform):
 
-    def __init__(self):
+    def __init__(self, _program, vertexlist, coordArray=None):
         super().__init__()
+
+
         self.boundingBox = []
         self.vertexArray = []
+        self.coordArray = coordArray or []
+
+        for each in vertexlist:
+            self._add_vertex(each)
+
+        self.program = _program
+
+        self.initBuffers()
+        self.initDataToBuffers()
+
+
+    def initBuffers(self):
+        self.vBuffer = GL.glGenBuffers(1)
+        self.cBuffer = GL.glGenBuffers(1)
+        self.nBuffer = GL.glGenBuffers(1)
+        self.iBuffer = GL.glGenBuffers(1)
+
+    def initDataToBuffers(self):
+        self.vPosition = GL.glGetAttribLocation(self.program, "a_Position")
+        self.initAttributeVariable(self.vPosition, self.vBuffer, 3, GL.GL_FLOAT)
+        GL.glBufferData(GL.GL_ARRAY_BUFFER, flatten(self.vertexArray), GL.GL_STATIC_DRAW)
+
+        self.vCoord = GL.glGetAttribLocation(self.program, "a_Position")
+        self.initAttributeVariable(self.vCoord, self.cBuffer, 2, GL.GL_FLOAT)
+        GL.glBufferData(GL.GL_ARRAY_BUFFER, flatten(self.coordArray), GL.GL_STATIC_DRAW)
+
+    def initAttributeVariable(self, a_attribute, buffer, size, var_type):
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, buffer)
+        GL.glVertexAttribPointer(a_attribute, size, var_type, False, 0, 0)
+        GL.glEnableVertexAttribArray(a_attribute)
 
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)
         self._update_boundingBox(vertex)
 
     def _update_boundingBox(self, p):
-        p1 = self.boundingBox[0]
-        p2 = self.boundingBox[1]
-        p3 = self.boundingBox[2]
-        p4 = self.boundingBox[3]
-
-        self.boundingBox[0] = Vector(min(p[0], p1[0]), min(p[1], p1[1]), min(p[2], p1[2]))
-        self.boundingBox[1] = Vector(max(p[0], p2[0]), min(p[1], p2[1]), min(p[2], p2[2]))
-        self.boundingBox[2] = Vector(min(p[0], p3[0]), max(p[1], p3[1]), min(p[2], p3[2]))
-        self.boundingBox[3] = Vector(min(p[0], p4[0]), min(p[1], p4[1]), max(p[2], p4[2]))
+        if len(self.boundingBox) > 3:
+            p1 = self.boundingBox[0]
+            p2 = self.boundingBox[1]
+            p3 = self.boundingBox[2]
+            p4 = self.boundingBox[3]
+            self.boundingBox[0] = [min(p[0], p1[0]), min(p[1], p1[1]), min(p[2], p1[2])]
+            self.boundingBox[1] = [max(p[0], p2[0]), min(p[1], p2[1]), min(p[2], p2[2])]
+            self.boundingBox[2] = [min(p[0], p3[0]), max(p[1], p3[1]), min(p[2], p3[2])]
+            self.boundingBox[3] = [min(p[0], p4[0]), min(p[1], p4[1]), max(p[2], p4[2])]
+        else:
+            p1 = p
+            p2 = p
+            p3 = p
+            p4 = p
+            self.boundingBox.append([min(p[0], p1[0]), min(p[1], p1[1]), min(p[2], p1[2])])
+            self.boundingBox.append([max(p[0], p2[0]), min(p[1], p2[1]), min(p[2], p2[2])])
+            self.boundingBox.append([min(p[0], p3[0]), max(p[1], p3[1]), min(p[2], p3[2])])
+            self.boundingBox.append([min(p[0], p4[0]), min(p[1], p4[1]), max(p[2], p4[2])])
 
 
 class Attenuation:
@@ -124,6 +168,7 @@ class BaseLight(Transform):
         self.intensity = 1
         self.colour = Vector(1, 1, 1)
 
+
 class PointLight(BaseLight):
 
     def __init__(self):
@@ -139,5 +184,3 @@ class Shader:
 class Material:
     def __init__(self, *args):
         pass
-
-
