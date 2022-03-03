@@ -2,7 +2,10 @@ import math
 
 import numpy
 from OpenGL import GL
-from OpenGL.raw.GL._types import GLfloat
+from OpenGL.GL import glVertexAttribPointer
+from OpenGL.raw.GL.VERSION.GL_1_5 import glBindBuffer, GL_ARRAY_BUFFER, glBufferData, GL_STATIC_DRAW
+from OpenGL.raw.GL.VERSION.GL_2_0 import glEnableVertexAttribArray
+from OpenGL.raw.GL._types import GLfloat, GL_FLOAT
 
 from src.utils.objectUtils import Matrix, degrees, quat_2_euler, matrix_to_quaternion, get_pointLight_radius, \
     Quaternion, euler_to_quaternion, quaternion_2_matrix, flatten
@@ -95,7 +98,6 @@ class Model(Transform):
     def __init__(self, _program, vertexlist, coordArray=None):
         super().__init__()
 
-
         self.boundingBox = []
         self.vertexArray = []
         self.coordArray = coordArray or []
@@ -104,23 +106,38 @@ class Model(Transform):
             self._add_vertex(each)
 
         self.program = _program
-
+        self.material = Material()
         self.initBuffers()
         self.initDataToBuffers()
 
+    def draw(self):
+        glBindBuffer(GL_ARRAY_BUFFER, self.vBuffer)
+        glBufferData(GL_ARRAY_BUFFER, flatten(self.vertexArray).nbytes, flatten(self.vertexArray), GL_STATIC_DRAW)
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, False, 0, None)
+        glEnableVertexAttribArray(0)
+
+        glBindBuffer(GL_ARRAY_BUFFER, self.cBuffer)
+        glBufferData(GL_ARRAY_BUFFER, flatten(self.coordArray).nbytes, flatten(self.coordArray), GL_STATIC_DRAW)
+
+        glVertexAttribPointer(1, 2, GL_FLOAT, False, 0, None)
+        glEnableVertexAttribArray(1)
+
+    def get_material(self):
+        return self.material
 
     def initBuffers(self):
         self.vBuffer = GL.glGenBuffers(1)
         self.cBuffer = GL.glGenBuffers(1)
-        self.nBuffer = GL.glGenBuffers(1)
-        self.iBuffer = GL.glGenBuffers(1)
+        # self.nBuffer = GL.glGenBuffers(1)
+        # self.iBuffer = GL.glGenBuffers(1)
 
     def initDataToBuffers(self):
         self.vPosition = GL.glGetAttribLocation(self.program, "a_Position")
         self.initAttributeVariable(self.vPosition, self.vBuffer, 3, GL.GL_FLOAT)
         GL.glBufferData(GL.GL_ARRAY_BUFFER, flatten(self.vertexArray), GL.GL_STATIC_DRAW)
 
-        self.vCoord = GL.glGetAttribLocation(self.program, "a_Position")
+        self.vCoord = GL.glGetAttribLocation(self.program, "InTexCoords")
         self.initAttributeVariable(self.vCoord, self.cBuffer, 2, GL.GL_FLOAT)
         GL.glBufferData(GL.GL_ARRAY_BUFFER, flatten(self.coordArray), GL.GL_STATIC_DRAW)
 
@@ -182,5 +199,21 @@ class Shader:
 
 
 class Material:
-    def __init__(self, *args):
-        pass
+    def __init__(self, tex_diffuse=None):
+        if tex_diffuse is not None:
+            self.tex_diffuse_b = True
+            self.tex_diffuse = tex_diffuse
+            self.diffuse_color = [1,1,1,1]
+        else:
+            self.tex_diffuse_b = True
+
+
+    def get_diffuse(self):
+        if self.tex_diffuse_b:
+            return self.tex_diffuse.slot
+        else:
+            return self.diffuse_color
+
+    def set_tex_diffuse(self, tex):
+        self.tex_diffuse_b = True
+        self.tex_diffuse = tex

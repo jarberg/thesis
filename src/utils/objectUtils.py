@@ -443,11 +443,11 @@ import numpy
 import array
 
 def flatten(obj):
-    #data = []
-    #for i in obj:
-    #    for j in i:
-    #        data.append(float(j))
-    return numpy.array(obj, dtype=numpy.float32)
+    if Matrix.__name__ == type(obj).__name__:
+        ret = transpose(obj)
+    else:
+        ret = obj
+    return numpy.array(ret, dtype=numpy.float32)
 
 
 def radians(degrees):
