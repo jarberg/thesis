@@ -41,11 +41,16 @@ def init():
 
     window = glutCreateWindow("Opengl Window In Python")
 
+
+
+
     GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
     GL.glEnable(GL.GL_BLEND)
     glDisable(GL_CULL_FACE)
     Fbo = FrameBuffer(50, 50)
 
+    print(glutGet(GLUT_WINDOW_WIDTH))
+    print(glutGet(GLUT_WINDOW_HEIGHT))
 
 
     glEnable(GL_TEXTURE_2D)
