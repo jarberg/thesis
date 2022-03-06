@@ -139,34 +139,8 @@ def render():
 
     post.bind()
     renderer.draw()
-    #clear_framebuffer()
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
     renderer.postDraw([quad], postProgram, post.texture.slot)
-
-    #blit_to_default(post)
-
-    #GL.glReadBuffer(GL_COLOR_ATTACHMENT1)
-    #GL.glDrawBuffer(GL_COLOR_ATTACHMENT1)
-
-    #GL.glBlitFramebuffer(
-    #    0, 0, blit.width, blit.height,
-    #    0, 0, blit.width, blit.height,
-    #    GL_COLOR_BUFFER_BIT, GL_NEAREST
-    #)
-    #GL.glBindFramebuffer(GL_READ_FRAMEBUFFER, target.framebuffer)
-    #GL.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
-
-    #GL.glReadBuffer(GL_COLOR_ATTACHMENT0)
-    #GL.glDrawBuffer(GL_FRONT)
-
-    #GL.glBlitFramebuffer(
-    #    0, 0, blit.width, blit.height,
-    #    0, 0, blit.width, blit.height,
-    #    GL_COLOR_BUFFER_BIT, GL_NEAREST
-    #)
-
-
-    #save_current_framebuffer_as_png(0)
 
     glFlush()
     fps_update()

@@ -33,6 +33,7 @@ struct Light
 in vec2 OutTexCoords;
 layout(location = 4) uniform sampler2D tex_diffuse;
 
+
 void main() {
     //vec3 light = test.position;
     //float distance = length(light - FragPos);
@@ -45,9 +46,9 @@ void main() {
     //else{
     //     gl_FragColor = vec4( 1, 0.5, 0, 1 );
     //}
+
     vec4 texColor = texture2D(tex_diffuse, OutTexCoords);
-    //if(texColor.a < 0.1)
-    //    discard;
+
     gl_FragColor = texColor;
 }
 

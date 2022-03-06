@@ -2,7 +2,7 @@ from OpenGL import GL
 from OpenGL.GL import GL_TEXTURE_2D, GL_UNSIGNED_BYTE, GL_REPEAT, GL_TEXTURE_WRAP_S, \
     GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER, GL_LINEAR, GL_RGB, GL_NEAREST, GL_TEXTURE_MAG_FILTER, \
     GL_NEAREST_MIPMAP_LINEAR, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER, GL_RGB8, GL_RGBA, glGenTextures, \
-    GL_LINEAR_MIPMAP_NEAREST
+    GL_LINEAR_MIPMAP_NEAREST, GL_TEXTURE_2D_MULTISAMPLE, glTexImage2DMultisample, glBindTexture
 from OpenGL.GL.framebufferobjects import glGenerateMipmap
 
 
@@ -30,12 +30,12 @@ class Texture_Manager:
 
 class Texture:
 
-    def __init__(self, size=None, data=None, mipmap=False, repeat=False, framebuffer = None):
+    def __init__(self, size=None, data=None, mipmap=False, repeat=False):
 
         self.mipmap = mipmap
         self.repeat = repeat
         self.genMipmap = False
-
+        self.texType = GL_TEXTURE_2D
         self.slot = glGenTextures(1)
         GL.glActiveTexture(GL.GL_TEXTURE0 + self.slot)
         GL.glBindTexture(GL_TEXTURE_2D, self.slot)
@@ -44,11 +44,29 @@ class Texture:
             self.width = size[0]
             self.height = size[1]
 
-        if not data is not None and size:
-            GL.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.width, self.height, 0, GL_RGB, GL_UNSIGNED_BYTE, None)
-            GL.glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.slot, 0)
+        if data is None and size:
+            GL.glTexImage2D(self.texType, 0, GL_RGBA, self.width, self.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, None)
         else:
-            GL.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, self.width, self.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
+            GL.glTexImage2D(self.texType, 0, GL_RGBA, self.width, self.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
+
+        bind(self)
+
+class Texture2dMS:
+
+    def __init__(self, size, mipmap=False, repeat=False):
+
+        self.mipmap = mipmap
+        self.repeat = repeat
+        self.genMipmap = False
+        self.texType = GL_TEXTURE_2D_MULTISAMPLE
+        self.slot = glGenTextures(1)
+        GL.glActiveTexture(GL.GL_TEXTURE0 + self.slot)
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, self.slot)
+
+
+        self.width = size[0]
+        self.height = size[1]
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 1, GL_RGBA, self.width,  self.height, True)
 
         bind(self)
 
@@ -56,21 +74,22 @@ class Texture:
 
 def bind(txt):
     GL.glActiveTexture(GL.GL_TEXTURE0 + txt.slot)
-    GL.glBindTexture(GL_TEXTURE_2D, txt.slot)
-
+    GL.glBindTexture(txt.texType, txt.slot)
     if txt.mipmap:
         if not txt.genMipmap:
-            glGenerateMipmap(GL_TEXTURE_2D)
+            glGenerateMipmap(txt.texType)
             txt.genMipmap = True
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
+        GL.glTexParameteri(txt.texType, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        GL.glTexParameteri(txt.texType, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
     else:
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        if txt.texType != GL_TEXTURE_2D_MULTISAMPLE:
+            GL.glTexParameteri(txt.texType, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+            GL.glTexParameteri(txt.texType, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
     if txt.repeat:
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        GL.glTexParameteri(txt.texType, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        GL.glTexParameteri(txt.texType, GL_TEXTURE_WRAP_T, GL_REPEAT)
     else:
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        GL.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+        if txt.texType != GL_TEXTURE_2D_MULTISAMPLE:
+            GL.glTexParameteri(txt.texType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+            GL.glTexParameteri(txt.texType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)

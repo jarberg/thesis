@@ -2,7 +2,7 @@ import math
 
 import numpy
 from OpenGL import GL
-from OpenGL.GL import glVertexAttribPointer
+from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM
 from OpenGL.raw.GL.VERSION.GL_1_5 import glBindBuffer, GL_ARRAY_BUFFER, glBufferData, GL_STATIC_DRAW
 from OpenGL.raw.GL.VERSION.GL_2_0 import glEnableVertexAttribArray
 from OpenGL.raw.GL._types import GLfloat, GL_FLOAT
@@ -95,7 +95,7 @@ class Transform:
 
 class Model(Transform):
 
-    def __init__(self, _program, vertexlist, coordArray=None):
+    def __init__(self, vertexlist, coordArray=None):
         super().__init__()
 
         self.boundingBox = []
@@ -105,21 +105,16 @@ class Model(Transform):
         for each in vertexlist:
             self._add_vertex(each)
 
-        self.program = _program
         self.material = Material()
         self.initBuffers()
         self.initDataToBuffers()
 
     def draw(self):
         glBindBuffer(GL_ARRAY_BUFFER, self.vBuffer)
-        glBufferData(GL_ARRAY_BUFFER, flatten(self.vertexArray).nbytes, flatten(self.vertexArray), GL_STATIC_DRAW)
-
         glVertexAttribPointer(0, 3, GL_FLOAT, False, 0, None)
         glEnableVertexAttribArray(0)
 
         glBindBuffer(GL_ARRAY_BUFFER, self.cBuffer)
-        glBufferData(GL_ARRAY_BUFFER, flatten(self.coordArray).nbytes, flatten(self.coordArray), GL_STATIC_DRAW)
-
         glVertexAttribPointer(1, 2, GL_FLOAT, False, 0, None)
         glEnableVertexAttribArray(1)
 
@@ -133,13 +128,14 @@ class Model(Transform):
         # self.iBuffer = GL.glGenBuffers(1)
 
     def initDataToBuffers(self):
-        self.vPosition = GL.glGetAttribLocation(self.program, "a_Position")
+        self.vPosition = GL.glGetAttribLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "a_Position")
         self.initAttributeVariable(self.vPosition, self.vBuffer, 3, GL.GL_FLOAT)
-        GL.glBufferData(GL.GL_ARRAY_BUFFER, flatten(self.vertexArray), GL.GL_STATIC_DRAW)
+        glBufferData(GL_ARRAY_BUFFER, flatten(self.vertexArray).nbytes, flatten(self.vertexArray), GL_STATIC_DRAW)
 
-        self.vCoord = GL.glGetAttribLocation(self.program, "InTexCoords")
+
+        self.vCoord = GL.glGetAttribLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "InTexCoords")
         self.initAttributeVariable(self.vCoord, self.cBuffer, 2, GL.GL_FLOAT)
-        GL.glBufferData(GL.GL_ARRAY_BUFFER, flatten(self.coordArray), GL.GL_STATIC_DRAW)
+        glBufferData(GL_ARRAY_BUFFER, flatten(self.coordArray).nbytes, flatten(self.coordArray), GL_STATIC_DRAW)
 
     def initAttributeVariable(self, a_attribute, buffer, size, var_type):
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, buffer)
