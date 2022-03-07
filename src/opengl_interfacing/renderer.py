@@ -2,7 +2,8 @@ import os
 import numpy
 from OpenGL import GL
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, glFlush, \
-    GL_ACTIVE_PROGRAM, GL_CURRENT_PROGRAM, glBindTexture, GL_TEXTURE_2D_MULTISAMPLE
+    GL_ACTIVE_PROGRAM, GL_CURRENT_PROGRAM, glBindTexture, GL_TEXTURE_2D_MULTISAMPLE, glDisableVertexAttribArray, \
+    glBindVertexArray
 
 import constants
 from opengl_interfacing.texture import Texture_Manager
@@ -28,9 +29,10 @@ class Renderer:
                     glUniform1i(loc, slot)
             glUniformMatrix4fv(2, 1, False, self.persp)
             glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
-            obj.draw()
 
+            glBindVertexArray(obj.VAO)
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
+
 
     def postDraw(self, objects, program, tex):
         GL.glUseProgram(program)
@@ -44,10 +46,9 @@ class Renderer:
                 if loc != -1:
 
                     glUniform1i(loc, tex)
-            #glUniformMatrix4fv(2, 1, False, self.persp)
-            glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
-            obj.draw()
 
+            glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
+            glBindVertexArray(obj.VAO)
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
 
 

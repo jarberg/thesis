@@ -35,15 +35,11 @@ def update_persp_event(w, h):
 def init():
     global start_time
     global fps_counter
-    global post
-    global program
-    global postProgram
-    global t
-    global t2
+
     global renderer
     global blit
     global target
-    global quad
+
     fps_counter = 0
     start_time = time.time()
 
@@ -59,20 +55,12 @@ def init():
     GL.glEnable(GL.GL_BLEND)
 
     glDisable(GL_CULL_FACE)
-
-
-    #glEnable(GL_TEXTURE_2D)
     glEnable(GL_MULTISAMPLE)
-
-    blit = FrameBuffer_blit_MS(width, height)
-    target = FrameBuffer_target_MS(width, height)
-    post = FrameBuffer_Tex_MS(width, height)
 
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
     program = initShaders("/shader/vertex-shader.glsl", "/shader/fragment-shader.glsl")
-    postProgram = initShaders("/shader/aa_v_shader.glsl", "/shader/aa_f_shader.glsl")
 
     glUseProgram(program)
 
@@ -83,11 +71,12 @@ def init():
                  [-1, 1, 0],
                  [1, -1, 0],
                  ])
-    quad.set_rotation([0, 180, 0])
+
     t = ImagePlane("/res/images/body_05.png")
     t.set_position([0.5, 0, -1])
     t.set_scale([-1, 1, 1])
     t.set_rotation([-45, 0, 0])
+
     t2 = ImagePlane("/res/images/body_05.png")
     t2.set_position([-0.5, 0, -1])
     t2.set_rotation([45, 0, 0])
@@ -120,53 +109,17 @@ def fps_update():
 
     fps_counter += 1
 
+
 def clear_framebuffer():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glClearColor(0.3, 0.3, 0.0, 1.0)
 
 
-
 def render():
-    global program
-    global postProgram
     global renderer
-    global post
-    global quad
-    global blit
-    global target
 
     clear_framebuffer()
-
-    post.bind()
     renderer.draw()
-    #clear_framebuffer()
-    glBindFramebuffer(GL_FRAMEBUFFER, 0)
-    renderer.postDraw([quad], postProgram, post.texture.slot)
-
-    #blit_to_default(post)
-
-    #GL.glReadBuffer(GL_COLOR_ATTACHMENT1)
-    #GL.glDrawBuffer(GL_COLOR_ATTACHMENT1)
-
-    #GL.glBlitFramebuffer(
-    #    0, 0, blit.width, blit.height,
-    #    0, 0, blit.width, blit.height,
-    #    GL_COLOR_BUFFER_BIT, GL_NEAREST
-    #)
-    #GL.glBindFramebuffer(GL_READ_FRAMEBUFFER, target.framebuffer)
-    #GL.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
-
-    #GL.glReadBuffer(GL_COLOR_ATTACHMENT0)
-    #GL.glDrawBuffer(GL_FRONT)
-
-    #GL.glBlitFramebuffer(
-    #    0, 0, blit.width, blit.height,
-    #    0, 0, blit.width, blit.height,
-    #    GL_COLOR_BUFFER_BIT, GL_NEAREST
-    #)
-
-
-    #save_current_framebuffer_as_png(0)
 
     glFlush()
     fps_update()

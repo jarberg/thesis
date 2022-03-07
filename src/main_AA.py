@@ -136,11 +136,10 @@ def render():
     global target
 
     clear_framebuffer()
-
     post.bind()
     renderer.draw()
-    glBindFramebuffer(GL_FRAMEBUFFER, 0)
     renderer.postDraw([quad], postProgram, post.texture.slot)
+    blit_to_default(post)
 
     glFlush()
     fps_update()

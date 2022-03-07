@@ -2,7 +2,8 @@ import math
 
 import numpy
 from OpenGL import GL
-from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM
+from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM, glDisableVertexAttribArray, glGenVertexArrays, \
+    glBindVertexArray
 from OpenGL.raw.GL.VERSION.GL_1_5 import glBindBuffer, GL_ARRAY_BUFFER, glBufferData, GL_STATIC_DRAW
 from OpenGL.raw.GL.VERSION.GL_2_0 import glEnableVertexAttribArray
 from OpenGL.raw.GL._types import GLfloat, GL_FLOAT
@@ -102,6 +103,7 @@ class Model(Transform):
         self.vertexArray = []
         self.coordArray = coordArray or []
 
+
         for each in vertexlist:
             self._add_vertex(each)
 
@@ -109,14 +111,6 @@ class Model(Transform):
         self.initBuffers()
         self.initDataToBuffers()
 
-    def draw(self):
-        glBindBuffer(GL_ARRAY_BUFFER, self.vBuffer)
-        glVertexAttribPointer(0, 3, GL_FLOAT, False, 0, None)
-        glEnableVertexAttribArray(0)
-
-        glBindBuffer(GL_ARRAY_BUFFER, self.cBuffer)
-        glVertexAttribPointer(1, 2, GL_FLOAT, False, 0, None)
-        glEnableVertexAttribArray(1)
 
     def get_material(self):
         return self.material
@@ -129,18 +123,34 @@ class Model(Transform):
 
     def initDataToBuffers(self):
         self.vPosition = GL.glGetAttribLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "a_Position")
-        self.initAttributeVariable(self.vPosition, self.vBuffer, 3, GL.GL_FLOAT)
-        glBufferData(GL_ARRAY_BUFFER, flatten(self.vertexArray).nbytes, flatten(self.vertexArray), GL_STATIC_DRAW)
-
-
         self.vCoord = GL.glGetAttribLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "InTexCoords")
-        self.initAttributeVariable(self.vCoord, self.cBuffer, 2, GL.GL_FLOAT)
-        glBufferData(GL_ARRAY_BUFFER, flatten(self.coordArray).nbytes, flatten(self.coordArray), GL_STATIC_DRAW)
 
-    def initAttributeVariable(self, a_attribute, buffer, size, var_type):
+        v_array = flatten(self.vertexArray)
+        c_array = flatten(self.coordArray)
+
+        self.VAO = glGenVertexArrays(1)
+        glBindVertexArray(self.VAO)
+
+        glBindBuffer(GL_ARRAY_BUFFER, self.vBuffer)
+        glBufferData(GL_ARRAY_BUFFER, v_array.nbytes, v_array, GL_STATIC_DRAW)
+        glVertexAttribPointer(0, 3, GL_FLOAT, False, 0, None)
+        glEnableVertexAttribArray(self.vPosition)
+
+        glBindBuffer(GL_ARRAY_BUFFER, self.cBuffer)
+        glBufferData(GL_ARRAY_BUFFER, c_array.nbytes, c_array, GL_STATIC_DRAW)
+        glVertexAttribPointer(1, 2, GL_FLOAT, False, 0, None)
+        glEnableVertexAttribArray(self.vCoord)
+
+
+
+    def initAttributeVariable(self, a_attribute, buffer, size, var_type, offset=0, step=0):
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, buffer)
-        GL.glVertexAttribPointer(a_attribute, size, var_type, False, 0, 0)
+        GL.glVertexAttribPointer(a_attribute, size, var_type, True, offset, step)
         GL.glEnableVertexAttribArray(a_attribute)
+
+    def disableAttributeVariables(self):
+        glDisableVertexAttribArray(self.vPosition)
+        glDisableVertexAttribArray(self.vCoord)
 
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)
