@@ -24,6 +24,6 @@ void main(){
     vec4 sample2 = texelFetch(screencapture, vpCoords+down, 0);
     vec4 sample3 = texelFetch(screencapture, vpCoords+left, 0);
     vec4 sample4 = texelFetch(screencapture, vpCoords+right, 0);
-
+        //vec4(1,0,0,1);//
     gl_FragColor = (origin+sample1 + sample2 + sample3 + sample4) / 5.0f;
 }

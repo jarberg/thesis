@@ -9,7 +9,7 @@ import time
 from opengl_interfacing.framebuffer import FrameBuffer, FrameBuffer_Tex_MS, FrameBuffer_blit_MS, FrameBuffer_target_MS, \
     blit_to_default
 from opengl_interfacing.initshader import initShaders
-from opengl_interfacing.renderer import ImagePlane, Renderer, Plane
+from opengl_interfacing.renderer import ImagePlane, Renderer, Plane, Cube
 from opengl_interfacing.texture import bind
 from utils.objectUtils import flatten, Matrix, ortho, perspective, transpose
 
@@ -71,6 +71,8 @@ def init():
                  [-1, 1, 0],
                  [1, -1, 0],
                  ])
+    cube = Cube()
+    cube.set_position([2,-2,-5])
 
     t = ImagePlane("/res/images/body_05.png")
     t.set_position([0.5, 0, -1])
@@ -82,7 +84,7 @@ def init():
     t2.set_rotation([45, 0, 0])
 
 
-    renderer = Renderer(program, [t, t2])
+    renderer = Renderer(program, [t,cube, t2])
 
     glutMainLoop()
 

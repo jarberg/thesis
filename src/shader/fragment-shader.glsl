@@ -24,15 +24,12 @@ struct Light
     float quadratic;
 };
 
-
-//in vec2 TexCoord;
-//
-//uniform Light test;
-//uniform use_tex_diffuse;
-
+in vec4 a_pos;
 in vec2 OutTexCoords;
 layout(location = 4) uniform sampler2D tex_diffuse;
+layout(location = 6) uniform int tex_diffuse_b;
 
+layout(location = 7) uniform sampler2D depthTexture;
 
 void main() {
     //vec3 light = test.position;
@@ -47,8 +44,18 @@ void main() {
     //     gl_FragColor = vec4( 1, 0.5, 0, 1 );
     //}
 
-    vec4 texColor = texture2D(tex_diffuse, OutTexCoords);
+    float frontDepth = texture(depthTexture, gl_FragCoord.xy).r;
+    if (gl_FragCoord.z <= frontDepth) {
+            //discard;
+    }
 
+    vec4 texColor = vec4(1,0,0,1);
+    if(tex_diffuse_b==1){
+        texColor = texture2D(tex_diffuse, OutTexCoords);
+    }
+    else{
+        texColor = vec4(1,0,0,1);
+    }
     gl_FragColor = texColor;
 }
 

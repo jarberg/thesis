@@ -103,7 +103,6 @@ class Model(Transform):
         self.vertexArray = []
         self.coordArray = coordArray or []
 
-
         for each in vertexlist:
             self._add_vertex(each)
 
@@ -211,7 +210,7 @@ class Material:
             self.tex_diffuse = tex_diffuse
             self.diffuse_color = [1,1,1,1]
         else:
-            self.tex_diffuse_b = True
+            self.tex_diffuse_b = False
 
 
     def get_diffuse(self):

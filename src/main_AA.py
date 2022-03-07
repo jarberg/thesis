@@ -138,7 +138,7 @@ def render():
     clear_framebuffer()
     post.bind()
     renderer.draw()
-    renderer.postDraw([quad], postProgram, post.texture.slot)
+    renderer.postDraw([quad], postProgram, post.texture)
     blit_to_default(post)
 
     glFlush()
