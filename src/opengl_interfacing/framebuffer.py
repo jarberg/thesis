@@ -282,7 +282,7 @@ class FrameBuffer_target_MS:
 
         glClearColor(0.3, 0.0, 0.3, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        #glFlush()
+        glFlush()
 
 
 class FrameBuffer_Tex_MS:

@@ -95,6 +95,9 @@ def init():
 
     renderer = Renderer(program, [t, t2])
 
+    post.bind()
+
+
     glutMainLoop()
 
 
@@ -136,7 +139,7 @@ def render():
     global target
 
     clear_framebuffer()
-    post.bind()
+
     renderer.draw()
     renderer.postDraw([quad], postProgram, post.texture)
     blit_to_default(post)

@@ -40,23 +40,19 @@ class Renderer:
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
 
-
     def postDraw(self, objects, program, tex):
         GL.glUseProgram(program)
 
-        glBindTexture(tex.texType, tex.slot)
-
         for obj in objects:
-            mat = obj.get_material()
-            if mat.tex_diffuse_b:
-                loc = glGetUniformLocation(program, "screencapture")
-                if loc != -1:
-                    glUniform1i(loc, tex.slot)
+
+            loc = glGetUniformLocation(program, "screencapture")
+            if loc != -1:
+                glUniform1i(loc, tex.slot)
 
             glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
+
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
-
 
     def bind(self):
         pass
@@ -66,14 +62,15 @@ class Renderer:
 
 
 class Plane(Model):
-    def __init__(self,plane=None):
-        plane = plane or [[0.5, 0.5, 0],
-                 [0.5, -0.5, 0],
-                 [-0.5, 0.5, 0],
-                 [-0.5, -0.5, 0],
-                 [-0.5, 0.5, 0],
-                 [0.5, -0.5, 0],
-                 ]
+    def __init__(self, plane=None):
+        plane = plane or [
+                        [0.5, 0.5, 0],
+                        [0.5, -0.5, 0],
+                        [-0.5, 0.5, 0],
+                        [-0.5, -0.5, 0],
+                        [-0.5, 0.5, 0],
+                        [0.5, -0.5, 0],
+                        ]
         self.coordArray = [
             [0.0, 0.0],
             [0.0, 1.0],
@@ -142,41 +139,41 @@ class Cube(Model):
             [-0.5, 0.5, 0.5],
             [0.5, -0.5, 0.5]]
         vertexcoord = [
-            [-1.0,-1.0],
-            [-1.0,-1.0],
+            [-1.0, -1.0],
+            [-1.0, -1.0],
             [-1.0, 1.0],
             [1.0, 1.0],
-            [-1.0,-1.0],
+            [-1.0, -1.0],
             [-1.0, 1.0],
-            [1.0,-1.0],
-            [-1.0,-1.0],
-            [1.0,-1.0],
+            [1.0, -1.0],
+            [-1.0, -1.0],
+            [1.0, -1.0],
             [1.0, 1.0],
-            [1.0,-1.0],
-            [-1.0,-1.0],
-            [-1.0,-1.0],
+            [1.0, -1.0],
+            [-1.0, -1.0],
+            [-1.0, -1.0],
             [-1.0, 1.0],
             [-1.0, 1.0],
-            [1.0,-1.0],
-            [-1.0,-1.0],
-            [-1.0,-1.0],
+            [1.0, -1.0],
+            [-1.0, -1.0],
+            [-1.0, -1.0],
             [-1.0, 1.0],
-            [-1.0,-1.0],
-            [1.0,-1.0],
+            [-1.0, -1.0],
+            [1.0, -1.0],
             [1.0, 1.0],
-            [1.0,-1.0],
+            [1.0, -1.0],
             [1.0, 1.0],
-            [1.0,-1.0],
+            [1.0, -1.0],
             [1.0, 1.0],
-            [1.0,-1.0],
+            [1.0, -1.0],
             [1.0, 1.0],
             [1.0, 1.0],
-            [-1.0, 1.0],
-            [1.0, 1.0],
-            [-1.0, 1.0],
             [-1.0, 1.0],
             [1.0, 1.0],
             [-1.0, 1.0],
-            [1.0,-1.0]]
-        super().__init__(vertexes,vertexcoord)
+            [-1.0, 1.0],
+            [1.0, 1.0],
+            [-1.0, 1.0],
+            [1.0, -1.0]]
+        super().__init__(vertexes, vertexcoord)
         self.material.tex_diffuse_b = False
