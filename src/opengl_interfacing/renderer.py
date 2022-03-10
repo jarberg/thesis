@@ -8,6 +8,7 @@ from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL
 from PIL import Image
 
 import constants
+from opengl_interfacing.framebuffer import G_Buffer
 from opengl_interfacing.texture import Texture_Manager
 from utils.objectUtils import flatten, perspective
 from utils.objects import Model
@@ -18,11 +19,17 @@ class Renderer:
     def __init__(self, _obj=None):
         self.objects = _obj or []
         self.persp = flatten(perspective(90, 1, 0.01, 100))
+        self.quad = Plane(plane=[[1, 1, 0],
+                        [1, -1, 0],
+                        [-1, 1, 0],
+                        [-1, -1, 0],
+                        [-1, 1, 0],
+                        [1, -1, 0],
+                        ])
+        self.quad.set_rotation([0,180,0])
 
     def draw(self):
-
         for obj in self.objects:
-
             mat = obj.get_material()
             glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b"), mat.tex_diffuse_b)
             if mat.tex_diffuse_b:
@@ -41,19 +48,30 @@ class Renderer:
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
 
-    def postDraw(self, objects, program, tex):
+    def light_draw(self, program, buffer: G_Buffer):
         GL.glUseProgram(program)
 
-        for obj in objects:
+        loc1 = glGetUniformLocation(program, "pos")
+        glUniform1i(loc1, buffer.position_tex.slot)
+        loc2 = glGetUniformLocation(program, "norm")
+        glUniform1i(loc2, buffer.normal_tex.slot)
+        loc3 = glGetUniformLocation(program, "albedo")
+        glUniform1i(loc3, buffer.normal_tex.slot)
 
-            loc = glGetUniformLocation(program, "screencapture")
-            if loc != -1:
-                glUniform1i(loc, tex.slot)
+        glBindVertexArray(self.quad.VAO)
+        glDrawArrays(GL_TRIANGLES, 0, len(self.quad.vertexArray))
 
-            glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
+    def postDraw(self, program, tex):
+        GL.glUseProgram(program)
 
-            glBindVertexArray(obj.VAO)
-            glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
+        loc = glGetUniformLocation(program, "screencapture")
+        if loc != -1:
+            glUniform1i(loc, tex.slot)
+
+        glUniformMatrix4fv(3, 1, False, flatten(self.quad.getTransform()))
+
+        glBindVertexArray(self.quad.VAO)
+        glDrawArrays(GL_TRIANGLES, 0, len(self.quad.vertexArray))
 
     def randDraw(self, objects, program, fps):
         GL.glUseProgram(program)
@@ -72,12 +90,6 @@ class Renderer:
         for obj in objects:
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
-
-    def bind(self):
-        pass
-
-    def unbind(self):
-        pass
 
 
 class Plane(Model):

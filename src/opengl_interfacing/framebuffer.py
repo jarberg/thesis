@@ -3,8 +3,7 @@ from OpenGL.GL import GL_FRAMEBUFFER, glBindRenderbuffer, GL_RENDERBUFFER, GL_DE
     GL_VIEWPORT, glGenFramebuffers, glGenRenderbuffers, \
     glClearColor, glClear, GL_COLOR_BUFFER_BIT, \
     GL_DEPTH_BUFFER_BIT, glFlush, GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, glFramebufferTexture2D, GL_TEXTURE_2D, \
-    GL_TEXTURE_2D_MULTISAMPLE, GL_READ_FRAMEBUFFER, glBlitFramebuffer, \
-    GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_FRONT, GL_SAMPLES, GL_COLOR_ATTACHMENT2, glDrawBuffers, \
+    GL_READ_FRAMEBUFFER, GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_FRONT, GL_SAMPLES, GL_COLOR_ATTACHMENT2, glDrawBuffers, \
     GL_UNSIGNED_BYTE, glBindTexture
 from OpenGL.GL import glBindFramebuffer
 from OpenGL.raw.GL.VERSION.GL_1_4 import GL_DEPTH_COMPONENT32
@@ -89,12 +88,15 @@ class G_Buffer:
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 
         self.position_tex = Texture(size=[self.width, self.height])
+        texture.bind(self.position_tex)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.position_tex.slot, 0)
 
         self.normal_tex = Texture(size=[self.width, self.height])
+        texture.bind(self.normal_tex)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, self.normal_tex.slot, 0)
 
         self.albedo_tex = Texture(size=[self.width, self.height])
+        texture.bind(self.albedo_tex)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, self.normal_tex.slot, 0)
 
         #depth renderbuffer
@@ -135,7 +137,7 @@ class G_Buffer:
 
         GL.glViewport(0, 0, self.width, self.height)
 
-        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClearColor(0.0, 1.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         self.bound = True
@@ -146,10 +148,11 @@ class G_Buffer:
             return
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
         GL.glViewport(0, 0, self.unbindWidth, self.unbindHeight)
 
-        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClearColor(0.0, 0.0, 1.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         self.bound = False
@@ -223,8 +226,6 @@ class FrameBuffer_depth:
         self.bound = False
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glClearColor(0.3, 0.3, 0.0, 1.0)
-
-
 class FrameBuffer_blit_MS:
     def __init__(self, width, height):
         self.width = width
@@ -304,7 +305,7 @@ class FrameBuffer_target_MS:
 
         self.framebuffer = glGenFramebuffers(1)
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
-        GL.glDrawBuffers(2, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1])
+        GL.glDrawBuffers(1, [GL_COLOR_ATTACHMENT0])
 
         #renderbuffer0
         self.RenderBufferHandle0 = glGenRenderbuffers(1)
@@ -384,6 +385,7 @@ class FrameBuffer_Tex_MS:
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 
         self.texture = texture.Texture2dMS([width, height])
+        texture.bind(self.texture)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.texture.texType, self.texture.slot, 0)
 
         status = GL.glCheckFramebufferStatus(GL_FRAMEBUFFER)
@@ -428,6 +430,8 @@ class FrameBuffer_Tex_MS:
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
         GL.glViewport(0, 0, self.unbindWidth, self.unbindHeight)
+        glClearColor(0.0, 0.5, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.bound = False
 
 

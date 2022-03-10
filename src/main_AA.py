@@ -63,21 +63,13 @@ def init():
     glEnable(GL_MULTISAMPLE)
 
     post = FrameBuffer_Tex_MS(width, height)
-    #glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST)
 
     program = initShaders("/shader/vertex-shader.glsl", "/shader/fragment-shader.glsl")
     postProgram = initShaders("/shader/aa_v_shader.glsl", "/shader/aa_f_shader.glsl")
 
     glUseProgram(program)
 
-    quad = Plane(plane= [[1, 1, 0],
-                 [1, -1, 0],
-                 [-1, 1, 0],
-                 [-1, -1, 0],
-                 [-1, 1, 0],
-                 [1, -1, 0],
-                 ])
-    quad.set_rotation([0, 180, 0])
+
     t = ImagePlane("/res/images/body_05.png")
     t.set_position([0.5, 0, -1])
     t.set_scale([-1, 1, 1])
@@ -89,8 +81,6 @@ def init():
     cube = Cube()
     cube.set_position([1, -1, -4])
     renderer = Renderer([t, cube, t2])
-
-    #post.bind()
 
     glutDisplayFunc(render)
     glutIdleFunc(render)
@@ -119,10 +109,10 @@ def fps_update():
 
     fps_counter += 1
 
+
 def clear_framebuffer():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glClearColor(0.3, 0.1, 0.0, 1.0)
-
 
 
 def render():
@@ -136,11 +126,9 @@ def render():
     clear_framebuffer()
     glUseProgram(program)
     renderer.draw()
-    renderer.postDraw([quad], postProgram, post.texture)
-    blit_to_default(post)
-
+    post.unbind()
+    renderer.postDraw(postProgram, post.texture)
     glFlush()
     fps_update()
-
 
 init()

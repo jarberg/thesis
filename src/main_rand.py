@@ -110,8 +110,8 @@ def fps_update():
     global fps_counter, start_time, time_per_frame, FPS
     FPS += (time.time() - 1646735755.962197)
     tim = (time.time() - start_time)
-    if (time.time() - start_time) > 1 and tim != 0:
-        time_per_frame = 1 / fps_counter / tim
+    if (time.time() - start_time) > 1 and fps_counter*tim != 0:
+        time_per_frame = 1 / fps_counter*tim
         tim = (time.time() - start_time)
         print("FPS: ", fps_counter / tim)
         fps_counter = 0

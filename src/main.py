@@ -40,7 +40,7 @@ def init():
     global start_time
     global fps_counter
 
-    global renderer, cube
+    global renderer, cube,program, lightProgram
     global blit
     global target
 
@@ -48,7 +48,7 @@ def init():
     start_time = time.time()
 
     glutInit()
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE)
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH)
     glutInitWindowSize(width, height)
     glutInitWindowPosition(200, 200)
 
@@ -61,24 +61,15 @@ def init():
     GL.glEnable(GL.GL_BLEND)
     glEnable(GL_DEPTH_TEST)
 
-    glEnable(GL_MULTISAMPLE)
-
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
-    program = initShaders("/shader/vertex-shader.glsl", "/shader/fragment-shader.glsl")
     program = initShaders("/shader/defered_v_shader.glsl", "/shader/defered_f_shader.glsl")
-    # light_program = initShaders("/shader/defered_v_shader.glsl", "/shader/defered_f_shader.glsl")
+    lightProgram = initShaders("/shader/defered_light_v_shader.glsl", "/shader/defered_light_f_shader.glsl")
 
     glUseProgram(program)
 
-    quad = Plane(plane=[[1, 1, 0],
-                        [1, -1, 0],
-                        [-1, 1, 0],
-                        [-1, -1, 0],
-                        [-1, 1, 0],
-                        [1, -1, 0],
-                        ])
+
     cube = Cube()
     cube.set_position([0, -1, -1])
     cube.set_rotation([-45, 0, 0])
@@ -99,7 +90,6 @@ def init():
 
     global buffer
     buffer = G_Buffer([width, height])
-    buffer.bind()
     glutMainLoop()
 
 
@@ -110,6 +100,7 @@ def save_current_framebuffer_as_png(bufferid):
     image = Image.frombytes("RGBA", (width, height), data)
     image = ImageOps.flip(image)  # in my case image is flipped top-bottom for some reason
     image.save('glutout.png', 'PNG')
+    GL.glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
 
 def fps_update():
@@ -130,20 +121,23 @@ def fps_update():
 
 
 def clear_framebuffer():
-    glClearColor(0.0, 0.0, 0.0, 1.0)
+    glClearColor(0.0, 0.0, 0.2, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
 
 
 def render():
-    global renderer, buffer
+    global renderer, buffer, program, lightProgram
 
+    buffer.bind()
+    GL.glUseProgram(program)
     clear_framebuffer()
     renderer.draw()
+    buffer.unbind()
 
-    blit_to_default(buffer)
+    renderer.light_draw(lightProgram, buffer)
+
     glFlush()
     fps_update()
-
 
 init()
