@@ -37,6 +37,7 @@ class Texture:
         self.repeat = repeat
         self.genMipmap = False
         self.texType = GL_TEXTURE_2D
+        self.format = GL_RGBA
         self.slot = glGenTextures(1)
         GL.glActiveTexture(GL.GL_TEXTURE0 + self.slot)
         GL.glBindTexture(GL_TEXTURE_2D, self.slot)
@@ -46,9 +47,9 @@ class Texture:
             self.height = size[1]
 
         if data is None and size:
-            GL.glTexImage2D(self.texType, 0, GL_RGBA, self.width, self.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, None)
+            GL.glTexImage2D(self.texType, 0, self.format, self.width, self.height, 0, self.format, GL_UNSIGNED_BYTE, None)
         else:
-            GL.glTexImage2D(self.texType, 0, GL_RGBA, self.width, self.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
+            GL.glTexImage2D(self.texType, 0, self.format, self.width, self.height, 0, self.format, GL_UNSIGNED_BYTE, data)
 
         bind(self)
 
@@ -97,7 +98,7 @@ class Texture2dMS:
 
         self.width = size[0]
         self.height = size[1]
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 1, GL_RGBA, self.width,  self.height, True)
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 12, GL_RGBA, self.width,  self.height, True)
 
         bind(self)
 

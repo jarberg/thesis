@@ -1,13 +1,16 @@
 import os
+from random import random, randrange
+
 import numpy
 from OpenGL import GL
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, glFlush, \
     GL_ACTIVE_PROGRAM, GL_CURRENT_PROGRAM, glBindTexture, GL_TEXTURE_2D_MULTISAMPLE, glDisableVertexAttribArray, \
-    glBindVertexArray
+    glBindVertexArray, glUniform1fv, glUniform3fv, glUniform2fv, glUniformMatrix3fv
+from numpy.matlib import rand
 
 import constants
 from opengl_interfacing.texture import Texture_Manager
-from utils.objectUtils import flatten, perspective
+from utils.objectUtils import flatten, perspective, normal_matrix
 from utils.objects import Transform, Model
 from PIL import Image
 
@@ -16,7 +19,7 @@ class Renderer:
 
     def __init__(self, program, _obj=None):
         self.objects = _obj or []
-        self.persp = flatten(perspective(90, 1, 0, 100))
+        self.persp = flatten(perspective(90, 1, 0.1, 100))
 
     def draw(self, depth=None):
 
@@ -33,6 +36,10 @@ class Renderer:
                 if loc != -1:
                     slot = mat.get_diffuse()
                     glUniform1i(loc, slot)
+
+            loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "normal_matrix")
+            if loc != -1:
+                glUniformMatrix3fv(loc, 1, False, flatten(obj.get_normalMatrix()))
 
             glUniformMatrix4fv(2, 1, False, self.persp)
             glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
@@ -51,6 +58,24 @@ class Renderer:
 
             glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
 
+            glBindVertexArray(obj.VAO)
+            glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
+
+    def randDraw(self, objects, program, fps):
+        GL.glUseProgram(program)
+        v=[]
+        for i in range(4):
+            v.append([])
+            for j in range(4):
+                v[i].append(randrange(-1, 1))
+                v[i].append(randrange(-1, 1))
+
+        glUniform1fv(glGetUniformLocation(program, "timeI"), 1, fps/10000000)
+        loc = glGetUniformLocation(program, "vectors")
+        vv = flatten(v)
+        glUniform2fv(loc, vv.nbytes, vv)
+
+        for obj in objects:
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
 

@@ -4,11 +4,12 @@ from OpenGL.GL import GL_FRAMEBUFFER, glBindRenderbuffer, GL_RENDERBUFFER, GL_DE
     glClearColor, glClear, GL_COLOR_BUFFER_BIT, \
     GL_DEPTH_BUFFER_BIT, glFlush, GL_DRAW_FRAMEBUFFER, glFramebufferTexture, GL_COLOR_ATTACHMENT0, glDrawBuffer, \
     glFramebufferTexture2D, GL_TEXTURE_2D, GL_TEXTURE_2D_MULTISAMPLE, GL_READ_FRAMEBUFFER, glBlitFramebuffer, \
-    GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_FRONT, GL_DEPTH_COMPONENT
+    GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_FRONT, GL_DEPTH_COMPONENT, GL_SAMPLES, GL_COLOR_ATTACHMENT2, glDrawBuffers, \
+    GL_UNSIGNED_BYTE, glBindTexture
 from OpenGL.GL import glBindFramebuffer
 
 from opengl_interfacing import texture
-from opengl_interfacing.texture import Texture_Manager, Texture_depth
+from opengl_interfacing.texture import Texture_Manager, Texture_depth, Texture
 
 
 class FrameBuffer:
@@ -19,16 +20,19 @@ class FrameBuffer:
 
         self.framebuffer = glGenFramebuffers(1)
 
+        GL.glHint(GL_SAMPLES, 10)
+
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 
-        self.texture = Texture_Manager().createNewTexture(size=[width, height])
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,  self.texture.slot, 0)
+        #depth renderbuffer
+        self.renderbuffer = glGenRenderbuffers(1)
+        GL.glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
+        GL.glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT, width, height)
+        GL.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.renderbuffer)
 
-        #self.renderbuffer = glGenRenderbuffers(1)
-        #glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
-        #glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT16, width, height)
-        #glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.renderbuffer)
 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
         status = GL.glCheckFramebufferStatus(GL_FRAMEBUFFER)
 
@@ -45,22 +49,20 @@ class FrameBuffer:
             else:
                 raise Exception("Framebuffer creation failed to undefined error: {}".format(status))
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
     def bind(self):
         if self.bound:
             return
 
-
         currentViewport = GL.glGetIntegerv(GL_VIEWPORT)
         self.unbindWidth = currentViewport[2]
         self.unbindHeight = currentViewport[3]
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
-        texture.bind(self.texture)
+        glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
+
 
         GL.glViewport(0, 0, self.width, self.height)
-        glClearColor(0.0, 1.0, 0.0, 1.0)
+        glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         self.bound = True
@@ -75,6 +77,93 @@ class FrameBuffer:
         self.bound = False
 
 
+class G_Buffer:
+    def __init__(self, size):
+
+        self.width = size[0]
+        self.height = size[1]
+        self.bound = False
+
+        self.framebuffer = glGenFramebuffers(1)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+
+        self.position_tex = Texture(size=[self.width, self.height])
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.position_tex.slot, 0)
+
+        self.normal_tex = Texture(size=[self.width, self.height])
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, self.normal_tex.slot, 0)
+
+        self.albedo_tex = Texture(size=[self.width, self.height])
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, self.normal_tex.slot, 0)
+
+        #depth renderbuffer
+        self.renderbuffer = glGenRenderbuffers(1)
+        GL.glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
+        GL.glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT, self.width, self.height)
+        GL.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.renderbuffer)
+
+        glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2])
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+
+        status = GL.glCheckFramebufferStatus(GL_FRAMEBUFFER)
+
+        if status != int(GL_FRAMEBUFFER_COMPLETE):
+            # https://neslib.github.io/Ooogles.Net/html/0e1349ae-da69-6e5e-edd6-edd8523101f8.htm
+            if status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT):
+                raise Exception("IncompleteAttachment: {}".format(status))
+            elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
+                raise Exception("IncompleteAttachment: {}".format(status))
+            elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
+                raise Exception("Missing attachment: {}".format(status))
+            elif status == int(GL.GL_FRAMEBUFFER_UNSUPPORTED):
+                raise Exception("Not supported: {}".format(status))
+            else:
+                raise Exception("Framebuffer creation failed to undefined error: {}".format(status))
+
+    def bind(self):
+        if self.bound:
+            return
+        currentViewport = GL.glGetIntegerv(GL_VIEWPORT)
+        self.unbindWidth = currentViewport[2]
+        self.unbindHeight = currentViewport[3]
+
+        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+        glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
+
+        GL.glViewport(0, 0, self.width, self.height)
+
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        self.bound = True
+
+
+    def unbind(self):
+        if not self.bound:
+            return
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+        GL.glViewport(0, 0, self.unbindWidth, self.unbindHeight)
+
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        self.bound = False
+
+    def resize(self, w, h):
+        self.width = w
+        self.height = h
+        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+
+        for tex in [self.albedo_tex,self.normal_tex, self.position_tex]:
+            glBindTexture(tex.texType, tex.slot)
+            GL.glTexImage2D(tex.texType, 0, tex.format, w, h, 0, tex.format, GL_UNSIGNED_BYTE, None)
+
+        GL.glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
+        GL.glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT, self.width, self.height)
 
 
 class FrameBuffer_depth:
@@ -90,7 +179,6 @@ class FrameBuffer_depth:
         self.texture = Texture_depth(size=[width, height])
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, self.texture.slot, 0)
 
-
         status = GL.glCheckFramebufferStatus(GL_FRAMEBUFFER)
 
         if status != int(GL_FRAMEBUFFER_COMPLETE):
@@ -98,7 +186,7 @@ class FrameBuffer_depth:
             if status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT):
                 raise Exception("IncompleteAttachment: {}".format(status))
             elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
-                raise Exception("IncompleteAttachment: {}".format(status))
+                raise Exception("Incomplete Missiing Attachment: {}".format(status))
             elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
                 raise Exception("Missing attachment: {}".format(status))
             elif status == int(GL.GL_FRAMEBUFFER_UNSUPPORTED):
@@ -348,7 +436,10 @@ class FrameBuffer_Tex_MS:
 
 
 
-def blit(source, target):
+
+
+
+def blit_col_0(source, target):
     GL.glBindFramebuffer(GL_READ_FRAMEBUFFER, source.framebuffer)
     GL.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.framebuffer)
 
@@ -365,7 +456,7 @@ def blit_to_default(source):
     GL.glBindFramebuffer(GL_READ_FRAMEBUFFER, source.framebuffer)
     GL.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
 
-    GL.glReadBuffer(GL_COLOR_ATTACHMENT0)
+    GL.glReadBuffer(GL_COLOR_ATTACHMENT2)
     GL.glDrawBuffer(GL_FRONT)
 
     GL.glBlitFramebuffer(

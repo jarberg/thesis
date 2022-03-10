@@ -23,6 +23,14 @@ struct Light
     float linear;
     float quadratic;
 };
+float near = 1;
+float far  = 100.0;
+
+float LinearizeDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0; // back to NDC
+    return (2.0 * near * far) / (far + near - z * (far - near));
+}
 
 in vec4 a_pos;
 in vec2 OutTexCoords;
@@ -30,6 +38,8 @@ layout(location = 4) uniform sampler2D tex_diffuse;
 layout(location = 6) uniform int tex_diffuse_b;
 
 layout(location = 7) uniform sampler2D depthTexture;
+
+out vec4 FragColor;
 
 void main() {
     //vec3 light = test.position;
@@ -44,19 +54,22 @@ void main() {
     //     gl_FragColor = vec4( 1, 0.5, 0, 1 );
     //}
 
-    float frontDepth = texture(depthTexture, gl_FragCoord.xy).r;
-    if (gl_FragCoord.z <= frontDepth) {
-            //discard;
-    }
 
     vec4 texColor = vec4(1,0,0,1);
-    if(tex_diffuse_b==1){
+    if(tex_diffuse_b == 1){
         texColor = texture2D(tex_diffuse, OutTexCoords);
     }
     else{
         texColor = vec4(1,0,0,1);
     }
-    gl_FragColor = texColor;
+    if (texColor.a < 0.1){
+        discard;
+    }
+
+    FragColor = texColor;//*vec4(gl_FragCoord.z,0,0,1);
+    //float depth = LinearizeDepth(a_pos.z) / far; // divide by far for demonstration
+    //FragColor = vec4(vec3(abs(a_pos.z)), 1);
+
 }
 
 

@@ -2,12 +2,13 @@ import numpy
 from OpenGL import GL
 from OpenGL.GL import *
 from OpenGL.GLUT import *
+from OpenGL.raw.GL.NV.multisample_filter_hint import GL_MULTISAMPLE_FILTER_HINT_NV
 from OpenGL.raw.GLU import gluPerspective
 from PIL import Image, ImageOps
 import time
 
 from opengl_interfacing.framebuffer import FrameBuffer, FrameBuffer_Tex_MS, FrameBuffer_blit_MS, FrameBuffer_target_MS, \
-    blit_to_default
+    blit_to_default, G_Buffer
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.renderer import ImagePlane, Renderer, Plane, Cube
 from opengl_interfacing.texture import bind
@@ -18,25 +19,28 @@ aspectRatio = width / height
 program = None
 postProgram = None
 window = None
-count = 0
 
 global renderer
 global t2
 global blit
 global target
+global count, cube
+count = 0
 
 
 def update_persp_event(w, h):
-    global renderer
+    global renderer, buffer
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
-    renderer.persp = flatten(perspective(90, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0, 100))
+    renderer.persp = flatten(perspective(90, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0.1, 100))
+    buffer.resize(w,h)
+    clear_framebuffer()
 
 
 def init():
     global start_time
     global fps_counter
 
-    global renderer
+    global renderer, cube
     global blit
     global target
 
@@ -44,48 +48,56 @@ def init():
     start_time = time.time()
 
     glutInit()
-    glutInitDisplayMode(GLUT_RGBA)
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE)
     glutInitWindowSize(width, height)
     glutInitWindowPosition(200, 200)
 
     window = glutCreateWindow("Opengl Window In Python")
 
     glutReshapeFunc(update_persp_event)
-    GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
-    GL.glEnable(GL.GL_BLEND)
 
-    glDisable(GL_CULL_FACE)
+    GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+    GL.glEnable(GL.GL_CULL_FACE)
+    GL.glEnable(GL.GL_BLEND)
+    glEnable(GL_DEPTH_TEST)
+    glDepthRange(0.1, 100)
+
+
     glEnable(GL_MULTISAMPLE)
 
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
     program = initShaders("/shader/vertex-shader.glsl", "/shader/fragment-shader.glsl")
+    program = initShaders("/shader/defered_v_shader.glsl", "/shader/defered_f_shader.glsl")
+    # light_program = initShaders("/shader/defered_v_shader.glsl", "/shader/defered_f_shader.glsl")
 
     glUseProgram(program)
 
-    quad = Plane(plane= [[1, 1, 0],
-                 [1, -1, 0],
-                 [-1, 1, 0],
-                 [-1, -1, 0],
-                 [-1, 1, 0],
-                 [1, -1, 0],
-                 ])
+    quad = Plane(plane=[[1, 1, 0],
+                        [1, -1, 0],
+                        [-1, 1, 0],
+                        [-1, -1, 0],
+                        [-1, 1, 0],
+                        [1, -1, 0],
+                        ])
     cube = Cube()
-    cube.set_position([2,-2,-5])
+    cube.set_position([0, -1, -1])
+    cube.set_rotation([-45, 0, 0])
 
     t = ImagePlane("/res/images/body_05.png")
     t.set_position([0.5, 0, -1])
-    t.set_scale([-1, 1, 1])
-    t.set_rotation([-45, 0, 0])
+    t.set_rotation([135, 0, 0])
 
     t2 = ImagePlane("/res/images/body_05.png")
     t2.set_position([-0.5, 0, -1])
-    t2.set_rotation([45, 0, 0])
+    t2.set_rotation([-135, 0, 0])
 
+    renderer = Renderer(program, [t, cube, t2])
 
-    renderer = Renderer(program, [t,cube, t2])
-
+    global buffer
+    buffer = G_Buffer([width, height])
+    buffer.bind()
     glutMainLoop()
 
 
@@ -113,16 +125,18 @@ def fps_update():
 
 
 def clear_framebuffer():
+    glClearColor(0.0, 0.0, 0.0, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glClearColor(0.3, 0.3, 0.0, 1.0)
+
 
 
 def render():
-    global renderer
+    global renderer, buffer
 
     clear_framebuffer()
     renderer.draw()
 
+    blit_to_default(buffer)
     glFlush()
     fps_update()
 

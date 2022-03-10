@@ -442,8 +442,8 @@ import ctypes
 import numpy
 import array
 
-def flatten(obj):
-    if Matrix.__name__ == type(obj).__name__:
+def flatten(obj, transposes = True):
+    if Matrix.__name__ == type(obj).__name__ and transposes:
         ret = transpose(obj)
     else:
         ret = obj
@@ -500,7 +500,7 @@ def inverse(m: Matrix) -> Matrix:
 
 
 def normal_matrix(m: Matrix, as_lower_order: bool = False):
-    a = inverse(transpose(m))
+    a = transpose(inverse(m))
     if not as_lower_order:
         return a
     else:

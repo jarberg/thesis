@@ -31,26 +31,23 @@ def update_persp_event(w, h):
     global renderer
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
     renderer.persp = flatten(perspective(90, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0.1, 100))
-
+    clear_framebuffer()
 
 def init():
     global start_time
     global fps_counter
-    global post
-    global program
-    global postProgram
-    global t
-    global t2
+    global FPS
+
     global renderer
     global blit
-    global target
-    global quad
+    global target, randProgram, quad
+
+    FPS = 0
     fps_counter = 0
     start_time = time.time()
-
+    print (start_time)
     glutInit()
     glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE)
-
     glutInitWindowSize(width, height)
     glutInitWindowPosition(200, 200)
 
@@ -64,43 +61,39 @@ def init():
     glEnable(GL_DEPTH_TEST)
     glDepthRange(0.1, 100)
 
+    glDisable(GL_CULL_FACE)
     glEnable(GL_MULTISAMPLE)
 
-    post = FrameBuffer_Tex_MS(width, height)
-    glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST)
-
-
-    print(glutGet(GLUT_MULTISAMPLE))
+    glutDisplayFunc(render)
+    glutIdleFunc(render)
 
     program = initShaders("/shader/vertex-shader.glsl", "/shader/fragment-shader.glsl")
-    postProgram = initShaders("/shader/aa_v_shader.glsl", "/shader/aa_f_shader.glsl")
+    randProgram = initShaders("/shader/ran_v_shader.glsl", "/shader/ran_f_shader.glsl")
+
 
     glUseProgram(program)
 
-    quad = Plane(plane= [[1, 1, 0],
-                 [1, -1, 0],
-                 [-1, 1, 0],
-                 [-1, -1, 0],
-                 [-1, 1, 0],
-                 [1, -1, 0],
-                 ])
-    quad.set_rotation([0, 180, 0])
+    quad = Plane(plane=[[1, 1, 0],
+                        [1, -1, 0],
+                        [-1, 1, 0],
+                        [-1, -1, 0],
+                        [-1, 1, 0],
+                        [1, -1, 0],
+                        ])
+    cube = Cube()
+    cube.set_position([1, -1, -4])
+
     t = ImagePlane("/res/images/body_05.png")
     t.set_position([0.5, 0, -1])
     t.set_scale([-1, 1, 1])
     t.set_rotation([-45, 0, 0])
+
     t2 = ImagePlane("/res/images/body_05.png")
     t2.set_position([-0.5, 0, -1])
     t2.set_rotation([45, 0, 0])
 
-    cube = Cube()
-    cube.set_position([1, -1, -4])
     renderer = Renderer(program, [t, cube, t2])
 
-    post.bind()
-
-    glutDisplayFunc(render)
-    glutIdleFunc(render)
     glutMainLoop()
 
 
@@ -114,37 +107,29 @@ def save_current_framebuffer_as_png(bufferid):
 
 
 def fps_update():
-    global fps_counter
-    global start_time
-    global time_per_frame
-
+    global fps_counter, start_time, time_per_frame, FPS
+    FPS += (time.time() - 1646735755.962197)
     if (time.time() - start_time) > 1:
         time_per_frame = 1 / fps_counter / (time.time() - start_time)
-        print("FPS: ", fps_counter / (time.time() - start_time))
+        tim = (time.time() - start_time)
+        print("FPS: ", fps_counter / tim)
         fps_counter = 0
         start_time = time.time()
 
     fps_counter += 1
 
+
 def clear_framebuffer():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glClearColor(0.3, 0.3, 0.0, 1.0)
-
+    glClearColor(0.3, 0.3, 0.3, 1.0)
 
 
 def render():
-    global program
-    global postProgram
-    global renderer
-    global post
-    global quad
+    global renderer, quad, randProgram, FPS
 
 
     clear_framebuffer()
-
-    renderer.draw()
-    renderer.postDraw([quad], postProgram, post.texture)
-    blit_to_default(post)
+    renderer.randDraw([quad], randProgram, FPS)
 
     glFlush()
     fps_update()
