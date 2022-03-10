@@ -1,17 +1,11 @@
 import math
 
-import numpy
-from OpenGL import GL
-from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM, glDisableVertexAttribArray, glGenVertexArrays, \
-    glBindVertexArray
-from OpenGL.raw.GL.VERSION.GL_1_5 import glBindBuffer, GL_ARRAY_BUFFER, glBufferData, GL_STATIC_DRAW
-from OpenGL.raw.GL.VERSION.GL_2_0 import glEnableVertexAttribArray
-from OpenGL.raw.GL._types import GLfloat, GL_FLOAT
+from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM, glGenVertexArrays, \
+    glBindVertexArray, glGenBuffers, glGetIntegerv, GL_FLOAT, glBindBuffer, GL_ARRAY_BUFFER, glBufferData, GL_STATIC_DRAW, glEnableVertexAttribArray, glGetAttribLocation
 
 from src.utils.objectUtils import Matrix, degrees, quat_2_euler, matrix_to_quaternion, get_pointLight_radius, \
     Quaternion, euler_to_quaternion, quaternion_2_matrix, flatten, cross, normal_matrix
 from src.utils.objectUtils import Vector
-from src.utils.objectUtils import rotate
 
 
 class Transform:
@@ -47,7 +41,6 @@ class Transform:
         return [degrees(x), degrees(y), degrees(z)]
 
     def set_scale(self, s: list):
-        scale = [1, 1, 1]
         for i in range(len(self.m) - 1):
             self.S[i][i] = s[i]
         self._update_transform()
@@ -135,15 +128,15 @@ class Model(Transform):
         return self.material
 
     def initBuffers(self):
-        self.vBuffer = GL.glGenBuffers(1)
-        self.cBuffer = GL.glGenBuffers(1)
-        self.nBuffer = GL.glGenBuffers(1)
+        self.vBuffer = glGenBuffers(1)
+        self.cBuffer = glGenBuffers(1)
+        self.nBuffer = glGenBuffers(1)
         # self.iBuffer = GL.glGenBuffers(1)
 
     def initDataToBuffers(self):
-        self.vPosition = GL.glGetAttribLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "a_Position")
-        self.vCoord = GL.glGetAttribLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "InTexCoords")
-        self.vNormal = GL.glGetAttribLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "inNormal")
+        self.vPosition = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "a_Position")
+        self.vCoord = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "InTexCoords")
+        self.vNormal = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "inNormal")
 
         v_array = flatten(self.vertexArray)
         c_array = flatten(self.coordArray)
@@ -170,10 +163,9 @@ class Model(Transform):
             glEnableVertexAttribArray(self.vNormal)
 
     def initAttributeVariable(self, a_attribute, buffer, size, var_type, offset=0, step=0):
-        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, buffer)
-        GL.glVertexAttribPointer(a_attribute, size, var_type, True, offset, step)
-        GL.glEnableVertexAttribArray(a_attribute)
-
+        glBindBuffer(GL_ARRAY_BUFFER, buffer)
+        glVertexAttribPointer(a_attribute, size, var_type, True, offset, step)
+        glEnableVertexAttribArray(a_attribute)
 
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)

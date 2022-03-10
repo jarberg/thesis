@@ -1,33 +1,27 @@
 import os
-from random import random, randrange
+from random import randrange
 
 import numpy
 from OpenGL import GL
-from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, glFlush, \
-    GL_ACTIVE_PROGRAM, GL_CURRENT_PROGRAM, glBindTexture, GL_TEXTURE_2D_MULTISAMPLE, glDisableVertexAttribArray, \
-    glBindVertexArray, glUniform1fv, glUniform3fv, glUniform2fv, glUniformMatrix3fv
-from numpy.matlib import rand
+from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
+    GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv
+from PIL import Image
 
 import constants
 from opengl_interfacing.texture import Texture_Manager
-from utils.objectUtils import flatten, perspective, normal_matrix
-from utils.objects import Transform, Model
-from PIL import Image
+from utils.objectUtils import flatten, perspective
+from utils.objects import Model
 
 
 class Renderer:
 
-    def __init__(self, program, _obj=None):
+    def __init__(self, _obj=None):
         self.objects = _obj or []
-        self.persp = flatten(perspective(90, 1, 0.1, 100))
+        self.persp = flatten(perspective(90, 1, 0.01, 100))
 
-    def draw(self, depth=None):
+    def draw(self):
 
         for obj in self.objects:
-            if depth:
-                depthloc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "depthTexture")
-                if depthloc != -1:
-                    glUniform1i(depthloc, depth)
 
             mat = obj.get_material()
             glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b"), mat.tex_diffuse_b)

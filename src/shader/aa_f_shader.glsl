@@ -16,8 +16,8 @@ void main(){
     ivec2 right = ivec2(-1,0);
 
     ivec2 vpCoords = ivec2(0, 0);
-    vpCoords.x = int(OutTexCoords.x*800);
-    vpCoords.y = int(OutTexCoords.y*800);
+    vpCoords.x = int(OutTexCoords.x*400);
+    vpCoords.y = int(OutTexCoords.y*400);
 
     //do a simple average since this is just a demo
     vec4 sample1 = texelFetch(screencapture, vpCoords, 0);

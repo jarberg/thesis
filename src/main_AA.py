@@ -1,20 +1,16 @@
-import numpy
+import time
+
 from OpenGL import GL
 from OpenGL.GL import *
 from OpenGL.GLUT import *
-from OpenGL.raw.GL.NV.multisample_filter_hint import GL_MULTISAMPLE_FILTER_HINT_NV
-from OpenGL.raw.GLU import gluPerspective
 from PIL import Image, ImageOps
-import time
 
-from opengl_interfacing.framebuffer import FrameBuffer, FrameBuffer_Tex_MS, FrameBuffer_blit_MS, FrameBuffer_target_MS, \
-    blit_to_default
+from opengl_interfacing.framebuffer import FrameBuffer_Tex_MS, blit_to_default
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.renderer import ImagePlane, Renderer, Plane, Cube
-from opengl_interfacing.texture import bind
-from utils.objectUtils import flatten, Matrix, ortho, perspective, transpose
+from utils.objectUtils import flatten, perspective
 
-width, height = 800, 800
+width, height = 400, 400
 aspectRatio = width / height
 program = None
 postProgram = None
@@ -49,7 +45,7 @@ def init():
     start_time = time.time()
 
     glutInit()
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE)
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH)
 
     glutInitWindowSize(width, height)
     glutInitWindowPosition(200, 200)
@@ -67,10 +63,7 @@ def init():
     glEnable(GL_MULTISAMPLE)
 
     post = FrameBuffer_Tex_MS(width, height)
-    glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST)
-
-
-    print(glutGet(GLUT_MULTISAMPLE))
+    #glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST)
 
     program = initShaders("/shader/vertex-shader.glsl", "/shader/fragment-shader.glsl")
     postProgram = initShaders("/shader/aa_v_shader.glsl", "/shader/aa_f_shader.glsl")
@@ -95,9 +88,9 @@ def init():
 
     cube = Cube()
     cube.set_position([1, -1, -4])
-    renderer = Renderer(program, [t, cube, t2])
+    renderer = Renderer([t, cube, t2])
 
-    post.bind()
+    #post.bind()
 
     glutDisplayFunc(render)
     glutIdleFunc(render)
@@ -117,9 +110,9 @@ def fps_update():
     global fps_counter
     global start_time
     global time_per_frame
-
-    if (time.time() - start_time) > 1:
-        time_per_frame = 1 / fps_counter / (time.time() - start_time)
+    tim = (time.time() - start_time)
+    if (time.time() - start_time) > 1 and fps_counter*tim != 0:
+        time_per_frame = 1 / fps_counter * tim
         print("FPS: ", fps_counter / (time.time() - start_time))
         fps_counter = 0
         start_time = time.time()
@@ -128,7 +121,7 @@ def fps_update():
 
 def clear_framebuffer():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glClearColor(0.3, 0.3, 0.0, 1.0)
+    glClearColor(0.3, 0.1, 0.0, 1.0)
 
 
 
@@ -139,9 +132,9 @@ def render():
     global post
     global quad
 
-
+    post.bind()
     clear_framebuffer()
-
+    glUseProgram(program)
     renderer.draw()
     renderer.postDraw([quad], postProgram, post.texture)
     blit_to_default(post)

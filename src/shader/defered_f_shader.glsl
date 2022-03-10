@@ -13,10 +13,19 @@ in vec3 Normal;
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_specular1;
 
+float near = 0.1;
+float far  = 4.0;
+
+float LinearizeDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0; // back to NDC
+    return (2.0 * near * far) / (far + near - z * (far - near));
+}
 
 void main() {
     // store the fragment position vector in the first gbuffer texture
-    gPosition = g_pos;
+    float t =  (gl_FragCoord.z)*1/gl_FragCoord.w;
+    gPosition = vec4(t,t,t,1);//g_pos;
     // also store the per-fragment normals into the gbuffer
     gNormal = vec4(normalize(Normal), 1);
     // and the diffuse per-fragment color

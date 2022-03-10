@@ -14,7 +14,7 @@ from opengl_interfacing.renderer import ImagePlane, Renderer, Plane, Cube
 from opengl_interfacing.texture import bind
 from utils.objectUtils import flatten, Matrix, ortho, perspective, transpose
 
-width, height = 800, 800
+width, height = 200, 200
 aspectRatio = width / height
 program = None
 postProgram = None
@@ -60,8 +60,6 @@ def init():
     GL.glEnable(GL.GL_CULL_FACE)
     GL.glEnable(GL.GL_BLEND)
     glEnable(GL_DEPTH_TEST)
-    glDepthRange(0.1, 100)
-
 
     glEnable(GL_MULTISAMPLE)
 
@@ -85,6 +83,10 @@ def init():
     cube.set_position([0, -1, -1])
     cube.set_rotation([-45, 0, 0])
 
+    cube2 = Cube()
+    cube2.set_position([0, 0, -10])
+    cube2.set_rotation([-45, 0, 0])
+
     t = ImagePlane("/res/images/body_05.png")
     t.set_position([0.5, 0, -1])
     t.set_rotation([135, 0, 0])
@@ -93,7 +95,7 @@ def init():
     t2.set_position([-0.5, 0, -1])
     t2.set_rotation([-135, 0, 0])
 
-    renderer = Renderer(program, [t, cube, t2])
+    renderer = Renderer([t, cube, cube2, t2])
 
     global buffer
     buffer = G_Buffer([width, height])
@@ -116,7 +118,10 @@ def fps_update():
     global time_per_frame
 
     if (time.time() - start_time) > 1:
-        time_per_frame = 1 / fps_counter / (time.time() - start_time)
+        tim = (time.time() - start_time)
+        if tim == 0:
+            return
+        time_per_frame = 1 / tim
         print("FPS: ", fps_counter / (time.time() - start_time))
         fps_counter = 0
         start_time = time.time()
