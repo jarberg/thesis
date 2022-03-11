@@ -32,7 +32,7 @@ def update_persp_event(w, h):
     global renderer, buffer
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
     renderer.persp = flatten(perspective(90, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0.1, 100))
-    buffer.resize(w,h)
+    # buffer.resize(w, h)
     clear_framebuffer()
 
 
@@ -40,7 +40,7 @@ def init():
     global start_time
     global fps_counter
 
-    global renderer, cube,program, lightProgram
+    global renderer, cube, program, lightProgram
     global blit
     global target
 
@@ -60,7 +60,7 @@ def init():
     GL.glEnable(GL.GL_CULL_FACE)
     GL.glEnable(GL.GL_BLEND)
     glEnable(GL_DEPTH_TEST)
-
+    glDisable(GL_CULL_FACE)
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
@@ -68,7 +68,6 @@ def init():
     lightProgram = initShaders("/shader/defered_light_v_shader.glsl", "/shader/defered_light_f_shader.glsl")
 
     glUseProgram(program)
-
 
     cube = Cube()
     cube.set_position([0, -1, -1])
@@ -86,7 +85,8 @@ def init():
     t2.set_position([-0.5, 0, -1])
     t2.set_rotation([-135, 0, 0])
 
-    renderer = Renderer([t, cube, cube2, t2])
+    renderer = Renderer()
+    renderer.objects = [t, cube, cube2, t2]
 
     global buffer
     buffer = G_Buffer([width, height])
@@ -121,23 +121,22 @@ def fps_update():
 
 
 def clear_framebuffer():
-    glClearColor(0.0, 0.0, 0.2, 1.0)
+    glClearColor(0.0, 1.0, 1, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
 
-
 def render():
-    global renderer, buffer, program, lightProgram
+    global renderer, buffer, program, lightProgram, cube
 
     buffer.bind()
-    GL.glUseProgram(program)
-    clear_framebuffer()
+    glUseProgram(program)
     renderer.draw()
     buffer.unbind()
-
-    renderer.light_draw(lightProgram, buffer)
-
+    glUseProgram(lightProgram)
+    renderer.light_draw(buffer)
     glFlush()
+
     fps_update()
+
 
 init()

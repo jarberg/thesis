@@ -31,13 +31,13 @@ class Texture_Manager:
 
 class Texture:
 
-    def __init__(self, size=None, data=None, mipmap=False, repeat=False):
+    def __init__(self, size=None, data=None, mipmap=False, repeat=False, format=GL_RGBA):
 
         self.mipmap = mipmap
         self.repeat = repeat
         self.genMipmap = False
         self.texType = GL_TEXTURE_2D
-        self.format = GL_RGBA
+        self.format = format
         self.slot = glGenTextures(1)
         GL.glActiveTexture(GL.GL_TEXTURE0 + self.slot)
         GL.glBindTexture(GL_TEXTURE_2D, self.slot)
@@ -47,9 +47,11 @@ class Texture:
             self.height = size[1]
 
         if data is None and size:
-            GL.glTexImage2D(self.texType, 0, self.format, self.width, self.height, 0, self.format, GL_UNSIGNED_BYTE, None)
+            GL.glTexImage2D(self.texType, 0, self.format, self.width, self.height, 0, self.format, GL_UNSIGNED_BYTE,
+                            None)
         else:
-            GL.glTexImage2D(self.texType, 0, self.format, self.width, self.height, 0, self.format, GL_UNSIGNED_BYTE, data)
+            GL.glTexImage2D(self.texType, 0, self.format, self.width, self.height, 0, self.format, GL_UNSIGNED_BYTE,
+                            data)
 
         bind(self)
 
@@ -71,9 +73,11 @@ class Texture_depth:
             self.height = size[1]
 
         if data is None and size:
-            GL.glTexImage2D(self.texType, 0, GL_DEPTH_COMPONENT, self.width, self.height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, None)
+            GL.glTexImage2D(self.texType, 0, GL_DEPTH_COMPONENT, self.width, self.height, 0, GL_DEPTH_COMPONENT,
+                            GL_UNSIGNED_BYTE, None)
         else:
-            GL.glTexImage2D(self.texType, 0, GL_DEPTH_COMPONENT, self.width, self.height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, data)
+            GL.glTexImage2D(self.texType, 0, GL_DEPTH_COMPONENT, self.width, self.height, 0, GL_DEPTH_COMPONENT,
+                            GL_UNSIGNED_BYTE, data)
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
@@ -83,11 +87,12 @@ class Texture_depth:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE)
 
+
 class Texture2dMS:
 
-    def __init__(self, size, mipmap=False, repeat=False):
-
+    def __init__(self, size, samples, mipmap=False, repeat=False):
         self.mipmap = mipmap
+        self.samples = samples
         self.repeat = repeat
         self.genMipmap = False
         self.texType = GL_TEXTURE_2D_MULTISAMPLE
@@ -95,13 +100,11 @@ class Texture2dMS:
         GL.glActiveTexture(GL.GL_TEXTURE0 + self.slot)
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, self.slot)
 
-
         self.width = size[0]
         self.height = size[1]
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 12, GL_RGBA, self.width,  self.height, True)
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, self.samples, GL_RGB, self.width, self.height, True)
 
         bind(self)
-
 
 
 def bind(txt):

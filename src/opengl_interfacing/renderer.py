@@ -48,15 +48,15 @@ class Renderer:
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
 
-    def light_draw(self, program, buffer: G_Buffer):
-        GL.glUseProgram(program)
-
-        loc1 = glGetUniformLocation(program, "pos")
+    def light_draw(self, buffer: G_Buffer):
+        loc1 = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "pos")
         glUniform1i(loc1, buffer.position_tex.slot)
-        loc2 = glGetUniformLocation(program, "norm")
+        loc2 = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "norm")
         glUniform1i(loc2, buffer.normal_tex.slot)
-        loc3 = glGetUniformLocation(program, "albedo")
+        loc3 = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "albedo")
         glUniform1i(loc3, buffer.normal_tex.slot)
+
+        glUniformMatrix4fv(3, 1, False, flatten(self.quad.getTransform()))
 
         glBindVertexArray(self.quad.VAO)
         glDrawArrays(GL_TRIANGLES, 0, len(self.quad.vertexArray))
