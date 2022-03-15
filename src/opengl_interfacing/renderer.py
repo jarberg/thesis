@@ -92,6 +92,22 @@ class Renderer:
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
 
 
+
+
+class Bigbrainjoints(Model):
+
+    def __init__(self, vertexlist):
+        super().__init__(vertexlist)
+        self.joints = []
+        self.parents = {}
+        self.transforms = {}
+        self.bindTransforms = {}
+        self.inverseBindTransforms = {}
+        self.children = {}
+
+
+
+
 class Plane(Model):
     def __init__(self, plane=None):
         plane = plane or [
