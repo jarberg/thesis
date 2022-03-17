@@ -4,7 +4,7 @@ from random import randrange
 import numpy
 from OpenGL import GL
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
-    GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv
+    GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_POINTS, GL_LINE, GL_LINES
 from PIL import Image
 
 import constants
@@ -47,6 +47,17 @@ class Renderer:
 
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
+
+    def joint_draw(self, objects):
+        for obj in objects:
+            if obj.parent:
+                partrans = obj.parent.getTransform()
+
+            glUniformMatrix4fv(2, 1, False, self.persp)
+            glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
+
+            glBindVertexArray(obj.VAO)
+            glDrawArrays(GL_LINES, 0, int(len(obj.vertexArray)))
 
     def light_draw(self, buffer: G_Buffer):
         loc1 = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "pos")
@@ -111,10 +122,10 @@ class Bigbrainjoints(Model):
 class Plane(Model):
     def __init__(self, plane=None):
         plane = plane or [
-                        [0.5, 0.5, 0],
+                        [0.5, 0.5,  0],
                         [0.5, -0.5, 0],
                         [-0.5, 0.5, 0],
-                        [-0.5, -0.5, 0],
+                        [-0.5, -0.5,0],
                         [-0.5, 0.5, 0],
                         [0.5, -0.5, 0],
                         ]

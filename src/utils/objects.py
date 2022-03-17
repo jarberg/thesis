@@ -1,20 +1,37 @@
 import math
 
 from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM, glGenVertexArrays, \
-    glBindVertexArray, glGenBuffers, glGetIntegerv, GL_FLOAT, glBindBuffer, GL_ARRAY_BUFFER, glBufferData, GL_STATIC_DRAW, glEnableVertexAttribArray, glGetAttribLocation
+    glBindVertexArray, glGenBuffers, glGetIntegerv, GL_FLOAT, glBindBuffer, GL_ARRAY_BUFFER, glBufferData, \
+    GL_STATIC_DRAW, glEnableVertexAttribArray, glGetAttribLocation
 
 from src.utils.objectUtils import Matrix, degrees, quat_2_euler, matrix_to_quaternion, get_pointLight_radius, \
-    Quaternion, euler_to_quaternion, quaternion_2_matrix, flatten, cross, normal_matrix
+    Quaternion, euler_to_quaternion, quaternion_2_matrix, flatten, cross, normal_matrix, inverse, euler_to_matrix, \
+    rotate, matrix_to_euler, rotateX, rotateY, rotateZ
 from src.utils.objectUtils import Vector
+
+
+def calc_normal_from_points(p0, p1, p2):
+    v1 = Vector(p1) - Vector(p0)
+    v2 = Vector(p2) - Vector(p0)
+    n = cross(v1, v2)
+    return n
 
 
 class Transform:
 
-    def __init__(self, size=4):
+    def __init__(self, parent=None, children=None, size=4):
+        self.rot = [0, 0, 0]
         self.T = Matrix(n=size)
         self.S = Matrix(n=size)
         self.R = Matrix(n=size)
         self.m = Matrix(n=size)
+
+        self.children = children or []
+        self.parent = parent
+
+        if self.parent:
+            self.parent.children.append(self)
+
         self._update_transform()
 
     def getTransform(self):
@@ -34,11 +51,7 @@ class Transform:
         return ret
 
     def get_rotation(self):
-
-        q = Quaternion(quats=matrix_to_quaternion(self.R.m))
-        x, y, z = quat_2_euler(q)
-
-        return [degrees(x), degrees(y), degrees(z)]
+        return self.rot
 
     def set_scale(self, s: list):
         for i in range(len(self.m) - 1):
@@ -46,39 +59,15 @@ class Transform:
         self._update_transform()
 
     def _update_transform(self):
-        self.m = self.T * (self.R * self.S)
+        self.m = self.T * self.R * self.S
 
     def set_rotation(self, newrot: list or Vector):
+        self.rot[0] = newrot[0] % 360
+        self.rot[1] = newrot[1] % 360
+        self.rot[2] = newrot[2] % 360
 
-        q = euler_to_quaternion(newrot)
-        self.R.m = quaternion_2_matrix(q).m
-
+        self.R = euler_to_matrix(self.rot)
         self._update_transform()
-        """
-        newrot = [x * math.pi / 180 for x in newrot]
-        ch = math.cos(newrot[0])
-        sh = math.sin(newrot[0])
-        ca = math.cos(newrot[1])
-        sa = math.sin(newrot[1])
-        cb = math.cos(newrot[2])
-        sb = math.sin(newrot[2])
-
-        m00 = ch * ca
-        m01 = sh * sb - ch * sa * cb
-        m02 = ch * sa * sb + sh * cb
-        m10 = sa
-        m11 = ca * cb
-        m12 = -ca * sb
-        m20 = -sh * ca
-        m21 = sh * sa * cb + ch * sb
-        m22 = -sh * sa * sb + ch * cb
-
-        self.R.m =[[m00,m01,m02,0],
-                   [m10,m11,m12,0],
-                   [m20,m21,m22,0],
-                   [0,0,0,1]
-                   ]
-        """
 
     def set_position(self, newPos: list or Vector):
         minval = min(len(self.m) - 1, 3)
@@ -87,11 +76,49 @@ class Transform:
         self._update_transform()
 
 
-def calc_normal_from_points(p0, p1, p2):
-    v1 = Vector(p1) - Vector(p0)
-    v2 = Vector(p2) - Vector(p0)
-    n = cross(v1, v2)
-    return n
+class Joint(Transform):
+    def __init__(self, parent=None, children=None, bindTransform=None):
+        super(Joint, self).__init__(parent=parent, children=children)
+
+        self.bindTransform = bindTransform or Transform()
+        self.inverseBindTransform = inverse(self.bindTransform.m)
+
+        self.vertexArray = [[0, 0, 0], [0.5, 0, 0]]
+        self.initBuffers()
+        self.initDataToBuffers()
+
+    def getTransform(self):
+        if self.parent:
+            return self.parent.m * self.m
+        else:
+            return self.m
+
+    def set_bind_transform(self, transform):
+        self.bindTransform = transform
+        self.calcInverseBindTransform(self.bindTransform)
+
+    def calcInverseBindTransform(self, parentBindTransform):
+        self.bindTransform.m = parentBindTransform.m * self.bindTransform.m
+        self.inverseBindTransform.m = inverse(self.bindTransform.m)
+
+        for child in self.children:
+            child.calcInverseBindTransform(self.bindTransform)
+
+    def initBuffers(self):
+        self.vBuffer = glGenBuffers(1)
+
+    def initDataToBuffers(self):
+        self.vPosition = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "a_Position")
+
+        v_array = flatten(self.vertexArray)
+
+        self.VAO = glGenVertexArrays(1)
+        glBindVertexArray(self.VAO)
+
+        glBindBuffer(GL_ARRAY_BUFFER, self.vBuffer)
+        glBufferData(GL_ARRAY_BUFFER, v_array.nbytes, v_array, GL_STATIC_DRAW)
+        glVertexAttribPointer(0, 3, GL_FLOAT, False, 0, None)
+        glEnableVertexAttribArray(self.vPosition)
 
 
 class Model(Transform):
@@ -161,11 +188,6 @@ class Model(Transform):
         glVertexAttribPointer(4, 3, GL_FLOAT, False, 0, None)
         if self.vNormal > 0:
             glEnableVertexAttribArray(self.vNormal)
-
-    def initAttributeVariable(self, a_attribute, buffer, size, var_type, offset=0, step=0):
-        glBindBuffer(GL_ARRAY_BUFFER, buffer)
-        glVertexAttribPointer(a_attribute, size, var_type, True, offset, step)
-        glEnableVertexAttribArray(a_attribute)
 
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)
@@ -237,3 +259,9 @@ class Material:
     def set_tex_diffuse(self, tex):
         self.tex_diffuse_b = True
         self.tex_diffuse = tex
+
+
+def initAttributeVariable(a_attribute, buffer, size, var_type, offset=0, step=0):
+    glBindBuffer(GL_ARRAY_BUFFER, buffer)
+    glVertexAttribPointer(a_attribute, size, var_type, True, offset, step)
+    glEnableVertexAttribArray(a_attribute)

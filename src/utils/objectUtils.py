@@ -316,7 +316,7 @@ class Quaternion:
             self.i, self.j, self.k, self.w = (0, 0, 0, 1)
 
     def __str__(self):
-        return str([self.w, self.i, self.j, self.k])
+        return str([self.i, self.j, self.k, self.w])
 
     def __mul__(self, other):
         other_type = type(other).__name__
@@ -442,7 +442,8 @@ import ctypes
 import numpy
 import array
 
-def flatten(obj, transposes = True):
+
+def flatten(obj, transposes=True):
     if Matrix.__name__ == type(obj).__name__ and transposes:
         ret = transpose(obj)
     else:
@@ -658,8 +659,8 @@ def rotateX(theta):
     c = math.cos(radians(theta))
     s = math.sin(radians(theta))
     rz = Matrix(inputData=[[1.0, 0.0, 0.0, 0.0],
-                           [0.0, c, s, 0.0],
-                           [0.0, -s, c, 0.0],
+                           [0.0, c, -s, 0.0],
+                           [0.0, s, c, 0.0],
                            [0.0, 0.0, 0.0, 1.0]
                            ])
     return rz
@@ -668,9 +669,9 @@ def rotateX(theta):
 def rotateY(theta):
     c = math.cos(radians(theta))
     s = math.sin(radians(theta))
-    rz = Matrix(inputData=[[c, 0.0, -s, 0.0],
+    rz = Matrix(inputData=[[c, 0.0, s, 0.0],
                            [0.0, 1.0, 0.0, 0.0],
-                           [s, 0.0, c, 0.0],
+                           [-s, 0.0, c, 0.0],
                            [0.0, 0.0, 0.0, 1.0]
                            ])
     return rz
@@ -679,12 +680,32 @@ def rotateY(theta):
 def rotateZ(theta):
     c = math.cos(radians(theta))
     s = math.sin(radians(theta))
-    rz = Matrix(inputData=[[c, s, 0.0, 0.0],
-                           [-s, c, 0.0, 0.0, ],
+    rz = Matrix(inputData=[[c, -s, 0.0, 0.0],
+                           [s, c, 0.0, 0.0, ],
                            [0.0, 0.0, 1.0, 0.0],
                            [0.0, 0.0, 0.0, 1.0]
                            ])
     return rz
+
+
+def matrix_to_euler(m):
+    if (m[1][0] > 0.999999999):
+        # singularity at north pole
+        heading = math.atan2(m[0][2], m[2][2])
+        attitude = math.pi / 2
+        bank = 0
+
+    elif (m[1][0] < -0.999999999):
+        # // singularity at south pole
+        heading = math.atan2(m[0][2], m[2][2])
+        attitude = -math.pi / 2
+        bank = 0
+    else:
+        heading = math.atan2(-m[2][0], m[0][0])
+        attitude = math.asin(m[1][0])
+        bank = math.atan2(-m[1][2], m[1][1])
+
+    return degrees(bank), degrees(heading), degrees(attitude)
 
 
 def scale(input):
@@ -717,6 +738,30 @@ def euler_to_quaternion(euler_angles):
     z = c1 * s2 * c3 - s1 * c2 * s3
 
     return Quaternion(quats=(x, y, z, w))
+
+
+def euler_to_matrix(euler_angles):
+    heading = radians(euler_angles[0])
+    attitude = radians(euler_angles[1])
+    bank = radians(euler_angles[2])
+
+    ch = math.cos(heading)
+    sh = math.sin(heading)
+    ca = math.cos(attitude)
+    sa = math.sin(attitude)
+    cb = math.cos(bank)
+    sb = math.sin(bank)
+
+    """ res = Matrix([[ch * ca, sh * sb - ch * sa * cb, ch * sa * sb + sh * cb, 0],
+                  [sa, ca * cb, -ca * sb, 0],
+                  [-sh * ca, sh * sa * cb + ch * sb, -sh * sa * sb + ch * cb, 0],
+                  [0, 0, 0, 1]])"""
+
+    res = Matrix([[cb * ca, sh * sa * cb - ch * sb, ch * sa * ca + sh * sa, 0],
+                  [ca * sb, sh * sa * sb + ch * cb, ch * sa * sb - sh * cb, 0],
+                  [-sa, sh * ca, ch * ca, 0],
+                  [0, 0, 0, 1]])
+    return res
 
 
 def matrix_to_quaternion(m):
@@ -752,7 +797,7 @@ def matrix_to_quaternion(m):
         qy = (m[1][2] + m[2][1]) * S1
         qz = 0.25 * S
 
-    return [qx, qy, qz, qw]
+    return Quaternion(quats=[qx, qy, qz, qw])
 
 
 def quaternion_2_matrix(q):
@@ -806,17 +851,17 @@ def quat_2_euler(q: Quaternion):
 
     test = q.i * q.j + q.k * q.w
 
-    if test > 0.4999999 * unit:  # singularity at north pole
+    if test > 0.4999999:  # * unit:  # singularity at north pole
         heading = 2 * math.atan2(q.i, q.w)
         attitude = math.pi / 2
         bank = 0
-        return (heading, attitude, bank)
+        return degrees(heading), degrees(attitude), degrees(bank)
 
-    if test < -0.499999 * unit:  # singularity at south pole
+    if test < -0.499999:  # * unit:  # singularity at south pole
         heading = -2 * math.atan2(q.i, q.w)
         attitude = - math.pi / 2
         bank = 0
-        return (heading, attitude, bank)
+        return degrees(heading), degrees(attitude), degrees(bank)
 
     sqx = q.i * q.i
     sqy = q.j * q.j
@@ -831,7 +876,7 @@ def quat_2_euler(q: Quaternion):
     # attitude = math.asin(2 * test / unit)
     # bank = math.atan2(2 * q.i * q.w - 2 * q.j * q.k, -sqx + sqy - sqz + sqw)
 
-    return (heading, attitude, bank)
+    return degrees(heading), degrees(attitude), degrees(bank)
 
 
 def within_radius(position, light):

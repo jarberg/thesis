@@ -1,18 +1,18 @@
-import numpy
+import math
+
+from OpenGL import GL
+import time
+
 from OpenGL import GL
 from OpenGL.GL import *
 from OpenGL.GLUT import *
-from OpenGL.raw.GL.NV.multisample_filter_hint import GL_MULTISAMPLE_FILTER_HINT_NV
-from OpenGL.raw.GLU import gluPerspective
 from PIL import Image, ImageOps
-import time
 
-from opengl_interfacing.framebuffer import FrameBuffer, FrameBuffer_Tex_MS, FrameBuffer_blit_MS, FrameBuffer_target_MS, \
-    blit_to_default, G_Buffer
+from opengl_interfacing.framebuffer import G_Buffer, blit_to_default
 from opengl_interfacing.initshader import initShaders
-from opengl_interfacing.renderer import ImagePlane, Renderer, Plane, Cube
-from opengl_interfacing.texture import bind
-from utils.objectUtils import flatten, Matrix, ortho, perspective, transpose
+from opengl_interfacing.renderer import ImagePlane, Renderer, Cube, Bigbrainjoints
+from utils.objectUtils import flatten, perspective, euler_to_quaternion, quat_2_euler, degrees
+from utils.objects import Transform, Joint
 
 width, height = 200, 200
 aspectRatio = width / height
@@ -40,7 +40,7 @@ def init():
     global start_time
     global fps_counter
 
-    global renderer, cube, program, lightProgram
+    global renderer, cube, program, lightProgram, jointProgram
     global blit
     global target
 
@@ -55,7 +55,7 @@ def init():
     window = glutCreateWindow("Opengl Window In Python")
 
     glutReshapeFunc(update_persp_event)
-
+    GL.glLineWidth(1)
     GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
     GL.glEnable(GL.GL_CULL_FACE)
     GL.glEnable(GL.GL_BLEND)
@@ -66,7 +66,7 @@ def init():
 
     program = initShaders("/shader/defered_v_shader.glsl", "/shader/defered_f_shader.glsl")
     lightProgram = initShaders("/shader/defered_light_v_shader.glsl", "/shader/defered_light_f_shader.glsl")
-
+    jointProgram = initShaders("/shader/joint_v_shader.glsl", "/shader/joint_f_shader.glsl")
     glUseProgram(program)
 
     cube = Cube()
@@ -88,8 +88,22 @@ def init():
     renderer = Renderer()
     renderer.objects = [t, cube, cube2, t2]
 
-    global buffer
+    global buffer, bbj, joint, joint2
     buffer = G_Buffer([width, height])
+
+    t = Transform()
+    t.set_position([0, 1, 0])
+
+    joint = Joint()
+    joint2 = Joint(parent=joint)
+    joint.set_position([0, 0, -1.5])
+    joint.set_rotation([0, 0, 88])
+
+    joint2.set_position([0.5, 0, 0])
+    joint2.set_rotation([0, 0, -45])
+
+    joint.set_bind_transform(t)
+
     glutMainLoop()
 
 
@@ -126,17 +140,26 @@ def clear_framebuffer():
 
 
 def render():
-    global renderer, buffer, program, lightProgram, cube
+    global renderer, buffer, program, lightProgram, cube, bbj, joint, joint2
 
     buffer.bind()
     glUseProgram(program)
-    renderer.draw()
+    # renderer.draw()
     buffer.unbind()
-    glUseProgram(lightProgram)
-    renderer.light_draw(buffer)
+    rot = joint.get_rotation()
+    rot2 = joint2.get_rotation()
+    joint.set_rotation([0, 0, rot[2] + 0.1])
+    joint2.set_rotation([0, 0, -rot[2]])
+
+    glUseProgram(jointProgram)
+    renderer.joint_draw([joint, joint2])
+
+    # glUseProgram(lightProgram)
+    # renderer.light_draw(buffer)
     glFlush()
 
     fps_update()
 
 
 init()
+
