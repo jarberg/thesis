@@ -437,7 +437,7 @@ def blit_to_default(source):
     GL.glBindFramebuffer(GL_READ_FRAMEBUFFER, source.framebuffer)
     GL.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
 
-    GL.glReadBuffer(GL_COLOR_ATTACHMENT0)
+    GL.glReadBuffer(GL_COLOR_ATTACHMENT2)
     GL.glDrawBuffer(GL_FRONT)
 
     GL.glBlitFramebuffer(

@@ -1,6 +1,3 @@
-import math
-
-from OpenGL import GL
 import time
 
 from OpenGL import GL
@@ -8,11 +5,12 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from PIL import Image, ImageOps
 
+from opengl_interfacing.animator import Animator, Animation, KeyFrame
 from opengl_interfacing.framebuffer import G_Buffer, blit_to_default
 from opengl_interfacing.initshader import initShaders
-from opengl_interfacing.renderer import ImagePlane, Renderer, Cube, Bigbrainjoints
-from utils.objectUtils import flatten, perspective, euler_to_quaternion, quat_2_euler, degrees
-from utils.objects import Transform, Joint
+from opengl_interfacing.renderer import ImagePlane, Renderer, Cube
+from utils.objectUtils import flatten, perspective
+from utils.objects import Joint, Animated_model
 
 width, height = 200, 200
 aspectRatio = width / height
@@ -24,7 +22,7 @@ global renderer
 global t2
 global blit
 global target
-global count, cube
+global count, cube, animator
 count = 0
 
 
@@ -32,7 +30,7 @@ def update_persp_event(w, h):
     global renderer, buffer
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
     renderer.persp = flatten(perspective(90, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0.1, 100))
-    # buffer.resize(w, h)
+    #buffer.resize(w, h)
     clear_framebuffer()
 
 
@@ -40,10 +38,11 @@ def init():
     global start_time
     global fps_counter
 
-    global renderer, cube, program, lightProgram, jointProgram
+    global renderer, cube, program, lightProgram, jointProgram, animator, time_per_frame
     global blit
     global target
-
+    global buffer, bbj, joint, joint2
+    time_per_frame = 0
     fps_counter = 0
     start_time = time.time()
 
@@ -60,7 +59,7 @@ def init():
     GL.glEnable(GL.GL_CULL_FACE)
     GL.glEnable(GL.GL_BLEND)
     glEnable(GL_DEPTH_TEST)
-    glDisable(GL_CULL_FACE)
+    #glDisable(GL_CULL_FACE)
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
@@ -70,41 +69,79 @@ def init():
     glUseProgram(program)
 
     cube = Cube()
-    cube.set_position([0, -1, -1])
-    cube.set_rotation([-45, 0, 0])
+    cube.set_position([0, 0, -2])
+    #cube.set_rotation([30, 0, 45])
 
     cube2 = Cube()
     cube2.set_position([0, 0, -10])
-    cube2.set_rotation([-45, 0, 0])
 
-    t = ImagePlane("/res/images/body_05.png")
+    t = ImagePlane("/res/images/box.png")
     t.set_position([0.5, 0, -1])
-    t.set_rotation([135, 0, 0])
+    t.set_rotation([0, 135, 0])
 
-    t2 = ImagePlane("/res/images/body_05.png")
+    t2 = ImagePlane("/res/images/box.png")
     t2.set_position([-0.5, 0, -1])
-    t2.set_rotation([-135, 0, 0])
+    t2.set_rotation([0, -135, 0])
 
-    renderer = Renderer()
-    renderer.objects = [t, cube, cube2, t2]
-
-    global buffer, bbj, joint, joint2
     buffer = G_Buffer([width, height])
 
-    t = Transform()
-    t.set_position([0, 1, 0])
+    joint = Joint(1)
+    joint2 = Joint(2, parent=joint)
 
-    joint = Joint()
-    joint2 = Joint(parent=joint)
-    joint.set_position([0, 0, -1.5])
-    joint.set_rotation([0, 0, 88])
+    joint.set_bind_transform(joint)
 
-    joint2.set_position([0.5, 0, 0])
-    joint2.set_rotation([0, 0, -45])
+    acube = Animated_model(cube, joint, 2)
 
-    joint.set_bind_transform(t)
+    animator = setup_test_anim([joint, joint2], acube)
+
+    renderer = Renderer()
+    renderer.objects = [t, acube, cube2, t2]
 
     glutMainLoop()
+
+
+def setup_test_anim(bones, model):
+    bones[0].set_position([0, 1, -4])
+    bones[0].set_rotation([0, 0, 0])
+    #bones[1].set_scale([0.1, 0.1,  0.1])
+    key1 = KeyFrame({1: bones[0].getTransform(),
+                     2: bones[1].getTransform()}, 0)
+
+    bones[0].set_position([0, 1, -4])
+    #bones[1].set_position([-0.5, -1, 0])
+    bones[1].set_rotation([0, 0, 90])
+    #bones[1].set_scale([1, 1, 1])
+
+    key2 = KeyFrame({1: bones[0].getTransform(),
+                     2: bones[1].getTransform()}, 1)
+
+    bones[0].set_position([0, 0, -2])
+    # bones[0].set_scale([1, 1, 1])
+    # bones[1].set_position([0, -1, 0])
+    bones[1].set_rotation([0, 0, 180])
+    #bones[1].set_scale([1, 1, 1])
+    key3 = KeyFrame({1: bones[0].getTransform(),
+                     2: bones[1].getTransform()}, 2)
+
+    bones[0].set_position([0, 0, -2])
+    # bones[1].set_position([0, -1, 0])
+    bones[1].set_rotation([0, 0, 270])
+    key4 = KeyFrame({1: bones[0].getTransform(),
+                     2: bones[1].getTransform()}, 3)
+
+    bones[0].set_position([0, 0, -2])
+
+    # bones[1].set_position([0.5, 1, 0])
+    bones[1].set_rotation([0, 0, 0])
+    #bones[1].set_scale([0.1, 0.1, 0.1])
+    key5 = KeyFrame({1: bones[0].getTransform(),
+                     2: bones[1].getTransform()}, 4)
+
+    anim = Animation([key1, key2, key3, key4, key5])
+
+    animator = Animator(model=model, animation=anim)
+
+    return animator
 
 
 def save_current_framebuffer_as_png(bufferid):
@@ -121,17 +158,11 @@ def fps_update():
     global fps_counter
     global start_time
     global time_per_frame
+    tim = (time.time() - start_time)
 
-    if (time.time() - start_time) > 1:
-        tim = (time.time() - start_time)
-        if tim == 0:
-            return
-        time_per_frame = 1 / tim
-        print("FPS: ", fps_counter / (time.time() - start_time))
-        fps_counter = 0
-        start_time = time.time()
-
-    fps_counter += 1
+    if tim != 0:
+        time_per_frame = tim
+        # print("FPS: ", 1 / tim)
 
 
 def clear_framebuffer():
@@ -140,26 +171,27 @@ def clear_framebuffer():
 
 
 def render():
-    global renderer, buffer, program, lightProgram, cube, bbj, joint, joint2
+    global renderer, buffer, program, lightProgram, cube, bbj, joint, joint2, animator, start_time
+    start_time = time.time()
 
     buffer.bind()
-    glUseProgram(program)
-    # renderer.draw()
     buffer.unbind()
-    rot = joint.get_rotation()
-    rot2 = joint2.get_rotation()
-    joint.set_rotation([0, 0, rot[2] + 0.1])
-    joint2.set_rotation([0, 0, -rot[2]])
+    glUseProgram(program)
+
+    renderer.draw(animator = animator)
+
+
+
 
     glUseProgram(jointProgram)
     renderer.joint_draw([joint, joint2])
+    #glUseProgram(lightProgram)
+    #renderer.light_draw(buffer)
 
-    # glUseProgram(lightProgram)
-    # renderer.light_draw(buffer)
+    animator.update(time_per_frame)
     glFlush()
 
     fps_update()
 
 
 init()
-

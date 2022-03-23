@@ -20,7 +20,7 @@ class Texture_Manager:
         self.usedSlots = []
 
     def createNewTexture(self, size=None, data=None, mipmap=False):
-        return Texture(size=size, data=data, mipmap=mipmap)
+        return
 
     def _register(self):
         pass

@@ -2,11 +2,10 @@ import math
 
 from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM, glGenVertexArrays, \
     glBindVertexArray, glGenBuffers, glGetIntegerv, GL_FLOAT, glBindBuffer, GL_ARRAY_BUFFER, glBufferData, \
-    GL_STATIC_DRAW, glEnableVertexAttribArray, glGetAttribLocation
+    GL_STATIC_DRAW, glEnableVertexAttribArray, glGetAttribLocation, GL_INT
 
-from src.utils.objectUtils import Matrix, degrees, quat_2_euler, matrix_to_quaternion, get_pointLight_radius, \
-    Quaternion, euler_to_quaternion, quaternion_2_matrix, flatten, cross, normal_matrix, inverse, euler_to_matrix, \
-    rotate, matrix_to_euler, rotateX, rotateY, rotateZ
+from src.utils.objectUtils import Matrix, get_pointLight_radius, \
+    flatten, cross, normal_matrix, inverse, euler_to_matrix
 from src.utils.objectUtils import Vector
 
 
@@ -34,8 +33,11 @@ class Transform:
 
         self._update_transform()
 
-    def getTransform(self):
-        return self.m
+    def getTransform(self, useParent=False):
+        if self.parent and useParent:
+            return self.parent.getTransform()*self.m
+        else:
+            return self.m
 
     def get_position(self):
         return [self.T[0][3], self.T[1][3], self.T[2][3]]
@@ -75,11 +77,13 @@ class Transform:
             self.T[i][min(minval, 3)] = newPos[i]
         self._update_transform()
 
+    def set_transform(self, m):
+        self.m = m
 
 class Joint(Transform):
-    def __init__(self, parent=None, children=None, bindTransform=None):
+    def __init__(self, id, parent=None, children=None, bindTransform=None):
         super(Joint, self).__init__(parent=parent, children=children)
-
+        self.id = id
         self.bindTransform = bindTransform or Transform()
         self.inverseBindTransform = inverse(self.bindTransform.m)
 
@@ -88,10 +92,10 @@ class Joint(Transform):
         self.initDataToBuffers()
 
     def getTransform(self):
-        if self.parent:
-            return self.parent.m * self.m
-        else:
-            return self.m
+        return self.m
+
+    def add_child(self, child):
+        self.children.append(child)
 
     def set_bind_transform(self, transform):
         self.bindTransform = transform
@@ -123,7 +127,7 @@ class Joint(Transform):
 
 class Model(Transform):
 
-    def __init__(self, vertexlist, coordArray=None):
+    def __init__(self, vertexlist, coordArray=None, n_array = None):
         super().__init__()
 
         self.boundingBox = []
@@ -131,14 +135,22 @@ class Model(Transform):
         self.normalArray = []
         self.coordArray = coordArray or []
 
-        for i in range(len(vertexlist)):
-            self._add_vertex(vertexlist[i])
-            j = i + 1
-            if i != 0 and (j % 3) == 0:
-                normal = calc_normal_from_points(vertexlist[i - 2], vertexlist[i - 1], vertexlist[i])
-                self.normalArray.append(normal)
-                self.normalArray.append(normal)
-                self.normalArray.append(normal)
+        if n_array:
+            self.normalArray = n_array
+        else:
+            for i in range(len(vertexlist)):
+                self._add_vertex(vertexlist[i])
+                j = i+1
+                if i != 0 and (j % 3) == 0:
+                    p1 = vertexlist[i - 2]
+                    p2 = vertexlist[i - 1]
+                    p3 = vertexlist[i]
+                    normal = calc_normal_from_points(p1, p2, p3)
+
+                    self.normalArray.append(normal)
+                    self.normalArray.append(normal)
+                    self.normalArray.append(normal)
+
 
         self.material = Material()
         self.initBuffers()
@@ -153,6 +165,12 @@ class Model(Transform):
 
     def get_material(self):
         return self.material
+
+    def getVAO(self):
+        return self.VAO
+
+    def get_vertexArray_len(self):
+        return len(self.vertexArray)
 
     def initBuffers(self):
         self.vBuffer = glGenBuffers(1)
@@ -174,18 +192,18 @@ class Model(Transform):
 
         glBindBuffer(GL_ARRAY_BUFFER, self.vBuffer)
         glBufferData(GL_ARRAY_BUFFER, v_array.nbytes, v_array, GL_STATIC_DRAW)
-        glVertexAttribPointer(0, 3, GL_FLOAT, False, 0, None)
+        glVertexAttribPointer(self.vPosition, 3, GL_FLOAT, False, 0, None)
         glEnableVertexAttribArray(self.vPosition)
 
         glBindBuffer(GL_ARRAY_BUFFER, self.cBuffer)
         glBufferData(GL_ARRAY_BUFFER, c_array.nbytes, c_array, GL_STATIC_DRAW)
-        glVertexAttribPointer(1, 2, GL_FLOAT, False, 0, None)
+        glVertexAttribPointer( self.vCoord, 2, GL_FLOAT, False, 0, None)
         if self.vCoord > 0:
             glEnableVertexAttribArray(self.vCoord)
 
         glBindBuffer(GL_ARRAY_BUFFER, self.nBuffer)
         glBufferData(GL_ARRAY_BUFFER, n_array.nbytes, n_array, GL_STATIC_DRAW)
-        glVertexAttribPointer(4, 3, GL_FLOAT, False, 0, None)
+        glVertexAttribPointer(self.vNormal, 3, GL_FLOAT, False, 0, None)
         if self.vNormal > 0:
             glEnableVertexAttribArray(self.vNormal)
 
@@ -204,15 +222,136 @@ class Model(Transform):
             self.boundingBox[2] = [min(p[0], p3[0]), max(p[1], p3[1]), min(p[2], p3[2])]
             self.boundingBox[3] = [min(p[0], p4[0]), min(p[1], p4[1]), max(p[2], p4[2])]
         else:
-            p1 = p
-            p2 = p
-            p3 = p
-            p4 = p
-            self.boundingBox.append([min(p[0], p1[0]), min(p[1], p1[1]), min(p[2], p1[2])])
-            self.boundingBox.append([max(p[0], p2[0]), min(p[1], p2[1]), min(p[2], p2[2])])
-            self.boundingBox.append([min(p[0], p3[0]), max(p[1], p3[1]), min(p[2], p3[2])])
-            self.boundingBox.append([min(p[0], p4[0]), min(p[1], p4[1]), max(p[2], p4[2])])
+            self.boundingBox.append([p[0], p[1], p[2]])
+            self.boundingBox.append([p[0], p[1], p[2]])
+            self.boundingBox.append([p[0], p[1], p[2]])
+            self.boundingBox.append([p[0], p[1], p[2]])
 
+
+class Animated_model:
+    def __init__(self, model: Model, rootJoint, jointCount):
+        self.model = model
+        self.rootJoint = rootJoint
+        self.jointCount = jointCount
+        self.skinned = 1
+
+        self.joint_indices = [
+            [0],
+            [0],
+            [0],
+            [0],
+            [0],
+            [0],
+            [0],
+            [0],
+            [0],
+            [0],
+            [0],
+            [0],
+            [0],
+            [0],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+        ]
+        self.weights = [
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+            [1],
+        ]
+
+        self.model.material.tex_diffuse_b = False
+
+        glBindVertexArray(self.model.VAO)
+        jointIndice_array = flatten(self.joint_indices)
+
+        self.JointIndices_Loc = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "in_joint_indices")
+        self.JIBuffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, self.JIBuffer)
+        glBufferData(GL_ARRAY_BUFFER, jointIndice_array.nbytes, jointIndice_array, GL_STATIC_DRAW)
+        glVertexAttribPointer(self.JointIndices_Loc, 3, GL_INT, False, 0, None)
+        glEnableVertexAttribArray(self.JointIndices_Loc)
+
+        glBindVertexArray(self.model.VAO)
+        w_array = flatten(self.joint_indices)
+        self.skinWieghts_Loc = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "in_weights")
+        self.swBuffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, self.swBuffer)
+        glBufferData(GL_ARRAY_BUFFER, w_array.nbytes, w_array, GL_STATIC_DRAW)
+        glVertexAttribPointer(self.skinWieghts_Loc, 3, GL_FLOAT, False, 0, None)
+        glEnableVertexAttribArray(self.skinWieghts_Loc)
+
+
+
+    def _update_transform(self):
+        self.model._update_transform()
+
+    def get_normalMatrix(self):
+        return self.model.normalMatrix
+
+    def get_material(self):
+        return self.model.get_material()
+
+    def getTransform(self):
+        return self.model.getTransform()
+
+    def getVAO(self):
+        return self.model.VAO
+
+    def get_vertexArray_len(self):
+        return self.model.get_vertexArray_len()
 
 class Attenuation:
     def __init__(self, const=1, linear=1, exp=1):

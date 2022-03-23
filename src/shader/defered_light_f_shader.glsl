@@ -13,5 +13,5 @@ out vec4 fragCol;
 
 void main() {
     //fragCol = texture2D(norm, TexCoords)*texture2D(pos, TexCoords)*texture2D(albedo, TexCoords);
-    fragCol = texture2D(norm, TexCoords);
+    fragCol = texture2D(pos, TexCoords);
 }

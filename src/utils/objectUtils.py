@@ -1,11 +1,7 @@
-import decimal
-from typing import Union
 import math
+from typing import Union
 
-from OpenGL import GL
-from OpenGL.raw.GL._types import GLfloat
-
-from constants import PI, EPSILON, EPISLON_LEN
+from constants import PI, EPISLON_LEN
 
 
 class Vector:
@@ -59,18 +55,12 @@ class Vector:
 
     def __add__(self, other):
         result = []
-
         if type(self).__name__ == (type(other).__name__):
             if len(self) != len(other):
                 raise Exception("Trying to add vectors of different dimensions")
 
             for i in range(len(self)):
-                if len(self[i]) != len(other[i]):
-                    raise Exception("Trying to add vectors of different dimensions")
-
-                result.append([])
-                for j in range(len(other)):
-                    result[i].append(self[i][j] + other[i][j])
+                result.append(self[i] + other[i])
 
             return Vector(result)
         elif type(other).__name__ == list.__name__:
@@ -308,6 +298,8 @@ class Quaternion:
             self.k = quats[2]
             self.w = quats[3]
             d = normalize_q(self)
+            if d == 0:
+                d = 1
             self.i /= d
             self.j /= d
             self.k /= d
@@ -315,8 +307,30 @@ class Quaternion:
         else:
             self.i, self.j, self.k, self.w = (0, 0, 0, 1)
 
+    def __len__(self):
+        return 4
+
+    def __getitem__(self, item):
+        return [self.i, self.j, self.k, self.w][item]
+
+    def __setitem__(self, key, value):
+        [self.i, self.j, self.k, self.w][key] = value
+
     def __str__(self):
         return str([self.i, self.j, self.k, self.w])
+
+    def __add__(self, other):
+        result = []
+        if type(self).__name__ in [list.__name__, type(other).__name__]:
+            if len(self) != len(other):
+                raise Exception("Trying to add Quaternion of different dimensions")
+
+            for i in range(len(self)):
+                result.append(self[i] + other[i])
+
+            return Quaternion(result)
+        else:
+            raise Exception("Addition with Quaternion and object type {} is not supported".format(type(other).__name__))
 
     def __mul__(self, other):
         other_type = type(other).__name__
@@ -327,10 +341,21 @@ class Quaternion:
             ret.j = self.w * other.j - self.i * other.k + self.j * other.w + self.k * other.i  # j
             ret.k = self.w * other.k + self.i * other.j - self.j * other.i + self.k * other.w  # k
             return ret
+        elif other_type in [int.__name__, float.__name__]:
+            ret = Quaternion()
+            ret.w = self.w*other
+            ret.i = self.i*other
+            ret.j = self.j*other
+            ret.k = self.k*other
+            return ret
+        else:
+            raise Exception("Somethign whent wrong".format(type(other).__name__))
 
     def __truediv__(self, other):
         other_type = type(other).__name__
         if other_type in [float.__name__, int.__name__]:
+            if other == 0:
+                other = 1
             self.w /= other
             self.i /= other
             self.j /= other
@@ -438,9 +463,7 @@ def row_operations_principal_diagonal(m, size):
             m[i][j] = m[i][j] / m[i][i]
 
 
-import ctypes
 import numpy
-import array
 
 
 def flatten(obj, transposes=True):
@@ -800,7 +823,7 @@ def matrix_to_quaternion(m):
     return Quaternion(quats=[qx, qy, qz, qw])
 
 
-def quaternion_2_matrix(q):
+def quaternion_to_matrix(q):
     m = Matrix(n=4)
 
     sqw = q.w * q.w
@@ -808,7 +831,10 @@ def quaternion_2_matrix(q):
     sqy = q.j * q.j
     sqz = q.k * q.k
 
-    invs = 1 / (sqx + sqy + sqz + sqw)
+    denom =  (sqx + sqy + sqz + sqw)
+    if denom ==0:
+        denom = 1
+    invs = 1 / denom
     m00 = (sqx - sqy - sqz + sqw) * invs
     m11 = (-sqx + sqy - sqz + sqw) * invs
     m22 = (-sqx - sqy + sqz + sqw) * invs
@@ -835,6 +861,13 @@ def quaternion_2_matrix(q):
 
 def normalize_q(q):
     return math.sqrt(q.w * q.w + q.i * q.i + q.j * q.j + q.k * q.k)
+
+
+def conjugate(quat: Quaternion):
+    i = quat.i * -1
+    j = quat.j * -1
+    k = quat.k * -1
+    return Quaternion(i, j, k, quat.w)
 
 
 def quat_2_euler(q: Quaternion):
