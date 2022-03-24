@@ -51,9 +51,9 @@ void main() {
 
         }
         g_pos = projection*totalLocalPos;
-        Normal = normal_matrix*totalNormal.xyz;
+        Normal = totalNormal.xyz;
         TexCoords = InTexCoords;
-        gl_Position = projection*g_pos;
+        gl_Position = projection*obj_transform*a_Position;
     }
     else{
         g_pos = obj_transform*a_Position;

@@ -28,7 +28,7 @@ class Renderer:
                                  [-1, 1, 0],
                                  [1, -1, 0],
                                  ])
-        self.quad.set_rotation([0, 0, 180])
+        self.quad.set_rotation([0, 180, 0])
 
     def draw(self, animator=None):
         skin_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "skinned")
@@ -49,7 +49,6 @@ class Renderer:
             glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
 
             if type(obj).__name__ == "Animated_model":
-
                 if len(animator.curPoseList) > 0:
                     trans = []
                     for k in range(len( animator.curPoseList)):

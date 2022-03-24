@@ -69,11 +69,11 @@ def init():
     glUseProgram(program)
 
     cube = Cube()
-    cube.set_position([0, 0, -2])
+    cube.set_position([0.5, 0, -2])
     #cube.set_rotation([30, 0, 45])
 
     cube2 = Cube()
-    cube2.set_position([0, 0, -10])
+    cube2.set_position([-0.5, 0, -3])
 
     t = ImagePlane("/res/images/box.png")
     t.set_position([0.5, 0, -1])
@@ -92,48 +92,39 @@ def init():
 
     acube = Animated_model(cube, joint, 2)
 
+    cube.material.set_tex_diffuse(t.get_material().tex_diffuse)
+
     animator = setup_test_anim([joint, joint2], acube)
 
     renderer = Renderer()
-    renderer.objects = [t, acube, cube2, t2]
+    renderer.objects = [acube, cube2]
 
     glutMainLoop()
 
 
 def setup_test_anim(bones, model):
-    bones[0].set_position([0, 1, -4])
+    bones[0].set_position([0, 0, -2])
     bones[0].set_rotation([0, 0, 0])
-    #bones[1].set_scale([0.1, 0.1,  0.1])
     key1 = KeyFrame({1: bones[0].getTransform(),
                      2: bones[1].getTransform()}, 0)
 
-    bones[0].set_position([0, 1, -4])
-    #bones[1].set_position([-0.5, -1, 0])
+    bones[0].set_position([0, 0, -2])
     bones[1].set_rotation([0, 0, 90])
-    #bones[1].set_scale([1, 1, 1])
-
     key2 = KeyFrame({1: bones[0].getTransform(),
                      2: bones[1].getTransform()}, 1)
 
     bones[0].set_position([0, 0, -2])
-    # bones[0].set_scale([1, 1, 1])
-    # bones[1].set_position([0, -1, 0])
     bones[1].set_rotation([0, 0, 180])
-    #bones[1].set_scale([1, 1, 1])
     key3 = KeyFrame({1: bones[0].getTransform(),
                      2: bones[1].getTransform()}, 2)
 
     bones[0].set_position([0, 0, -2])
-    # bones[1].set_position([0, -1, 0])
     bones[1].set_rotation([0, 0, 270])
     key4 = KeyFrame({1: bones[0].getTransform(),
                      2: bones[1].getTransform()}, 3)
 
     bones[0].set_position([0, 0, -2])
-
-    # bones[1].set_position([0.5, 1, 0])
     bones[1].set_rotation([0, 0, 0])
-    #bones[1].set_scale([0.1, 0.1, 0.1])
     key5 = KeyFrame({1: bones[0].getTransform(),
                      2: bones[1].getTransform()}, 4)
 
@@ -175,18 +166,16 @@ def render():
     start_time = time.time()
 
     buffer.bind()
-    buffer.unbind()
     glUseProgram(program)
-
     renderer.draw(animator = animator)
-
-
-
 
     glUseProgram(jointProgram)
     renderer.joint_draw([joint, joint2])
-    #glUseProgram(lightProgram)
-    #renderer.light_draw(buffer)
+
+    buffer.unbind()
+
+    glUseProgram(lightProgram)
+    renderer.light_draw(buffer)
 
     animator.update(time_per_frame)
     glFlush()
