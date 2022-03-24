@@ -6,6 +6,7 @@ from OpenGL.GLUT import *
 from PIL import Image, ImageOps
 
 from opengl_interfacing.animator import Animator, Animation, KeyFrame
+from opengl_interfacing.camera import Camera
 from opengl_interfacing.framebuffer import G_Buffer, blit_to_default
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.renderer import ImagePlane, Renderer, Cube
@@ -30,8 +31,33 @@ def update_persp_event(w, h):
     global renderer, buffer
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
     renderer.persp = flatten(perspective(90, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0.1, 100))
-    #buffer.resize(w, h)
+    # buffer.resize(w, h)
     clear_framebuffer()
+
+
+def buttons(key, x, y):
+    print(key, x, y)
+
+def on_click(button, state, x, y):
+    print(button, state, x, y)
+
+
+def mouseControl(mx, my):
+    print(mx, my)
+    return
+    global rect_x, rect_y, dx, dy, s, mouse_x, mouse_y
+
+    my_new = height - my
+    mouse_x = mx
+    mouse_y = my_new
+
+    dif_x = mx - rect_x  # differnce between position of mouse cursor and rectangle to x
+    dif_y = my_new - rect_y  # differnce between position of mouse cursor and rectangle to y
+
+    s = math.sqrt(dif_x ** 2 + dif_y ** 2)
+    k = v / s
+    dx = k * dif_x
+    dy = k * dif_y
 
 
 def init():
@@ -59,7 +85,7 @@ def init():
     GL.glEnable(GL.GL_CULL_FACE)
     GL.glEnable(GL.GL_BLEND)
     glEnable(GL_DEPTH_TEST)
-    #glDisable(GL_CULL_FACE)
+    glDisable(GL_CULL_FACE)
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
@@ -70,7 +96,7 @@ def init():
 
     cube = Cube()
     cube.set_position([0.5, 0, -2])
-    #cube.set_rotation([30, 0, 45])
+    # cube.set_rotation([30, 0, 45])
 
     cube2 = Cube()
     cube2.set_position([-0.5, 0, -3])
@@ -88,6 +114,11 @@ def init():
     joint = Joint(1)
     joint2 = Joint(2, parent=joint)
 
+
+    glutKeyboardFunc(buttons)
+    glutMotionFunc(mouseControl)
+    glutMouseFunc(on_click)
+
     joint.set_bind_transform(joint)
 
     acube = Animated_model(cube, joint, 2)
@@ -95,6 +126,9 @@ def init():
     cube.material.set_tex_diffuse(t.get_material().tex_diffuse)
 
     animator = setup_test_anim([joint, joint2], acube)
+
+    global cam
+    cam = Camera()
 
     renderer = Renderer()
     renderer.objects = [acube, cube2]
@@ -162,12 +196,12 @@ def clear_framebuffer():
 
 
 def render():
-    global renderer, buffer, program, lightProgram, cube, bbj, joint, joint2, animator, start_time
+    global renderer, buffer, program, lightProgram, cube, bbj, joint, joint2, animator, start_time, cam
     start_time = time.time()
-
+    cam.adjustDistance(cam.radius + 0.01)
     buffer.bind()
     glUseProgram(program)
-    renderer.draw(animator = animator)
+    renderer.draw(animator=animator)
 
     glUseProgram(jointProgram)
     renderer.joint_draw([joint, joint2])

@@ -25,8 +25,6 @@ layout(location = 5) uniform mat3 normal_matrix;
 in ivec3 in_joint_indices;
 in vec3 in_weights;
 
-
-
 uniform mat4 jointTransforms[MAX_JOINTS];
 
 out vec2 TexCoords;
@@ -46,14 +44,14 @@ void main() {
 
             vec4 localPos = trans * vec4(a_Position.xyz, 1.0);
             totalLocalPos+= localPos*weight;
+
             vec4 worldNormal = trans * vec4(inNormal, 1.0);
             totalNormal += worldNormal * weight;
-
         }
-        g_pos = projection*totalLocalPos;
+        g_pos = totalLocalPos;
         Normal = totalNormal.xyz;
         TexCoords = InTexCoords;
-        gl_Position = projection*obj_transform*a_Position;
+        gl_Position = totalLocalPos;
     }
     else{
         g_pos = obj_transform*a_Position;
