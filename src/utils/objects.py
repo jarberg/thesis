@@ -35,7 +35,7 @@ class Transform:
 
     def getTransform(self, useParent=False):
         if self.parent and useParent:
-            return self.parent.getTransform()*self.m
+            return self.parent.getTransform() * self.m
         else:
             return self.m
 
@@ -79,6 +79,7 @@ class Transform:
 
     def set_transform(self, m):
         self.m = m
+
 
 class Joint(Transform):
     def __init__(self, id, parent=None, children=None, bindTransform=None):
@@ -127,7 +128,7 @@ class Joint(Transform):
 
 class Model(Transform):
 
-    def __init__(self, vertexlist, coordArray=None, n_array = None):
+    def __init__(self, vertexlist, coordArray=None, n_array=None):
         super().__init__()
 
         self.boundingBox = []
@@ -140,7 +141,7 @@ class Model(Transform):
         else:
             for i in range(len(vertexlist)):
                 self._add_vertex(vertexlist[i])
-                j = i+1
+                j = i + 1
                 if i != 0 and (j % 3) == 0:
                     p1 = vertexlist[i - 2]
                     p2 = vertexlist[i - 1]
@@ -150,7 +151,6 @@ class Model(Transform):
                     self.normalArray.append(normal)
                     self.normalArray.append(normal)
                     self.normalArray.append(normal)
-
 
         self.material = Material()
         self.initBuffers()
@@ -173,39 +173,21 @@ class Model(Transform):
         return len(self.vertexArray)
 
     def initBuffers(self):
-        self.vBuffer = glGenBuffers(1)
-        self.cBuffer = glGenBuffers(1)
-        self.nBuffer = glGenBuffers(1)
-        # self.iBuffer = GL.glGenBuffers(1)
+        self.vertex_normal_buffer = Buffer()
+        self.vertex_position_buffer = Buffer()
+        self.tex_coord_buffer = Buffer()
 
     def initDataToBuffers(self):
-        self.vPosition = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "a_Position")
-        self.vCoord = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "InTexCoords")
-        self.vNormal = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "inNormal")
-
-        v_array = flatten(self.vertexArray)
-        c_array = flatten(self.coordArray)
-        n_array = flatten(self.normalArray)
 
         self.VAO = glGenVertexArrays(1)
         glBindVertexArray(self.VAO)
 
-        glBindBuffer(GL_ARRAY_BUFFER, self.vBuffer)
-        glBufferData(GL_ARRAY_BUFFER, v_array.nbytes, v_array, GL_STATIC_DRAW)
-        glVertexAttribPointer(self.vPosition, 3, GL_FLOAT, False, 0, None)
-        glEnableVertexAttribArray(self.vPosition)
+        self.vertex_position_buffer.bind_vertex_attribute("a_Position", flatten(self.vertexArray), 3, GL_FLOAT, 0)
 
-        glBindBuffer(GL_ARRAY_BUFFER, self.cBuffer)
-        glBufferData(GL_ARRAY_BUFFER, c_array.nbytes, c_array, GL_STATIC_DRAW)
-        glVertexAttribPointer( self.vCoord, 2, GL_FLOAT, False, 0, None)
-        if self.vCoord > 0:
-            glEnableVertexAttribArray(self.vCoord)
+        self.tex_coord_buffer.bind_vertex_attribute("InTexCoords", flatten(self.coordArray), 2, GL_FLOAT, 0)
 
-        glBindBuffer(GL_ARRAY_BUFFER, self.nBuffer)
-        glBufferData(GL_ARRAY_BUFFER, n_array.nbytes, n_array, GL_STATIC_DRAW)
-        glVertexAttribPointer(self.vNormal, 3, GL_FLOAT, False, 0, None)
-        if self.vNormal > 0:
-            glEnableVertexAttribArray(self.vNormal)
+        self.vertex_normal_buffer.bind_vertex_attribute("inNormal", flatten(self.normalArray), 3, GL_FLOAT, 0)
+
 
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)
@@ -228,6 +210,30 @@ class Model(Transform):
             self.boundingBox.append([p[0], p[1], p[2]])
 
 
+class Buffer:
+    def __init__(self, type=GL_ARRAY_BUFFER):
+        self.slot = glGenBuffers(1)
+        self.buffer_type = type
+        self.attributes = {}
+
+    def bind(self):
+        glBindBuffer(self.buffer_type, self.slot)
+
+    def add_data(self, data):
+        glBufferData(GL_ARRAY_BUFFER, data.nbytes, data, GL_STATIC_DRAW)
+
+    def get_attribute_location(self, name):
+        return glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), name)
+
+    def bind_vertex_attribute(self, name, data=None, data_len=3, data_type=GL_FLOAT, offset = 0):
+        self.bind()
+        self.add_data(data)
+        attributeSlot = self.get_attribute_location(name)
+        glVertexAttribPointer(attributeSlot, data_len, data_type, False, offset, None)
+        if attributeSlot >= 0:
+            glEnableVertexAttribArray(attributeSlot)
+            self.attributes[name] = attributeSlot
+
 class Animated_model:
     def __init__(self, model: Model, rootJoint, jointCount):
         self.model = model
@@ -236,80 +242,80 @@ class Animated_model:
         self.skinned = 1
 
         self.joint_indices = [
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
         ]
         self.weights = [
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0],
         ]
 
         glBindVertexArray(self.model.VAO)
@@ -331,8 +337,6 @@ class Animated_model:
         glVertexAttribPointer(self.skinWieghts_Loc, 3, GL_FLOAT, False, 0, None)
         glEnableVertexAttribArray(self.skinWieghts_Loc)
 
-
-
     def _update_transform(self):
         self.model._update_transform()
 
@@ -350,6 +354,7 @@ class Animated_model:
 
     def get_vertexArray_len(self):
         return self.model.get_vertexArray_len()
+
 
 class Attenuation:
     def __init__(self, const=1, linear=1, exp=1):

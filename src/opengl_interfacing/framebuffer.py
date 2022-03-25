@@ -34,20 +34,7 @@ class FrameBuffer:
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
-        status = GL.glCheckFramebufferStatus(GL_FRAMEBUFFER)
-
-        if status != int(GL_FRAMEBUFFER_COMPLETE):
-            # https://neslib.github.io/Ooogles.Net/html/0e1349ae-da69-6e5e-edd6-edd8523101f8.htm
-            if status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT):
-                raise Exception("IncompleteAttachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
-                raise Exception("IncompleteAttachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
-                raise Exception("Missing attachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_UNSUPPORTED):
-                raise Exception("Not supported: {}".format(status))
-            else:
-                raise Exception("Framebuffer creation failed to undefined error: {}".format(status))
+        check_status()
 
     def bind(self):
         if self.bound:
@@ -147,7 +134,7 @@ class G_Buffer:
             GL.glTexImage2D(tex.texType, 0, tex.format, w, h, 0, tex.format, GL_UNSIGNED_BYTE, None)
 
         GL.glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
-        GL.glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT, self.width, self.height)
+        GL.glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT, w, h)
 
 
 class FrameBuffer_Tex_MS:
@@ -216,20 +203,7 @@ class FrameBuffer_depth:
         self.texture = Texture_depth(size=[width, height])
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, self.texture.slot, 0)
 
-        status = GL.glCheckFramebufferStatus(GL_FRAMEBUFFER)
-
-        if status != int(GL_FRAMEBUFFER_COMPLETE):
-            # https://neslib.github.io/Ooogles.Net/html/0e1349ae-da69-6e5e-edd6-edd8523101f8.htm
-            if status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT):
-                raise Exception("IncompleteAttachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
-                raise Exception("Incomplete Missiing Attachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
-                raise Exception("Missing attachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_UNSUPPORTED):
-                raise Exception("Not supported: {}".format(status))
-            else:
-                raise Exception("Framebuffer creation failed to undefined error: {}".format(status))
+        check_status()
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
@@ -277,20 +251,7 @@ class FrameBuffer_blit_MS:
         self.texture2 = texture.Texture([width, height])
         GL.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, self.texture2.slot, 0)
 
-        status = GL.glCheckFramebufferStatus(GL_FRAMEBUFFER)
-
-        if status != int(GL_FRAMEBUFFER_COMPLETE):
-            # https://neslib.github.io/Ooogles.Net/html/0e1349ae-da69-6e5e-edd6-edd8523101f8.htm
-            if status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT):
-                raise Exception("IncompleteAttachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
-                raise Exception("IncompleteAttachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
-                raise Exception("Missing attachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_UNSUPPORTED):
-                raise Exception("Not supported: {}".format(status))
-            else:
-                raise Exception("Framebuffer creation failed to undefined error: {}".format(status))
+        check_status()
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         self.bound = False
@@ -354,20 +315,7 @@ class FrameBuffer_target_MS:
         # GL.glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL.GL_DEPTH_COMPONENT24, width, height)
         # GL.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.DepthBufferHandle)
 
-        status = GL.glCheckFramebufferStatus(GL_FRAMEBUFFER)
-
-        if status != int(GL_FRAMEBUFFER_COMPLETE):
-            # https://neslib.github.io/Ooogles.Net/html/0e1349ae-da69-6e5e-edd6-edd8523101f8.htm
-            if status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT):
-                raise Exception("IncompleteAttachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
-                raise Exception("IncompleteAttachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT):
-                raise Exception("Missing attachment: {}".format(status))
-            elif status == int(GL.GL_FRAMEBUFFER_UNSUPPORTED):
-                raise Exception("Not supported: {}".format(status))
-            else:
-                raise Exception("Framebuffer creation failed to undefined error: {}".format(status))
+        check_status()
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         self.bound = False
@@ -437,7 +385,7 @@ def blit_to_default(source):
     GL.glBindFramebuffer(GL_READ_FRAMEBUFFER, source.framebuffer)
     GL.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
 
-    GL.glReadBuffer(GL_COLOR_ATTACHMENT2)
+    GL.glReadBuffer(GL_COLOR_ATTACHMENT0)
     GL.glDrawBuffer(GL_FRONT)
 
     GL.glBlitFramebuffer(

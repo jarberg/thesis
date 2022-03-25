@@ -1,3 +1,4 @@
+import math
 import time
 
 from OpenGL import GL
@@ -10,7 +11,6 @@ from opengl_interfacing.camera import Camera
 from opengl_interfacing.framebuffer import G_Buffer, blit_to_default
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.renderer import ImagePlane, Renderer, Cube
-from utils.objectUtils import flatten, perspective
 from utils.objects import Joint, Animated_model
 
 width, height = 200, 200
@@ -28,36 +28,44 @@ count = 0
 
 
 def update_persp_event(w, h):
-    global renderer, buffer
+    global renderer, buffer, cam
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
-    renderer.persp = flatten(perspective(90, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0.1, 100))
-    # buffer.resize(w, h)
+    cam.update_pMatrix()
+    buffer.resize(w, h)
+
     clear_framebuffer()
 
 
 def buttons(key, x, y):
-    print(key, x, y)
+    pass#print(key, x, y)
 
 def on_click(button, state, x, y):
-    print(button, state, x, y)
+    global cam, dragx_start, dragy_start
+    if button == 0:
+        if state ==0:
+            dragx_start = x
+            dragy_start = y
+
+    if button == 3:
+        cam.adjustDistance(-0.1)
+    elif button ==4:
+        cam.adjustDistance(0.1)
+        #scrool backward
 
 
 def mouseControl(mx, my):
-    print(mx, my)
-    return
-    global rect_x, rect_y, dx, dy, s, mouse_x, mouse_y
+    global cam, dragx_start, dragy_start
 
-    my_new = height - my
-    mouse_x = mx
-    mouse_y = my_new
+    deltax = (mx-dragx_start)/glutGet(GLUT_WINDOW_WIDTH)
+    deltay = (my-dragy_start)/glutGet(GLUT_WINDOW_HEIGHT)
 
-    dif_x = mx - rect_x  # differnce between position of mouse cursor and rectangle to x
-    dif_y = my_new - rect_y  # differnce between position of mouse cursor and rectangle to y
+    print(deltax, deltay)
+    cam.updateHorizontal(-deltax*100)
+    cam.updateVertical(-deltay*100)
 
-    s = math.sqrt(dif_x ** 2 + dif_y ** 2)
-    k = v / s
-    dx = k * dif_x
-    dy = k * dif_y
+    dragx_start = mx
+    dragy_start = my
+
 
 
 def init():
@@ -82,9 +90,10 @@ def init():
     glutReshapeFunc(update_persp_event)
     GL.glLineWidth(1)
     GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
-    GL.glEnable(GL.GL_CULL_FACE)
+
     GL.glEnable(GL.GL_BLEND)
     glEnable(GL_DEPTH_TEST)
+
     glDisable(GL_CULL_FACE)
     glutDisplayFunc(render)
     glutIdleFunc(render)
@@ -95,11 +104,12 @@ def init():
     glUseProgram(program)
 
     cube = Cube()
-    cube.set_position([0.5, 0, -2])
-    # cube.set_rotation([30, 0, 45])
+    #cube.set_position([0.5, 0.3, -2])
+    #cube.set_rotation([30, 0, 45])
 
     cube2 = Cube()
-    cube2.set_position([-0.5, 0, -3])
+    #cube2.set_position([-0.5, 0, -2])
+
 
     t = ImagePlane("/res/images/box.png")
     t.set_position([0.5, 0, -1])
@@ -130,8 +140,9 @@ def init():
     global cam
     cam = Camera()
 
+
     renderer = Renderer()
-    renderer.objects = [acube, cube2]
+    renderer.objects = [ cube , cube2]
 
     glutMainLoop()
 
@@ -198,13 +209,14 @@ def clear_framebuffer():
 def render():
     global renderer, buffer, program, lightProgram, cube, bbj, joint, joint2, animator, start_time, cam
     start_time = time.time()
-    cam.adjustDistance(cam.radius + 0.01)
+
+
     buffer.bind()
     glUseProgram(program)
-    renderer.draw(animator=animator)
+    renderer.draw(cam, animator=animator)
 
-    glUseProgram(jointProgram)
-    renderer.joint_draw([joint, joint2])
+    #glUseProgram(jointProgram)
+    #renderer.joint_draw([joint, joint2])
 
     buffer.unbind()
 
@@ -215,6 +227,7 @@ def render():
     glFlush()
 
     fps_update()
+
 
 
 init()

@@ -12,5 +12,5 @@ out vec2 TexCoords;
 
 void main() {
     TexCoords = InTexCoords;
-    gl_Position = obj_transform*a_Position;
+    gl_Position = a_Position;
 }

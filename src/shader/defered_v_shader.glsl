@@ -3,11 +3,6 @@
 #extension GL_ARB_explicit_attrib_location : enable
 
 
-layout (std140) uniform Matrices{
-    mat4 projection2;
-    mat4 view;
-};
-
 const int MAX_JOINTS  = 20;
 const int MAX_WEIGHTS = 3;
 
@@ -20,6 +15,7 @@ layout(location = 4) in vec3 inNormal;
 layout(location = 1) uniform int skinned;
 layout(location = 2) uniform mat4 projection;
 layout(location = 3) uniform mat4 obj_transform;
+layout(location = 4) uniform mat4 v_matrix;
 layout(location = 5) uniform mat3 normal_matrix;
 
 in ivec3 in_joint_indices;
@@ -32,7 +28,8 @@ out vec4 g_pos;
 out vec3 Normal;
 
 void main() {
-
+    vec4 poos = vec4(a_Position.xyz, 1.0);
+    mat4 pv_mat = projection*v_matrix;
     if(skinned==1){
         vec4 totalLocalPos = vec4(0.0);
         vec4 totalNormal = vec4(0.0);
@@ -42,21 +39,21 @@ void main() {
             trans = jointTransforms[in_joint_indices[i]];
             weight = in_weights[i];
 
-            vec4 localPos = trans * vec4(a_Position.xyz, 1.0);
+            vec4 localPos = trans * poos;
             totalLocalPos+= localPos*weight;
 
             vec4 worldNormal = trans * vec4(inNormal, 1.0);
             totalNormal += worldNormal * weight;
         }
-        g_pos = totalLocalPos;
+        g_pos = obj_transform*poos;
         Normal = totalNormal.xyz;
         TexCoords = InTexCoords;
-        gl_Position = totalLocalPos;
+        gl_Position = projection*obj_transform*poos;
     }
     else{
-        g_pos = obj_transform*a_Position;
+        g_pos = obj_transform*poos;
         Normal = normal_matrix*inNormal;
         TexCoords = InTexCoords;
-        gl_Position = projection*obj_transform*a_Position;
+        gl_Position = projection*v_matrix*obj_transform*poos;
     }
 }

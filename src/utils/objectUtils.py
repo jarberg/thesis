@@ -475,7 +475,7 @@ def flatten(obj, transposes=True):
 
 
 def radians(degrees):
-    return degrees / 180.0 * PI
+    return (degrees / 180.0) * PI
 
 
 def degrees(radians):

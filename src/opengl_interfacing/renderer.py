@@ -4,23 +4,22 @@ from random import randrange
 import numpy
 from OpenGL import GL
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
-    GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_POINTS, GL_LINE, GL_LINES, \
-    GL_RGBA, GL_RGB, GL_UNIFORM_BUFFER
-from OpenGL.GL import glGenBuffers, GL_STATIC_DRAW, glBindBuffer, glBufferData
+    GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_LINES, \
+    GL_RGBA, GL_RGB
 from PIL import Image
 
 import constants
 from opengl_interfacing.framebuffer import G_Buffer
 from opengl_interfacing.texture import Texture_Manager, Texture
 from utils.objectUtils import flatten, perspective
-from utils.objects import Model, Animated_model, calc_normal_from_points
+from utils.objects import Model
 
 
 class Renderer:
 
     def __init__(self, _obj=None):
         self.objects = _obj or []
-        self.persp = flatten(perspective(90, 1, 0.01, 100))
+        self.persp = flatten(perspective(120, 1, 0.01, 100))
         self.quad = Plane(plane=[[1, 1, 0],
                                  [1, -1, 0],
                                  [-1, 1, 0],
@@ -30,9 +29,12 @@ class Renderer:
                                  ])
         self.quad.set_rotation([0, 180, 0])
 
-    def draw(self, animator=None):
+    def draw(self, cam, animator=None):
         skin_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "skinned")
-        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, self.persp)
+
+        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
+        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
+
         for obj in self.objects:
             mat = obj.get_material()
             glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b"), mat.tex_diffuse_b)
@@ -55,7 +57,7 @@ class Renderer:
                         trans.append( flatten( animator.curPoseList[k]))
                     transforms = flatten(trans)
                     for i in range(obj.jointCount):
-                        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), i, False, transforms[i])
+                        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), i, False, trans[i])
 
             if skin_loc != -1:
                 if hasattr(obj, "skinned"):
