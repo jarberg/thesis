@@ -1,4 +1,5 @@
 import math
+from collections import OrderedDict
 from math import floor, ceil, sqrt
 
 from utils.objectUtils import Matrix, Vector, quaternion_to_matrix, Quaternion, \
@@ -9,7 +10,7 @@ global time_per_frame
 
 
 class KeyFrame:
-    def __init__(self, transforms: dict, timestamp: int):
+    def __init__(self, transforms: OrderedDict, timestamp: int):
         self.transforms = transforms
         self.timestamp = timestamp
 
@@ -54,6 +55,7 @@ class Animator:
             curPose = self.calculateCurrentAnimationPose()
             self.applyPoseToJoints(curPose, self.model.rootJoint, Matrix())
 
+
     def increaseAnimationTime(self):
         self.animTime += self.tpf
         if self.animTime > len(self.animation.keyframes) - 1:
@@ -82,16 +84,16 @@ class Animator:
         return self.interpolatePoses(frames[0], frames[1], progression)
 
 
-    def applyPoseToJoints(self, curPose: dict, rootJoint: Joint, parentTransform):
+    def applyPoseToJoints(self, curPose: OrderedDict, rootJoint: Joint, parentTransform):
         curLocalTransform = curPose.get(rootJoint.id)
         curTransform = parentTransform * curLocalTransform
+        self.curPoseList.append(rootJoint.inverseBindTransform * curTransform)
         for child in rootJoint.children:
             self.applyPoseToJoints(curPose, child, curTransform)
-        self.curPoseList.append(rootJoint.inverseBindTransform * curTransform)
         rootJoint.set_transform(curTransform)
 
     def interpolatePoses(self, prevFrame: KeyFrame, nexFrame: KeyFrame, progression: float):
-        curPose = {}
+        curPose = OrderedDict()
         for joint in prevFrame.getJointKeyFrames().keys():
             previousTransform = prevFrame.getJointKeyFrames().get(joint)
             nextTransform = nexFrame.getJointKeyFrames().get(joint)

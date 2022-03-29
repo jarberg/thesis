@@ -242,100 +242,94 @@ class Animated_model:
         self.skinned = 1
 
         self.joint_indices = [
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
         ]
         self.weights = [
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
-            [1, 0, 0],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [1, 0, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
+            [0, 1, -1],
         ]
 
         glBindVertexArray(self.model.VAO)
-        jointIndice_array = flatten(self.joint_indices)
 
-        self.JointIndices_Loc = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "in_joint_indices")
-        self.JIBuffer = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.JIBuffer)
-        glBufferData(GL_ARRAY_BUFFER, jointIndice_array.nbytes, jointIndice_array, GL_STATIC_DRAW)
-        glVertexAttribPointer(self.JointIndices_Loc, 3, GL_INT, False, 0, None)
-        glEnableVertexAttribArray(self.JointIndices_Loc)
+
+        self.JIBuffer = Buffer()
+        self.JIBuffer.bind_vertex_attribute(name="in_joint_indices", data=flatten(self.joint_indices), data_len=3, data_type=GL_INT)
 
         glBindVertexArray(self.model.VAO)
-        w_array = flatten(self.joint_indices)
-        self.skinWieghts_Loc = glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "in_weights")
-        self.swBuffer = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.swBuffer)
-        glBufferData(GL_ARRAY_BUFFER, w_array.nbytes, w_array, GL_STATIC_DRAW)
-        glVertexAttribPointer(self.skinWieghts_Loc, 3, GL_FLOAT, False, 0, None)
-        glEnableVertexAttribArray(self.skinWieghts_Loc)
+
+        self.swBuffer = Buffer()
+        self.swBuffer.bind_vertex_attribute(name="in_weights", data=flatten(self.weights), data_len=3, data_type=GL_FLOAT)
+
+
 
     def _update_transform(self):
         self.model._update_transform()

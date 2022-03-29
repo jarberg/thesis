@@ -1,5 +1,6 @@
 import math
 import time
+from collections import OrderedDict
 
 from OpenGL import GL
 from OpenGL.GL import *
@@ -55,11 +56,11 @@ def on_click(button, state, x, y):
 
 def mouseControl(mx, my):
     global cam, dragx_start, dragy_start
+    ratio = glutGet(GLUT_WINDOW_WIDTH)/glutGet(GLUT_WINDOW_HEIGHT)
 
-    deltax = (mx-dragx_start)/glutGet(GLUT_WINDOW_WIDTH)
+    deltax = ((mx-dragx_start)*ratio)/glutGet(GLUT_WINDOW_WIDTH)
     deltay = (my-dragy_start)/glutGet(GLUT_WINDOW_HEIGHT)
 
-    print(deltax, deltay)
     cam.updateHorizontal(-deltax*100)
     cam.updateVertical(-deltay*100)
 
@@ -121,8 +122,8 @@ def init():
 
     buffer = G_Buffer([width, height])
 
-    joint = Joint(1)
-    joint2 = Joint(2, parent=joint)
+    joint = Joint(0)
+    joint2 = Joint(1, parent=joint)
 
 
     glutKeyboardFunc(buttons)
@@ -140,42 +141,58 @@ def init():
     global cam
     cam = Camera()
 
-
+    cube.set_position([1,0,0])
     renderer = Renderer()
-    renderer.objects = [ cube , cube2]
+    renderer.objects = [ cube , acube]
+
 
     glutMainLoop()
 
 
 def setup_test_anim(bones, model):
-    bones[0].set_position([0, 0, -2])
-    bones[0].set_rotation([0, 0, 0])
-    key1 = KeyFrame({1: bones[0].getTransform(),
-                     2: bones[1].getTransform()}, 0)
+    odict = OrderedDict()
 
     bones[0].set_position([0, 0, -2])
-    bones[1].set_rotation([0, 0, 90])
-    key2 = KeyFrame({1: bones[0].getTransform(),
-                     2: bones[1].getTransform()}, 1)
+    bones[1].set_position([0, 0, 0])
+    odict[0] = bones[0].getTransform()
+    odict[1] = bones[1].getTransform()
+    key1 = KeyFrame(odict, 0)
+
+    bones[0].set_position([0, 0.5, -2])
+    bones[1].set_position([0.5, 0, 0])
+    odict = OrderedDict()
+    odict[0] = bones[0].getTransform()
+    odict[1] = bones[1].getTransform()
+
+    key2 = KeyFrame(odict, 1)
+
+    bones[0].set_position([0, 1, -2])
+    bones[1].set_position([1, 0, 0])
+    odict = OrderedDict()
+    odict[0] = bones[0].getTransform()
+    odict[1] = bones[1].getTransform()
+    key3 = KeyFrame(odict, 2)
+
+    bones[0].set_position([0, 0.5, -2])
+    bones[1].set_position([0.5, 0, 0])
+    odict = OrderedDict()
+    odict[0] = bones[0].getTransform()
+    odict[1] = bones[1].getTransform()
+    key4 = KeyFrame(odict, 3)
 
     bones[0].set_position([0, 0, -2])
-    bones[1].set_rotation([0, 0, 180])
-    key3 = KeyFrame({1: bones[0].getTransform(),
-                     2: bones[1].getTransform()}, 2)
-
-    bones[0].set_position([0, 0, -2])
-    bones[1].set_rotation([0, 0, 270])
-    key4 = KeyFrame({1: bones[0].getTransform(),
-                     2: bones[1].getTransform()}, 3)
-
-    bones[0].set_position([0, 0, -2])
-    bones[1].set_rotation([0, 0, 0])
-    key5 = KeyFrame({1: bones[0].getTransform(),
-                     2: bones[1].getTransform()}, 4)
+    bones[1].set_position([0, 0, 0])
+    odict = OrderedDict()
+    odict[0] = bones[0].getTransform()
+    odict[1] = bones[1].getTransform()
+    key5 = KeyFrame(odict, 4)
 
     anim = Animation([key1, key2, key3, key4, key5])
 
     animator = Animator(model=model, animation=anim)
+
+
+
 
     return animator
 
@@ -215,8 +232,9 @@ def render():
     glUseProgram(program)
     renderer.draw(cam, animator=animator)
 
-    #glUseProgram(jointProgram)
-    #renderer.joint_draw([joint, joint2])
+    glUseProgram(jointProgram)
+
+    renderer.joint_draw([joint, joint2], cam)
 
     buffer.unbind()
 

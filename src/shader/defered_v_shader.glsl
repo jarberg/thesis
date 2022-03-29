@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 #extension GL_ARB_explicit_uniform_location : enable
 #extension GL_ARB_explicit_attrib_location : enable
 
@@ -31,29 +31,39 @@ void main() {
     vec4 poos = vec4(a_Position.xyz, 1.0);
     mat4 pv_mat = projection*v_matrix;
     if(skinned==1){
-        vec4 totalLocalPos = vec4(0.0);
+        vec4 totalLocalPos = vec4(0.0,0.0,0.0,1);
         vec4 totalNormal = vec4(0.0);
         mat4 trans;
         float weight;
+        int jointID;
         for(int i =0;i<MAX_WEIGHTS;i++){
-            trans = jointTransforms[in_joint_indices[i]];
+            jointID = in_joint_indices[i];
+            trans = jointTransforms[i];
             weight = in_weights[i];
+            if (weight==0) {
+                continue;
+            }
+            if(jointID < 0 ||weight< 0){
+                break;
+            }
+
+
 
             vec4 localPos = trans * poos;
-            totalLocalPos+= localPos*weight;
+            totalLocalPos = localPos * weight;
 
             vec4 worldNormal = trans * vec4(inNormal, 1.0);
             totalNormal += worldNormal * weight;
         }
-        g_pos = obj_transform*poos;
+        g_pos = totalLocalPos;
         Normal = totalNormal.xyz;
         TexCoords = InTexCoords;
-        gl_Position = projection*obj_transform*poos;
+        gl_Position = pv_mat*totalLocalPos;
     }
     else{
         g_pos = obj_transform*poos;
         Normal = normal_matrix*inNormal;
         TexCoords = InTexCoords;
-        gl_Position = projection*v_matrix*obj_transform*poos;
+        gl_Position = pv_mat*obj_transform*poos;
     }
 }

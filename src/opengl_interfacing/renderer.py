@@ -5,7 +5,8 @@ import numpy
 from OpenGL import GL
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
     GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_LINES, \
-    GL_RGBA, GL_RGB
+    GL_RGBA, GL_RGB, glDepthFunc, GL_ALWAYS, GL_LESS
+
 from PIL import Image
 
 import constants
@@ -56,9 +57,8 @@ class Renderer:
                     for k in range(len( animator.curPoseList)):
                         trans.append( flatten( animator.curPoseList[k]))
                     transforms = flatten(trans)
-                    for i in range(obj.jointCount):
-                        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), i, False, trans[i])
 
+                    glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), 2, False, transforms)
             if skin_loc != -1:
                 if hasattr(obj, "skinned"):
                     glUniform1i(skin_loc, obj.skinned)
@@ -68,16 +68,19 @@ class Renderer:
             glBindVertexArray(obj.getVAO())
             glDrawArrays(GL_TRIANGLES, 0, obj.get_vertexArray_len())
 
-    def joint_draw(self, objects):
+    def joint_draw(self, objects, cam):
+        glDepthFunc(GL_ALWAYS)
         for obj in objects:
             # if obj.parent:
             #    partrans = obj.parent.getTransform()
 
-            glUniformMatrix4fv(2, 1, False, self.persp)
+            glUniformMatrix4fv(2, 1, False, cam.pMatrix)
             glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
+            glUniformMatrix4fv(4, 1, False, flatten(cam._getTransform()))
 
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_LINES, 0, int(len(obj.vertexArray)))
+        glDepthFunc(GL_LESS)
 
     def light_draw(self, buffer: G_Buffer):
         loc1 = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "pos")
@@ -263,6 +266,5 @@ class Cube(Model):
             [1.0, 0.0]]
         super().__init__(vertexes, coordArray=vertexcoord)
 
-        self.material.tex_diffuse_b = False
 
 
