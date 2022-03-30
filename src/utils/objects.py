@@ -229,8 +229,8 @@ class Buffer:
         self.bind()
         self.add_data(data)
         attributeSlot = self.get_attribute_location(name)
-        glVertexAttribPointer(attributeSlot, data_len, data_type, False, offset, None)
         if attributeSlot >= 0:
+            glVertexAttribPointer(attributeSlot, data_len, data_type, False, offset, None)
             glEnableVertexAttribArray(attributeSlot)
             self.attributes[name] = attributeSlot
 

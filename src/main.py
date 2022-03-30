@@ -9,7 +9,7 @@ from PIL import Image, ImageOps
 
 from opengl_interfacing.animator import Animator, Animation, KeyFrame
 from opengl_interfacing.camera import Camera
-from opengl_interfacing.framebuffer import G_Buffer, blit_to_default
+from opengl_interfacing.framebuffer import G_Buffer
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.renderer import ImagePlane, Renderer, Cube
 from utils.objects import Joint, Animated_model
@@ -99,9 +99,9 @@ def init():
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
-    program = initShaders("/shader/defered_v_shader.glsl", "/shader/defered_f_shader.glsl")
-    lightProgram = initShaders("/shader/defered_light_v_shader.glsl", "/shader/defered_light_f_shader.glsl")
-    jointProgram = initShaders("/shader/joint_v_shader.glsl", "/shader/joint_f_shader.glsl")
+    program = initShaders("/shader/defered/defered_v_shader.glsl", "/shader/defered/defered_f_shader.glsl")
+    lightProgram = initShaders("/shader/defered/defered_light_v_shader.glsl", "/shader/defered/defered_light_f_shader.glsl")
+    jointProgram = initShaders("/shader/debug/joint_v_shader.glsl", "/shader/debug/joint_f_shader.glsl")
     glUseProgram(program)
 
     cube = Cube()
