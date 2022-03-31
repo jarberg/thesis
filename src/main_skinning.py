@@ -13,7 +13,8 @@ from opengl_interfacing.camera import Camera
 from opengl_interfacing.framebuffer import G_Buffer
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.renderer import ImagePlane, Renderer, Cube
-from utils.objects import Joint, Animated_model
+from utils.objectUtils import flatten, Matrix
+from utils.objects import Joint, Animated_model, Transform
 
 width, height = 200, 200
 aspectRatio = width / height
@@ -33,7 +34,7 @@ def update_persp_event(w, h):
     global renderer, buffer, cam
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
     cam.update_pMatrix()
-    buffer.resize(w, h)
+    # buffer.resize(w, h)
 
     clear_framebuffer()
 
@@ -100,9 +101,7 @@ def init():
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
-    program = initShaders("/shader/defered/defered_v_shader.glsl", "/shader/defered/defered_f_shader.glsl")
-    lightProgram = initShaders("/shader/defered/defered_light_v_shader.glsl",
-                               "/shader/defered/defered_light_f_shader.glsl")
+    program = initShaders("/shader/skinning/skinning_v_gpu_interpolate.glsl", "/shader/skinning/skinning_f.glsl")
     jointProgram = initShaders("/shader/debug/joint_v_shader.glsl", "/shader/debug/joint_f_shader.glsl")
     glUseProgram(program)
 
@@ -121,22 +120,98 @@ def init():
     t2.set_position([-0.5, 0, -1])
     t2.set_rotation([0, -135, 0])
 
-    buffer = G_Buffer([width, height])
+    # buffer = G_Buffer([width, height])
+
+    joint = Joint(0)
+    joint2 = Joint(1, parent=joint)
 
     glutKeyboardFunc(buttons)
     glutMotionFunc(mouseControl)
     glutMouseFunc(on_click)
 
+    joint.set_bind_transform(joint)
+
+    acube = Animated_model(cube, joint, 2)
+
     cube.material.set_tex_diffuse(t.get_material().tex_diffuse)
+
+    animator = setup_test_anim([joint, joint2], acube)
 
     global cam
     cam = Camera()
 
     cube.set_position([1, 0, 0])
     renderer = Renderer()
-    renderer.objects = [cube]
+    renderer.objects = [cube, acube]
+
+    te1 = Transform()
+    te1.set_position([0.0, 2, 0.0])
+    te2 = Transform()
+    te2.set_position([1, 0, 0])
+    data = flatten([flatten(te1.m), flatten(te2.m)],numpy.float32,)
+    #data = flatten(2, data_type=numpy.int8)
+    #data2= flatten(te1.m)
+    global test_ssbo
+    test_ssbo = glGenBuffers(1)
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, test_ssbo)
+    #glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.nbytes, data)
+    #glBufferSubData(GL_SHADER_STORAGE_BUFFER, data.nbytes, data2.nbytes, data2)
+
+    glBufferData(GL_SHADER_STORAGE_BUFFER, data.nbytes, data=data, usage=GL_DYNAMIC_COPY)
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, test_ssbo)
+
+    #pog = glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.nbytes, None)
+
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+
 
     glutMainLoop()
+
+
+def setup_test_anim(bones, model):
+    odict = OrderedDict()
+
+    bones[0].set_position([0, 0, -2])
+    bones[1].set_position([0, 0, 0])
+    odict[0] = bones[0].getTransform()
+    odict[1] = bones[1].getTransform()
+    key1 = KeyFrame(odict, 0)
+
+    bones[0].set_position([0, 0.5, -2])
+    bones[1].set_position([0.5, 0, 0])
+    odict = OrderedDict()
+    odict[0] = bones[0].getTransform()
+    odict[1] = bones[1].getTransform()
+
+    key2 = KeyFrame(odict, 1)
+
+    bones[0].set_position([0, 1, -2])
+    bones[1].set_position([1, 0, 0])
+    odict = OrderedDict()
+    odict[0] = bones[0].getTransform()
+    odict[1] = bones[1].getTransform()
+    key3 = KeyFrame(odict, 2)
+
+    bones[0].set_position([0, 0.5, -2])
+    bones[1].set_position([0.5, 0, 0])
+    odict = OrderedDict()
+    odict[0] = bones[0].getTransform()
+    odict[1] = bones[1].getTransform()
+    key4 = KeyFrame(odict, 3)
+
+    bones[0].set_position([0, 0, -2])
+    bones[1].set_position([0, 0, 0])
+    odict = OrderedDict()
+    odict[0] = bones[0].getTransform()
+    odict[1] = bones[1].getTransform()
+    key5 = KeyFrame(odict, 4)
+
+    anim = Animation([key1, key2, key3, key4, key5])
+
+    animator = Animator(model=model, animation=anim)
+
+    return animator
 
 
 def save_current_framebuffer_as_png(bufferid):
@@ -166,18 +241,17 @@ def clear_framebuffer():
 
 
 def render():
-    global renderer, buffer, program, lightProgram, cube, bbj, joint, joint2, start_time, cam
+    global renderer, buffer, program, lightProgram, cube, bbj, joint, joint2, animator, start_time, cam, test_ssbo
     start_time = time.time()
 
-    buffer.bind()
+    clear_framebuffer()
     glUseProgram(program)
-    renderer.draw(cam)
+    renderer.draw(cam, animator=animator)
 
-    buffer.unbind()
+    glUseProgram(jointProgram)
+    renderer.joint_draw([joint, joint2], cam)
 
-    glUseProgram(lightProgram)
-    renderer.light_draw(buffer)
-
+    animator.update(time_per_frame)
     glFlush()
 
     fps_update()

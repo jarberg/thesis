@@ -37,6 +37,7 @@ class Renderer:
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
 
         for obj in self.objects:
+
             mat = obj.get_material()
             glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b"), mat.tex_diffuse_b)
             if mat.tex_diffuse_b:
@@ -58,7 +59,7 @@ class Renderer:
                         trans.append( flatten( animator.curPoseList[k]))
                     transforms = flatten(trans)
 
-                    glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), 2, False, transforms)
+                    glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), obj.jointCount, False, transforms)
             if skin_loc != -1:
                 if hasattr(obj, "skinned"):
                     glUniform1i(skin_loc, obj.skinned)
@@ -265,6 +266,5 @@ class Cube(Model):
             [0.0, 1.0],
             [1.0, 0.0]]
         super().__init__(vertexes, coordArray=vertexcoord)
-
 
 

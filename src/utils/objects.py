@@ -92,7 +92,7 @@ class Joint(Transform):
         self.initBuffers()
         self.initDataToBuffers()
 
-    def getTransform(self):
+    def getTransform(self, useParent=False):
         return self.m
 
     def add_child(self, child):
@@ -188,7 +188,6 @@ class Model(Transform):
 
         self.vertex_normal_buffer.bind_vertex_attribute("inNormal", flatten(self.normalArray), 3, GL_FLOAT, 0)
 
-
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)
         self._update_boundingBox(vertex)
@@ -211,21 +210,22 @@ class Model(Transform):
 
 
 class Buffer:
-    def __init__(self, type=GL_ARRAY_BUFFER):
+    def __init__(self, buf_type=GL_ARRAY_BUFFER, usage=GL_STATIC_DRAW):
         self.slot = glGenBuffers(1)
-        self.buffer_type = type
+        self.buffer_type = buf_type
+        self.usage = usage
         self.attributes = {}
 
     def bind(self):
         glBindBuffer(self.buffer_type, self.slot)
 
     def add_data(self, data):
-        glBufferData(GL_ARRAY_BUFFER, data.nbytes, data, GL_STATIC_DRAW)
+        glBufferData(GL_ARRAY_BUFFER, data.nbytes, data, self.usage)
 
     def get_attribute_location(self, name):
         return glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), name)
 
-    def bind_vertex_attribute(self, name, data=None, data_len=3, data_type=GL_FLOAT, offset = 0):
+    def bind_vertex_attribute(self, name, data=None, data_len=3, data_type=GL_FLOAT, offset=0):
         self.bind()
         self.add_data(data)
         attributeSlot = self.get_attribute_location(name)
@@ -233,6 +233,7 @@ class Buffer:
             glVertexAttribPointer(attributeSlot, data_len, data_type, False, offset, None)
             glEnableVertexAttribArray(attributeSlot)
             self.attributes[name] = attributeSlot
+
 
 class Animated_model:
     def __init__(self, model: Model, rootJoint, jointCount):
@@ -320,16 +321,13 @@ class Animated_model:
 
         glBindVertexArray(self.model.VAO)
 
-
         self.JIBuffer = Buffer()
-        self.JIBuffer.bind_vertex_attribute(name="in_joint_indices", data=flatten(self.joint_indices), data_len=3, data_type=GL_INT)
-
-        glBindVertexArray(self.model.VAO)
+        self.JIBuffer.bind_vertex_attribute(name="in_joint_indices", data=flatten(self.joint_indices), data_len=3,
+                                            data_type=GL_INT)
 
         self.swBuffer = Buffer()
-        self.swBuffer.bind_vertex_attribute(name="in_weights", data=flatten(self.weights), data_len=3, data_type=GL_FLOAT)
-
-
+        self.swBuffer.bind_vertex_attribute(name="in_weights", data=flatten(self.weights), data_len=3,
+                                            data_type=GL_FLOAT)
 
     def _update_transform(self):
         self.model._update_transform()

@@ -149,9 +149,9 @@ class Matrix:
                     m = n
                 for j in range(m):
                     if i == j:
-                        self.m[i].append(1)
+                        self.m[i].append(1.0)
                     else:
-                        self.m[i].append(0)
+                        self.m[i].append(0.0)
 
     def __eq__(self, other):
         other_type = type(other).__name__
@@ -466,12 +466,12 @@ def row_operations_principal_diagonal(m, size):
 import numpy
 
 
-def flatten(obj, transposes=True):
+def flatten(obj, transposes=True, data_type=numpy.float32):
     if Matrix.__name__ == type(obj).__name__ and transposes:
         ret = transpose(obj)
     else:
         ret = obj
-    return numpy.array(ret, dtype=numpy.float32)
+    return numpy.array(ret, dtype=data_type)
 
 
 def radians(degrees):
