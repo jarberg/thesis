@@ -6,13 +6,14 @@ from OpenGL import GL
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
     GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_LINES, \
     GL_RGBA, GL_RGB, glDepthFunc, GL_ALWAYS, GL_LESS
+from OpenGL.raw.GL.VERSION.GL_1_0 import GL_TRIANGLE_STRIP
 
 from PIL import Image
 
 import constants
 from opengl_interfacing.framebuffer import G_Buffer
 from opengl_interfacing.texture import Texture_Manager, Texture
-from utils.objectUtils import flatten, perspective
+from utils.objectUtils import flatten, perspective, det4
 from utils.objects import Model
 
 
@@ -35,11 +36,18 @@ class Renderer:
 
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
+        #if len(animator.curPoseList):
+        #    det0 = det4(animator.curPoseList[0])
+        #    glUniform1fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "det0"),1, det0)
+        #    det1 = det4(animator.curPoseList[1])
+        #    glUniform1fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "det1"),1, det1)
+
 
         for obj in self.objects:
 
             mat = obj.get_material()
             glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b"), mat.tex_diffuse_b)
+
             if mat.tex_diffuse_b:
                 loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse")
                 if loc != -1:
@@ -50,7 +58,7 @@ class Renderer:
             if loc != -1:
                 glUniformMatrix3fv(loc, 1, False, flatten(obj.get_normalMatrix()))
 
-            glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
+            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(obj.getTransform()))
 
             if type(obj).__name__ == "Animated_model":
                 if len(animator.curPoseList) > 0:
@@ -67,17 +75,19 @@ class Renderer:
                     glUniform1i(skin_loc, 0)
 
             glBindVertexArray(obj.getVAO())
-            glDrawArrays(GL_TRIANGLES, 0, obj.get_vertexArray_len())
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, obj.get_vertexArray_len())
 
     def joint_draw(self, objects, cam):
         glDepthFunc(GL_ALWAYS)
+        glUniformMatrix4fv(2, 1, False, cam.pMatrix)
+        glUniformMatrix4fv(4, 1, False, flatten(cam._getTransform()))
         for obj in objects:
             # if obj.parent:
             #    partrans = obj.parent.getTransform()
 
-            glUniformMatrix4fv(2, 1, False, cam.pMatrix)
+
             glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
-            glUniformMatrix4fv(4, 1, False, flatten(cam._getTransform()))
+
 
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_LINES, 0, int(len(obj.vertexArray)))
@@ -189,43 +199,24 @@ class ImagePlane(Plane):
 class Cube(Model):
     def __init__(self):
         vertexes = [
-            [-0.5, -0.5, -0.5],
-            [-0.5, -0.5, 0.5],
-            [-0.5, 0.5, 0.5],
-            [0.5, 0.5, -0.5],
-            [-0.5, -0.5, -0.5],
-            [-0.5, 0.5, -0.5],
-            [0.5, -0.5, 0.5],
-            [-0.5, -0.5, -0.5],
-            [0.5, -0.5, -0.5],
-            [0.5, 0.5, -0.5],
-            [0.5, -0.5, -0.5],
-            [-0.5, -0.5, -0.5],
-            [-0.5, -0.5, -0.5],
-            [-0.5, 0.5, 0.5],
-            [-0.5, 0.5, -0.5],
-            [0.5, -0.5, 0.5],
-            [-0.5, -0.5, 0.5],
-            [-0.5, -0.5, -0.5],
-            [-0.5, 0.5, 0.5],
-            [-0.5, -0.5, 0.5],
-            [0.5, -0.5, 0.5],
-            [0.5, 0.5, 0.5],
-            [0.5, -0.5, -0.5],
-            [0.5, 0.5, -0.5],
-            [0.5, -0.5, -0.5],
-            [0.5, 0.5, 0.5],
-            [0.5, -0.5, 0.5],
-            [0.5, 0.5, 0.5],
-            [0.5, 0.5, -0.5],
-            [-0.5, 0.5, -0.5],
+            [-1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0],
+            [-1.0, -1.0, 1.0],
+            [1.0, -1.0, 1.0],
 
-            [0.5, 0.5, 0.5],
-            [-0.5, 0.5, -0.5],
-            [-0.5, 0.5, 0.5],
-            [0.5, 0.5, 0.5],
-            [-0.5, 0.5, 0.5],
-            [0.5, -0.5, 0.5]]
+            [1.0, -1.0, -1.0],
+            [1.0, 1.0, 1.0],
+            [1.0, 1.0, -1.0],
+            [-1.0, 1.0, 1.0],
+
+            [-1.0, 1.0, -1.0],
+            [-1.0, -1.0, 1.0],
+            [-1.0, -1.0, -1.0],
+            [1.0, -1.0, -1.0],
+
+            [-1.0, 1.0, -1.0],
+            [1.0, 1.0, -1.0],
+            ]
         vertexcoord = [
             [0.0, 0.0],
             [0.0, 1.0],

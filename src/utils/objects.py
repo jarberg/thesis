@@ -1,5 +1,6 @@
 import math
 
+import numpy
 from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM, glGenVertexArrays, \
     glBindVertexArray, glGenBuffers, glGetIntegerv, GL_FLOAT, glBindBuffer, GL_ARRAY_BUFFER, glBufferData, \
     GL_STATIC_DRAW, glEnableVertexAttribArray, glGetAttribLocation, GL_INT
@@ -183,9 +184,7 @@ class Model(Transform):
         glBindVertexArray(self.VAO)
 
         self.vertex_position_buffer.bind_vertex_attribute("a_Position", flatten(self.vertexArray), 3, GL_FLOAT, 0)
-
         self.tex_coord_buffer.bind_vertex_attribute("InTexCoords", flatten(self.coordArray), 2, GL_FLOAT, 0)
-
         self.vertex_normal_buffer.bind_vertex_attribute("inNormal", flatten(self.normalArray), 3, GL_FLOAT, 0)
 
     def _add_vertex(self, vertex: list):
@@ -225,7 +224,9 @@ class Buffer:
     def get_attribute_location(self, name):
         return glGetAttribLocation(glGetIntegerv(GL_CURRENT_PROGRAM), name)
 
-    def bind_vertex_attribute(self, name, data=None, data_len=3, data_type=GL_FLOAT, offset=0):
+    def bind_vertex_attribute(self, name, data=None, data_len=3, data_type=GL_FLOAT, offset=0, VAO=None):
+        if VAO:
+            glBindVertexArray(VAO)
         self.bind()
         self.add_data(data)
         attributeSlot = self.get_attribute_location(name)
@@ -281,53 +282,35 @@ class Animated_model:
             [0, 1, -1],
         ]
         self.weights = [
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+            [0.5, 0.5, -1],
+
         ]
 
         glBindVertexArray(self.model.VAO)
 
         self.JIBuffer = Buffer()
-        self.JIBuffer.bind_vertex_attribute(name="in_joint_indices", data=flatten(self.joint_indices), data_len=3,
-                                            data_type=GL_INT)
-
         self.swBuffer = Buffer()
+
+        self.JIBuffer.bind_vertex_attribute(name="in_joint_indices", data=flatten(self.joint_indices, data_type=numpy.int32), data_len=3,
+                                            data_type=GL_INT, VAO=self.model.VAO)
+        glBindVertexArray(self.model.VAO)
         self.swBuffer.bind_vertex_attribute(name="in_weights", data=flatten(self.weights), data_len=3,
-                                            data_type=GL_FLOAT)
+                                            data_type=GL_FLOAT, VAO=self.model.VAO)
 
     def _update_transform(self):
         self.model._update_transform()

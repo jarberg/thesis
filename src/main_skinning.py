@@ -101,7 +101,7 @@ def init():
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
-    program = initShaders("/shader/skinning/skinning_v_gpu_interpolate.glsl", "/shader/skinning/skinning_f.glsl")
+    program = initShaders("/shader/skinning/skinning_v_cpu_interpolate.glsl", "/shader/skinning/skinning_f.glsl")
     jointProgram = initShaders("/shader/debug/joint_v_shader.glsl", "/shader/debug/joint_f_shader.glsl")
     glUseProgram(program)
 
@@ -110,7 +110,7 @@ def init():
     # cube.set_rotation([30, 0, 45])
 
     cube2 = Cube()
-    # cube2.set_position([-0.5, 0, -2])
+    cube2.set_position([3, 0, 0])
 
     t = ImagePlane("/res/images/box.png")
     t.set_position([0.5, 0, -1])
@@ -119,8 +119,6 @@ def init():
     t2 = ImagePlane("/res/images/box.png")
     t2.set_position([-0.5, 0, -1])
     t2.set_rotation([0, -135, 0])
-
-    # buffer = G_Buffer([width, height])
 
     joint = Joint(0)
     joint2 = Joint(1, parent=joint)
@@ -142,7 +140,7 @@ def init():
 
     cube.set_position([1, 0, 0])
     renderer = Renderer()
-    renderer.objects = [cube, acube]
+    renderer.objects = [cube2, acube]
 
     te1 = Transform()
     te1.set_position([0.0, 2, 0.0])
@@ -162,9 +160,7 @@ def init():
 
     #pog = glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.nbytes, None)
 
-
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
-
 
     glutMainLoop()
 
@@ -173,35 +169,35 @@ def setup_test_anim(bones, model):
     odict = OrderedDict()
 
     bones[0].set_position([0, 0, -2])
-    bones[1].set_position([0, 0, 0])
+    bones[1].set_position([0.5, 0, 0])
     odict[0] = bones[0].getTransform()
     odict[1] = bones[1].getTransform()
     key1 = KeyFrame(odict, 0)
 
-    bones[0].set_position([0, 0.5, -2])
-    bones[1].set_position([0.5, 0, 0])
+    #bones[0].set_position([0, 0.5, -2])
+    bones[1].set_rotation([0, 0, 45])
     odict = OrderedDict()
     odict[0] = bones[0].getTransform()
     odict[1] = bones[1].getTransform()
 
     key2 = KeyFrame(odict, 1)
 
-    bones[0].set_position([0, 1, -2])
-    bones[1].set_position([1, 0, 0])
+    #bones[0].set_position([0, 1, -2])
+    bones[1].set_rotation([0, 0, 90])
     odict = OrderedDict()
     odict[0] = bones[0].getTransform()
     odict[1] = bones[1].getTransform()
     key3 = KeyFrame(odict, 2)
 
-    bones[0].set_position([0, 0.5, -2])
-    bones[1].set_position([0.5, 0, 0])
+    #bones[0].set_position([0, 0.5, -2])
+    bones[1].set_rotation([0, 0, -90])
     odict = OrderedDict()
     odict[0] = bones[0].getTransform()
     odict[1] = bones[1].getTransform()
     key4 = KeyFrame(odict, 3)
 
-    bones[0].set_position([0, 0, -2])
-    bones[1].set_position([0, 0, 0])
+    #bones[0].set_position([0, 0, -2])
+    bones[1].set_rotation([0, 0, 0])
     odict = OrderedDict()
     odict[0] = bones[0].getTransform()
     odict[1] = bones[1].getTransform()

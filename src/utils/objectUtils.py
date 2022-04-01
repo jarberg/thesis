@@ -467,8 +467,13 @@ import numpy
 
 
 def flatten(obj, transposes=True, data_type=numpy.float32):
+    ret = []
     if Matrix.__name__ == type(obj).__name__ and transposes:
         ret = transpose(obj)
+    elif(list.__name__ == type(obj).__name__):
+        for each in obj:
+            for j in each:
+                ret.append(j)
     else:
         ret = obj
     return numpy.array(ret, dtype=data_type)

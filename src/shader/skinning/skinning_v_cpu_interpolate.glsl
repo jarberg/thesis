@@ -8,6 +8,7 @@ const int MAX_WEIGHTS = 3;
 
 layout(location = 0) in vec4 a_Position;
 layout(location = 1) in vec2 InTexCoords;
+layout(location = 3) in vec3 in_weights;
 layout(location = 4) in vec3 inNormal;
 
 layout(location = 1) uniform int skinned;
@@ -16,12 +17,13 @@ layout(location = 3) uniform mat4 obj_transform;
 layout(location = 4) uniform mat4 v_matrix;
 
 in ivec3 in_joint_indices;
-in vec3 in_weights;
 
 uniform mat4 jointTransforms[MAX_JOINTS];
 uniform float timestamp;
 out vec2 TexCoords;
 
+uniform float det0;
+uniform float det1;
 
 void main() {
     vec4 poos = vec4(a_Position.xyz, 1.0);
@@ -36,23 +38,24 @@ void main() {
             jointID = in_joint_indices[i];
             trans = jointTransforms[i];
             weight = in_weights[i];
-            if (weight==0) {
+            if(weight < 0){
                 continue;
             }
-            if(jointID < 0 ||weight< 0){
-                break;
-            }
-            vec4 localPos = trans * poos;
-            totalLocalPos = localPos * weight;
+            vec3 localPos = vec3(trans * a_Position);
+            totalLocalPos += vec4(localPos*weight,weight);
 
             vec4 worldNormal = trans * vec4(inNormal, 1.0);
             totalNormal += worldNormal * weight;
         }
+        vec4 test1 = vec4(vec3(jointTransforms[0]/sqrt(det0) * a_Position)*in_weights[0],in_weights[0]);
+        vec4 test2 = vec4(vec3(jointTransforms[1]/sqrt(det1) * a_Position)*in_weights[1],in_weights[1]);
         TexCoords = InTexCoords;
-        gl_Position = pv_mat*totalLocalPos;
+        gl_Position = pv_mat*(test1+test2);
     }
     else{
         TexCoords = InTexCoords;
         gl_Position = pv_mat*obj_transform*a_Position;
     }
 }
+
+
