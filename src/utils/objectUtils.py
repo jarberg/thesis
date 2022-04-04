@@ -343,10 +343,10 @@ class Quaternion:
             return ret
         elif other_type in [int.__name__, float.__name__]:
             ret = Quaternion()
-            ret.w = self.w*other
-            ret.i = self.i*other
-            ret.j = self.j*other
-            ret.k = self.k*other
+            ret.w = self.w * other
+            ret.i = self.i * other
+            ret.j = self.j * other
+            ret.k = self.k * other
             return ret
         else:
             raise Exception("Somethign whent wrong".format(type(other).__name__))
@@ -465,6 +465,7 @@ def row_operations_principal_diagonal(m, size):
 
 import numpy
 
+
 def flatten_list(list_obj, transposes=True, data_type=numpy.float32):
     res = []
     for obj in list_obj:
@@ -477,11 +478,12 @@ def flatten_list(list_obj, transposes=True, data_type=numpy.float32):
 
     return numpy.array(res, dtype=data_type)
 
+
 def flatten(obj, transposes=True, data_type=numpy.float32):
     ret = []
     if Matrix.__name__ == type(obj).__name__ and transposes:
         ret = transpose(obj)
-    elif(list.__name__ == type(obj).__name__):
+    elif (list.__name__ == type(obj).__name__):
         if list.__name__ == type(obj[0]).__name__:
             for each in obj:
                 for j in each:
@@ -490,7 +492,6 @@ def flatten(obj, transposes=True, data_type=numpy.float32):
             ret = obj
     else:
         ret = obj
-
 
     return numpy.array(ret, dtype=data_type)
 
@@ -524,7 +525,7 @@ def det(m: Matrix):
         return det4(m)
 
 
-def inverse(m: Matrix) -> Matrix:
+def inverse22(m: Matrix) -> Matrix:
     n = len(m)
     a = Matrix(n=n, m=2 * n)
 
@@ -542,6 +543,184 @@ def inverse(m: Matrix) -> Matrix:
             im[i][j] = a[i][j + n]
 
     return im
+
+
+def inverse2(m):
+    a = Matrix(n=2)
+    d = det2(m)
+    a[0][0] = m[1][1] / d
+    a[0][1] = -m[0][1] / d
+    a[1][0] = -m[1][0] / d
+    a[1][1] = m[0][0] / d
+
+    return a
+
+
+def inverse3(m):
+    a = Matrix(n=3)
+    d = det3(m)
+
+    a00 = [
+        Vector([m[1][1], m[1][2]]),
+        Vector([m[2][1], m[2][2]])
+    ]
+    a01 = [
+        Vector([m[1][0], m[1][2]]),
+        Vector([m[2][0], m[2][2]])
+    ]
+    a02 = [
+        Vector([m[1][0], m[1][1]]),
+        Vector([m[2][0], m[2][1]])
+    ]
+    a10 = [
+        Vector([m[0][1], m[0][2]]),
+        Vector([m[2][1], m[2][2]])
+    ]
+    a11 = [
+        Vector([m[0][0], m[0][2]]),
+        Vector([m[2][0], m[2][2]])
+    ]
+    a12 = [
+        Vector([m[0][0], m[0][1]]),
+        Vector([m[2][0], m[2][1]])
+    ]
+    a20 = [
+        Vector([m[0][1], m[0][2]]),
+        Vector([m[1][1], m[1][2]])
+    ]
+    a21 = [
+        Vector([m[0][0], m[0][2]]),
+        Vector([m[1][0], m[1][2]])
+    ]
+    a22 = [
+        Vector([m[0][0], m[0][1]]),
+        Vector([m[1][0], m[1][1]])
+    ]
+
+    a[0][0] = det2(a00) / d
+    a[0][1] = -det2(a10) / d
+    a[0][2] = det2(a20) / d
+    a[1][0] = -det2(a01) / d
+    a[1][1] = det2(a11) / d
+    a[1][2] = -det2(a21) / d
+    a[2][0] = det2(a02) / d
+    a[2][1] = -det2(a12) / d
+    a[2][2] = det2(a22) / d
+
+    return a
+
+
+def inverse4(m):
+    a = Matrix()
+    d = det4(m)
+
+    a00 = [
+        Vector([m[1][1], m[1][2], m[1][3]]),
+        Vector([m[2][1], m[2][2], m[2][3]]),
+        Vector([m[3][1], m[3][2], m[3][3]])
+    ]
+    a01 = [
+        Vector([m[1][0], m[1][2], m[1][3]]),
+        Vector([m[2][0], m[2][2], m[2][3]]),
+        Vector([m[3][0], m[3][2], m[3][3]])
+    ]
+    a02 = [
+        Vector([m[1][0], m[1][1], m[1][3]]),
+        Vector([m[2][0], m[2][1], m[2][3]]),
+        Vector([m[3][0], m[3][1], m[3][3]])
+    ]
+    a03 = [
+        Vector([m[1][0], m[1][1], m[1][2]]),
+        Vector([m[2][0], m[2][1], m[2][2]]),
+        Vector([m[3][0], m[3][1], m[3][2]])
+    ]
+    a10 = [
+        Vector([m[0][1], m[0][2], m[0][3]]),
+        Vector([m[2][1], m[2][2], m[2][3]]),
+        Vector([m[3][1], m[3][2], m[3][3]])
+    ]
+    a11 = [
+        Vector([m[0][0], m[0][2], m[0][3]]),
+        Vector([m[2][0], m[2][2], m[2][3]]),
+        Vector([m[3][0], m[3][2], m[3][3]])
+    ]
+    a12 = [
+        Vector([m[0][0], m[0][1], m[0][3]]),
+        Vector([m[2][0], m[2][1], m[2][3]]),
+        Vector([m[3][0], m[3][1], m[3][3]])
+    ]
+    a13 = [
+        Vector([m[0][0], m[0][1], m[0][2]]),
+        Vector([m[2][0], m[2][1], m[2][2]]),
+        Vector([m[3][0], m[3][1], m[3][2]])
+    ]
+    a20 = [
+        Vector([m[0][1], m[0][2], m[0][3]]),
+        Vector([m[1][1], m[1][2], m[1][3]]),
+        Vector([m[3][1], m[3][2], m[3][3]])
+    ]
+    a21 = [
+        Vector([m[0][0], m[0][2], m[0][3]]),
+        Vector([m[1][0], m[1][2], m[1][3]]),
+        Vector([m[3][0], m[3][2], m[3][3]])
+    ]
+    a22 = [
+        Vector([m[0][0], m[0][1], m[0][3]]),
+        Vector([m[1][0], m[1][1], m[1][3]]),
+        Vector([m[3][0], m[3][1], m[3][3]])
+    ]
+    a23 = [
+        Vector([m[0][0], m[0][1], m[0][2]]),
+        Vector([m[1][0], m[1][1], m[1][2]]),
+        Vector([m[3][0], m[3][1], m[3][2]])
+    ]
+
+    a30 = [
+        Vector([m[0][1], m[0][2], m[0][3]]),
+        Vector([m[1][1], m[1][2], m[1][3]]),
+        Vector([m[2][1], m[2][2], m[2][3]])
+    ]
+    a31 = [
+        Vector([m[0][0], m[0][2], m[0][3]]),
+        Vector([m[1][0], m[1][2], m[1][3]]),
+        Vector([m[2][0], m[2][2], m[2][3]])
+    ]
+    a32 = [
+        Vector([m[0][0], m[0][1], m[0][3]]),
+        Vector([m[1][0], m[1][1], m[1][3]]),
+        Vector([m[2][0], m[2][1], m[2][3]])
+    ]
+    a33 = [
+        Vector([m[0][0], m[0][1], m[0][2]]),
+        Vector([m[1][0], m[1][1], m[1][2]]),
+        Vector([m[2][0], m[2][1], m[2][2]])
+    ]
+    if d ==0:
+        d=1
+    a[0][0] = det3(a00) / d
+    a[0][1] = -det3(a10) / d
+    a[0][2] = det3(a20) / d
+    a[0][3] = -det3(a30) / d
+    a[1][0] = -det3(a01) / d
+    a[1][1] = det3(a11) / d
+    a[1][2] = -det3(a21) / d
+    a[1][3] = det3(a31) / d
+    a[2][0] = det3(a02) / d
+    a[2][1] = -det3(a12) / d
+    a[2][2] = det3(a22) / d
+    a[2][3] = -det3(a32) / d
+    a[3][0] = -det3(a03) / d
+    a[3][1] = det3(a13) / d
+    a[3][2] = -det3(a23) / d
+    a[3][3] = det3(a33) / d
+
+    return a
+
+
+def inverse(m):
+    if len(m) == 2: return inverse2(m)
+    if len(m) == 3: return inverse3(m)
+    if len(m) == 4: return inverse4(m)
 
 
 def normal_matrix(m: Matrix, as_lower_order: bool = False):
@@ -852,8 +1031,8 @@ def quaternion_to_matrix(q):
     sqy = q.j * q.j
     sqz = q.k * q.k
 
-    denom =  (sqx + sqy + sqz + sqw)
-    if denom ==0:
+    denom = (sqx + sqy + sqz + sqw)
+    if denom == 0:
         denom = 1
     invs = 1 / denom
     m00 = (sqx - sqy - sqz + sqw) * invs

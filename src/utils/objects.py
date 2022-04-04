@@ -90,8 +90,6 @@ class Joint(Transform):
     def __init__(self, id, name="", parent=None, children=None):
         super(Joint, self).__init__(parent=parent, children=children)
         self.id = id
-        self.bindTransform = Matrix()
-        self.inverseBindTransform = inverse(self.bindTransform)
         self.name = name
         self.vertexArray = [[0, 0, 0], [0.5, 0, 0]]
         self.initBuffers()
@@ -104,16 +102,21 @@ class Joint(Transform):
     def add_child(self, child):
         self.children.append(child)
 
-    def set_bind_transform(self, parent_transform):
-        self.bindTransform = parent_transform
-        self.calcInverseBindTransform(self.bindTransform)
+    def set_anim_transform(self, m):
+        self.anim_transform = m
+
+    def get_anim_transform(self):
+        return self.anim_transform
+
+    def set_local_bind_transform(self, transform=None):
+        self.localBindTransform = transform or self.getTransform()
 
     def calcInverseBindTransform(self, parentBindTransform):
-        self.bindTransform = parentBindTransform * self.bindTransform
-        self.inverseBindTransform = inverse(self.bindTransform)
+        bindTransform = parentBindTransform * self.localBindTransform
+        self.inverseBindTransform = inverse(bindTransform)
 
         for child in self.children:
-            child.calcInverseBindTransform(self.bindTransform)
+            child.calcInverseBindTransform(bindTransform)
 
     def initBuffers(self):
         self.vBuffer = glGenBuffers(1)
@@ -135,16 +138,16 @@ class Joint(Transform):
         return len(self.vertexArray)
 
 def set_bind_transform_from_self(joint):
-    joint.bindTransform = joint.getTransform()
+    joint.localBindTransform = joint.getTransform()
     for child in joint.children:
         set_bind_transform_from_self(child)
 
 def calcInverseBindTransform(joint, parentBindTransform):
-    joint.bindTransform = parentBindTransform * joint.bindTransform
-    joint.inverseBindTransform = inverse(joint.bindTransform)
+    joint.localBindTransform = parentBindTransform * joint.localBindTransform
+    joint.inverseBindTransform = inverse(joint.localBindTransform)
 
     for child in joint.children:
-        child.calcInverseBindTransform(joint.bindTransform)
+        child.calcInverseBindTransform(joint.localBindTransform)
 
 
 class Model(Transform):
@@ -258,26 +261,12 @@ class IndicedModel(Transform):
         self.indices = indices
         self.boundingBox = []
         self.vertexArray = []
-        self.normalArray = []
+        self.normalArray = n_array or []
         self.coordArray = coordArray or []
         self.renderType = renderType
-        if n_array:
-            self.normalArray = n_array
-            for i in range(len(vertexlist)):
-                self._add_vertex(vertexlist[i])
-        else:
-            for i in range(len(vertexlist)):
-                self._add_vertex(vertexlist[i])
-                j = i + 1
-                if i != 0 and (j % 3) == 0:
-                    p1 = vertexlist[i - 2]
-                    p2 = vertexlist[i - 1]
-                    p3 = vertexlist[i]
-                    normal = calc_normal_from_points(p1, p2, p3)
 
-                    self.normalArray.append(normal)
-                    self.normalArray.append(normal)
-                    self.normalArray.append(normal)
+        for i in range(len(vertexlist)):
+            self._add_vertex(vertexlist[i])
 
         self.material = Material()
 
@@ -287,6 +276,8 @@ class IndicedModel(Transform):
             coords = True
         if n_array:
             normals = True
+
+        self.buffers = {}
 
         self.initBuffers(normals, coords)
         self.initDataToBuffers(normals, coords)
@@ -311,25 +302,26 @@ class IndicedModel(Transform):
     def get_vertexArray_len(self):
         return len(self.vertexArray)
 
-    def initBuffers(self, normal=True, coords=True):
-        self.vertex_position_buffer = Buffer()
-        self.indice_position_buffer = Buffer(buf_type=GL_ELEMENT_ARRAY_BUFFER)
+    def initBuffers(self, normal, coords):
+        self.buffers["vertex_pos"] = Buffer()
+        self.buffers["indices"] = Buffer(buf_type=GL_ELEMENT_ARRAY_BUFFER)
         if normal:
-            self.vertex_normal_buffer = Buffer()
+            self.buffers["normal"] = Buffer()
         if coords:
-            self.tex_coord_buffer = Buffer()
+            self.buffers["tex_coords"] = Buffer()
 
     def initDataToBuffers(self, normal=True, coords=True):
 
         self.VAO = glGenVertexArrays(1)
         glBindVertexArray(self.VAO)
-        self.indice_position_buffer.bind(flatten(self.indices, data_type=numpy.uint16))
-        self.vertex_position_buffer.bind_vertex_attribute("a_Position", flatten(self.vertexArray), 3, GL_FLOAT, 0)
-        if normal:
-            self.vertex_normal_buffer.bind_vertex_attribute("inNormal", flatten(self.normalArray), 3, GL_FLOAT, 0)
-        if coords:
-            self.tex_coord_buffer.bind_vertex_attribute("InTexCoords", flatten(self.coordArray), 2, GL_FLOAT, 0)
 
+        self.buffers["vertex_pos"] .bind_vertex_attribute("a_Position", flatten(self.vertexArray), 3, GL_FLOAT, 0)
+        if normal:
+            self.buffers["normal"].bind_vertex_attribute("inNormal", flatten(self.normalArray), 3, GL_FLOAT, 0)
+        if coords:
+            self.buffers["tex_coords"].bind_vertex_attribute("InTexCoords", flatten(self.coordArray), 2, GL_FLOAT, 0)
+
+        self.buffers["indices"].bind(flatten(self.indices, data_type=numpy.uint16))
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)
         self._update_boundingBox(vertex)
@@ -382,7 +374,7 @@ class Buffer:
 
 
 class Animated_model:
-    def __init__(self, model: Model, rootJoint, jointCount, weights=None, indices=None, renderType=GL_TRIANGLE_STRIP):
+    def __init__(self, model, rootJoint, jointCount, weights=None, indices=None, renderType=GL_TRIANGLE_STRIP):
         self.model = model
         self.rootJoint = rootJoint
         self.jointCount = jointCount
@@ -445,14 +437,14 @@ class Animated_model:
             [1, 0, -1],
 
         ]
-        t = self.joint_indices[1359]
-        t2 = self.weights[1359]
+
         self.JIBuffer = Buffer()
         self.swBuffer = Buffer()
 
         glBindVertexArray(self.model.VAO)
+        indicedata = flatten(self.joint_indices,data_type=numpy.int8)
         self.JIBuffer.bind_vertex_attribute(name="in_joint_indices",
-                                            data=flatten(self.joint_indices,data_type=numpy.int8),
+                                            data=indicedata,
                                             data_len=4,
                                             data_type=GL_INT,
                                             VAO=self.model.VAO)

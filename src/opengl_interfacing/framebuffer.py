@@ -392,3 +392,8 @@ def blit_to_default(source):
         0, 0, source.width, source.height,
         0, 0, source.width, source.height,
         GL_COLOR_BUFFER_BIT, GL_NEAREST)
+
+
+def clear_framebuffer():
+    glClearColor(0.0, 1.0, 1, 1.0)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

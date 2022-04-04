@@ -41,7 +41,7 @@ class Renderer:
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
 
 
-        if len(animator.curPoseList) > 0:
+        if animator and len(animator.curPoseList) > 0:
             trans = []
             for k in range(len(animator.curPoseList)):
                 trans.append(animator.curPoseList[k])
@@ -77,14 +77,15 @@ class Renderer:
 
     def joint_draw(self, objects, cam, animator):
         glDepthFunc(GL_ALWAYS)
-        glUniformMatrix4fv(2, 1, False, cam.pMatrix)
-        glUniformMatrix4fv(4, 1, False, flatten(cam._getTransform()))
+        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
+        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
+
 
         for obj in objects:
-            if len(animator.curPoseList) > 0:
-                glUniformMatrix4fv(3, 1, False, flatten(animator.curPoseList[obj.id]))
+            if len(animator.curPoseList) > 0 and False:
+                glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(animator.curPoseList[obj.id]))
             else:
-                glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
+                glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(obj.getTransform()))
 
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_LINES, 0, int(len(obj.vertexArray)))
