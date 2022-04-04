@@ -229,7 +229,7 @@ class Matrix:
         result = []
 
         other_type = type(other).__name__
-        if type(self).__name__ == other_type:
+        if other_type in [type(self).__name__, "Transform"]:
             other_len = len(other)
             if len(self) != other_len:
                 raise Exception("Trying to add matrices of different dimensions")
@@ -270,7 +270,7 @@ class Matrix:
             else:
                 raise Exception("Trying to multiply a matrix with a vector of different dimensions")
 
-        raise Exception("Trying to multiply a matrix with a illegal type: ".format(other.__name__))
+        raise Exception("Trying to multiply a matrix with a illegal type: {}".format(type(other).__name__))
 
     def __truediv__(self, other):
         result = []
@@ -281,7 +281,7 @@ class Matrix:
                     result[i].append(self[i][j] / other)
             return Matrix(result)
 
-        raise Exception("Trying to multiply a matrix with a illegal type: ".format(other.__name__))
+        raise Exception("Trying to multiply a matrix with a illegal type: ".format(type(other).__name__))
 
 
 class Quaternion:
@@ -465,17 +465,33 @@ def row_operations_principal_diagonal(m, size):
 
 import numpy
 
+def flatten_list(list_obj, transposes=True, data_type=numpy.float32):
+    res = []
+    for obj in list_obj:
+        if Matrix.__name__ == type(obj).__name__ and transposes:
+            ret = transpose(obj)
+            for each in ret:
+                res.append(each)
+        else:
+            ret = obj
+
+    return numpy.array(res, dtype=data_type)
 
 def flatten(obj, transposes=True, data_type=numpy.float32):
     ret = []
     if Matrix.__name__ == type(obj).__name__ and transposes:
         ret = transpose(obj)
     elif(list.__name__ == type(obj).__name__):
-        for each in obj:
-            for j in each:
-                ret.append(j)
+        if list.__name__ == type(obj[0]).__name__:
+            for each in obj:
+                for j in each:
+                    ret.append(j)
+        else:
+            ret = obj
     else:
         ret = obj
+
+
     return numpy.array(ret, dtype=data_type)
 
 
@@ -780,15 +796,15 @@ def euler_to_matrix(euler_angles):
     cb = math.cos(bank)
     sb = math.sin(bank)
 
-    """ res = Matrix([[ch * ca, sh * sb - ch * sa * cb, ch * sa * sb + sh * cb, 0],
+    res = Matrix([[ch * ca, sh * sb - ch * sa * cb, ch * sa * sb + sh * cb, 0],
                   [sa, ca * cb, -ca * sb, 0],
                   [-sh * ca, sh * sa * cb + ch * sb, -sh * sa * sb + ch * cb, 0],
-                  [0, 0, 0, 1]])"""
+                  [0, 0, 0, 1]])
 
-    res = Matrix([[cb * ca, sh * sa * cb - ch * sb, ch * sa * ca + sh * sa, 0],
+    """res = Matrix([[cb * ca, sh * sa * cb - ch * sb, ch * sa * ca + sh * sa, 0],
                   [ca * sb, sh * sa * sb + ch * cb, ch * sa * sb - sh * cb, 0],
                   [-sa, sh * ca, ch * ca, 0],
-                  [0, 0, 0, 1]])
+                  [0, 0, 0, 1]])"""
     return res
 
 

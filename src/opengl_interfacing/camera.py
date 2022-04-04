@@ -57,6 +57,10 @@ class Camera(Transform):
         self.radius += input_d
         self.updateEye()
 
+    def set_position(self, newPos: list or Vector):
+        super().set_position(newPos)
+        self.updateEye()
+
     def updateEye(self):
         zero_pos = super().get_position()
 
@@ -89,6 +93,7 @@ class Camera(Transform):
                            ])
 
         self.update()
+
 
     def _getTransform(self, useParent=False):
         return self.mvMatrix

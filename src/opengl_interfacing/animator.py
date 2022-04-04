@@ -85,9 +85,11 @@ class Animator:
 
 
     def applyPoseToJoints(self, curPose: OrderedDict, rootJoint: Joint, parentTransform):
-        curLocalTransform = curPose.get(rootJoint.id)
-        curTransform = parentTransform * curLocalTransform
-        self.curPoseList.append(rootJoint.inverseBindTransform * curTransform)
+        curLocalTransform = curPose.get(rootJoint.name)
+
+        curTransform = parentTransform*curLocalTransform
+        final = rootJoint.inverseBindTransform * curTransform
+        self.curPoseList.append(final)
         for child in rootJoint.children:
             self.applyPoseToJoints(curPose, child, curTransform)
         rootJoint.set_transform(curTransform)
@@ -107,8 +109,8 @@ def interpolate(prevTransfrom: Transform, nexTransform: Transform, progression):
     trans = Vector([prevTransfrom[0][3], prevTransfrom[1][3], prevTransfrom[2][3]])
     trans2 = Vector([nexTransform[0][3], nexTransform[1][3], nexTransform[2][3]])
 
-    sx, sy, sz = get_scale(prevTransfrom)
-    sx1, sy1, sz1 = get_scale(nexTransform)
+    sx, sy, sz = get_scale(prevTransfrom.m)
+    sx1, sy1, sz1 = get_scale(nexTransform.m)
 
     quat1 = matrix_to_quaternion(prevTransfrom)
     quat2 = matrix_to_quaternion(nexTransform)

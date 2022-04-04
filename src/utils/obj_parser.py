@@ -1,4 +1,5 @@
 from src.constants import *
+from utils.objects import Material
 
 class ObjParser:
 
@@ -14,7 +15,7 @@ class ObjParser:
         self.normals = []
 
         self._parse(self.file_obj)
-
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
@@ -42,6 +43,7 @@ class ObjParser:
                 continue
                 
             elif command == "mtllib":
+                pass
                 path = self._parseMtlLib(sp, self.filepath)
                 mat = MTL_object(path)
                 self.mtls.append(mat)
@@ -49,9 +51,18 @@ class ObjParser:
             elif command == "o":
                 pass
             elif command == "g":
-                pass
+                if (currentObject.numIndices == 0):
+                    currentObject = self._parseObjectName(sp)
+                    self.objects[0] = currentObject
+
+                else:
+                    object = self._parseObjectName(sp)
+                    self.objects.append(object)
+                    currentObject = object
+
             elif command == "v":
-                pass
+                vertex = self._parseVertex(sp, 1)
+                self.vertices.append(vertex)
             elif command == "vn":
                 pass
             elif command == "usemtl":
@@ -63,10 +74,13 @@ class ObjParser:
             line = lines[index]
 
     def _parseObjectName(self, sp):
-        pass
+        return OBJObject(sp.getWord())
 
     def _parseVertex(self, sp, scale):
-        pass
+        x = sp.getFloat() * scale
+        y = sp.getFloat() * scale
+        z = sp.getFloat() * scale
+        return [x, y, z]
 
     def _parseNormal(self,sp):
         pass
@@ -119,9 +133,6 @@ class StringParser:
     def getFloat(self):
         return float(self.getWord())
 
-from utils.objects import Material
-
-
 class MTL_object:
     def __init__(self, path):
         self.path = path
@@ -169,7 +180,7 @@ class MTL_object:
         r = sp.getFloat()
         g = sp.getFloat()
         b = sp.getFloat()
-        return Material(name, r, g, b, 1)
+        return Material([r, g, b, 1])
 
     def _parseNewmtl(self, sp):
         return sp.getWord()
@@ -182,4 +193,4 @@ class OBJObject:
         self.numIndices = 0
 
 with ObjParser(r"res\models\charlie\charlie.obj") as parser:
-    print("hello")
+    print(parser.objects[0].faces)

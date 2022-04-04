@@ -5,7 +5,8 @@ import numpy
 from OpenGL import GL
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
     GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_LINES, \
-    GL_RGBA, GL_RGB, glDepthFunc, GL_ALWAYS, GL_LESS
+    GL_RGBA, GL_RGB, glDepthFunc, GL_ALWAYS, GL_LESS, glGenBuffers, glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, \
+    GL_STATIC_DRAW, glBufferData, GL_UNSIGNED_SHORT
 from OpenGL.raw.GL.VERSION.GL_1_0 import GL_TRIANGLE_STRIP
 
 from PIL import Image
@@ -13,8 +14,10 @@ from PIL import Image
 import constants
 from opengl_interfacing.framebuffer import G_Buffer
 from opengl_interfacing.texture import Texture_Manager, Texture
-from utils.objectUtils import flatten, perspective, det4
-from utils.objects import Model
+from utils.objectUtils import flatten, perspective, det4, flatten_list
+from utils.objects import Model, IndicedModel
+
+
 
 
 class Renderer:
@@ -36,12 +39,15 @@ class Renderer:
 
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
-        #if len(animator.curPoseList):
-        #    det0 = det4(animator.curPoseList[0])
-        #    glUniform1fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "det0"),1, det0)
-        #    det1 = det4(animator.curPoseList[1])
-        #    glUniform1fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "det1"),1, det1)
 
+
+        if len(animator.curPoseList) > 0:
+            trans = []
+            for k in range(len(animator.curPoseList)):
+                trans.append(animator.curPoseList[k])
+            transforms = flatten_list(trans)
+            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), len(animator.curPoseList),
+                               False, transforms)
 
         for obj in self.objects:
 
@@ -60,38 +66,31 @@ class Renderer:
 
             glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(obj.getTransform()))
 
-            if type(obj).__name__ == "Animated_model":
-                if len(animator.curPoseList) > 0:
-                    trans = []
-                    for k in range(len( animator.curPoseList)):
-                        trans.append( flatten( animator.curPoseList[k]))
-                    transforms = flatten(trans)
 
-                    glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), obj.jointCount, False, transforms)
             if skin_loc != -1:
                 if hasattr(obj, "skinned"):
                     glUniform1i(skin_loc, obj.skinned)
                 else:
                     glUniform1i(skin_loc, 0)
 
-            glBindVertexArray(obj.getVAO())
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, obj.get_vertexArray_len())
+            obj.draw()
 
-    def joint_draw(self, objects, cam):
+    def joint_draw(self, objects, cam, animator):
         glDepthFunc(GL_ALWAYS)
         glUniformMatrix4fv(2, 1, False, cam.pMatrix)
         glUniformMatrix4fv(4, 1, False, flatten(cam._getTransform()))
+
         for obj in objects:
-            # if obj.parent:
-            #    partrans = obj.parent.getTransform()
-
-
-            glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
-
+            if len(animator.curPoseList) > 0:
+                glUniformMatrix4fv(3, 1, False, flatten(animator.curPoseList[obj.id]))
+            else:
+                glUniformMatrix4fv(3, 1, False, flatten(obj.getTransform()))
 
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_LINES, 0, int(len(obj.vertexArray)))
+
         glDepthFunc(GL_LESS)
+
 
     def light_draw(self, buffer: G_Buffer):
         loc1 = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "pos")
@@ -169,10 +168,7 @@ def get_opengl_format(format):
 
 
 def is_mipmapable(x, y):
-    if x == y:
-        return True
-    else:
-        return False
+    return x == y
 
 
 class ImagePlane(Plane):
