@@ -3,7 +3,7 @@ from collections import OrderedDict
 from math import floor, ceil, sqrt
 
 from utils.objectUtils import Matrix, Vector, quaternion_to_matrix, Quaternion, \
-    dot, matrix_to_quaternion, length
+    dot, matrix_to_quaternion, length, det4
 from utils.objects import Joint, Transform
 
 global time_per_frame
@@ -55,7 +55,6 @@ class Animator:
             curPose = self.calculateCurrentAnimationPose()
             self.applyPoseToJoints(curPose, self.model.rootJoint, Matrix())
 
-
     def increaseAnimationTime(self):
         self.animTime += self.tpf
         if self.animTime > len(self.animation.keyframes) - 1:
@@ -83,16 +82,19 @@ class Animator:
         progression = self.calculateProgression(frames)
         return self.interpolatePoses(frames[0], frames[1], progression)
 
-
     def applyPoseToJoints(self, curPose: OrderedDict, rootJoint: Joint, parentTransform):
         curLocalTransform = curPose.get(rootJoint.name)
-        curTransform = parentTransform*curLocalTransform
-        self.curPoseList.append(rootJoint.inverseBindTransform * curTransform)
+        curTransform = parentTransform * curLocalTransform
+        final = curTransform*rootJoint.inverseBindTransform
+
+        rootJoint.set_transform(curTransform)
+
+        self.curPoseList.append(final)
+
         for child in rootJoint.children:
             self.applyPoseToJoints(curPose, child, curTransform)
 
-        rootJoint.set_anim_transform(rootJoint.inverseBindTransform * curTransform)
-        rootJoint.set_transform(curTransform)
+
 
     def interpolatePoses(self, prevFrame: KeyFrame, nexFrame: KeyFrame, progression: float):
         curPose = OrderedDict()
@@ -124,9 +126,12 @@ def interpolate(prevTransfrom: Transform, nexTransform: Transform, progression):
     t[2][3] = final_pos[2]
 
     r = quaternion_to_matrix(quat3)
+    det = det4(r)
+    r /= det
+
     sca1 = Vector(sx, sy, sz)
     sca2 = Vector(sx1, sy1, sz1)
-    
+
     final_sca = sca1 * (1 - progression) + sca2 * progression
 
     s = Matrix()
@@ -134,6 +139,7 @@ def interpolate(prevTransfrom: Transform, nexTransform: Transform, progression):
     s[1][1] = final_sca[1]
     s[2][2] = final_sca[2]
     res = t * r * s
+
     return res
 
 

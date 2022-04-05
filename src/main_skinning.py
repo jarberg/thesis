@@ -1,5 +1,8 @@
 import time
 
+global debug
+debug = False
+
 from OpenGL import GL
 from OpenGL.GL import *
 from OpenGL.GLUT import *
@@ -31,8 +34,9 @@ def update_persp_event(w, h):
 def buttons(key, x, y):
     # print(key, x, y)
     if key == b'd':
-        global debug
+        global debug, renderer
         debug = not debug
+        renderer.debug = not renderer.debug
 
 def on_click(button, state, x, y):
     global buttonPressed, cam, dragx_start, dragy_start, dragx_mid_start, dragy_mid_start
@@ -128,7 +132,7 @@ def init():
     t = ImagePlane("/res/images/box.png")
     t2 = ImagePlane("/res/images/box.png")
     cube.material.set_tex_diffuse(t.get_material().tex_diffuse)
-    cube.set_position([1, 0, 0])
+    cube.set_position([6, 0, 0])
 
     glutKeyboardFunc(buttons)
     glutMotionFunc(mouseControl)

@@ -4,7 +4,7 @@ import numpy
 from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM, glGenVertexArrays, \
     glBindVertexArray, glGenBuffers, glGetIntegerv, GL_FLOAT, glBindBuffer, GL_ARRAY_BUFFER, glBufferData, \
     GL_STATIC_DRAW, glEnableVertexAttribArray, glGetAttribLocation, GL_INT, GL_TRIANGLE_STRIP, GL_ELEMENT_ARRAY_BUFFER, \
-    glDrawArrays, GL_TRIANGLES, GL_UNSIGNED_SHORT, glDrawElements, GL_LINES, GL_UNSIGNED_INT
+    glDrawArrays, GL_TRIANGLES, GL_UNSIGNED_SHORT, glDrawElements, GL_LINES, GL_UNSIGNED_INT, glVertexAttribIPointer
 
 from src.utils.objectUtils import Matrix, get_pointLight_radius, \
     flatten, cross, normal_matrix, inverse, euler_to_matrix, det4
@@ -95,7 +95,7 @@ class Joint(Transform):
         self.initBuffers()
         self.initDataToBuffers()
 
-    def draw(self):
+    def draw(self, debug=False):
         glBindVertexArray(self.VAO)
         glDrawArrays(GL_LINES, 0, self.get_vertexArray_len())
 
@@ -188,7 +188,7 @@ class Model(Transform):
         self.initBuffers(normals, coords)
         self.initDataToBuffers(normals, coords)
 
-    def draw(self):
+    def draw(self, debug=False):
         glBindVertexArray(self.getVAO())
         glDrawArrays(self.renderType, 0, self.get_vertexArray_len())
 
@@ -279,12 +279,14 @@ class IndicedModel(Transform):
 
         self.buffers = {}
 
-        self.initBuffers(normals, coords)
-        self.initDataToBuffers(normals, coords)
+        self.initBuffers(normals, coords,(self.have_weights and self.have_windices))
+        self.initDataToBuffers(normals, coords,( self.have_weights and self.have_windices))
 
-    def draw(self):
+    def draw(self, debug=False):
         glBindVertexArray(self.getVAO())
         glDrawElements(self.renderType, len(self.indices), GL_UNSIGNED_SHORT, None)
+        if debug:
+            glDrawElements(GL_LINES, len(self.indices), GL_UNSIGNED_SHORT, None)
 
     def _update_transform(self):
         super()._update_transform()
@@ -302,26 +304,35 @@ class IndicedModel(Transform):
     def get_vertexArray_len(self):
         return len(self.vertexArray)
 
-    def initBuffers(self, normal, coords):
+    def initBuffers(self, normal, coords, influences):
         self.buffers["vertex_pos"] = Buffer()
-        self.buffers["indices"] = Buffer(buf_type=GL_ELEMENT_ARRAY_BUFFER)
+
         if normal:
             self.buffers["normal"] = Buffer()
         if coords:
             self.buffers["tex_coords"] = Buffer()
+        if influences:
+            self.buffers["influ_indices"] = Buffer()
+            self.buffers["influ_weights"] = Buffer()
 
-    def initDataToBuffers(self, normal=True, coords=True):
+        self.buffers["indices"] = Buffer(buf_type=GL_ELEMENT_ARRAY_BUFFER)
+
+    def initDataToBuffers(self, normal=True, coords=True, influences=None):
 
         self.VAO = glGenVertexArrays(1)
         glBindVertexArray(self.VAO)
-
         self.buffers["vertex_pos"] .bind_vertex_attribute("a_Position", flatten(self.vertexArray), 3, GL_FLOAT, 0)
         if normal:
             self.buffers["normal"].bind_vertex_attribute("inNormal", flatten(self.normalArray), 3, GL_FLOAT, 0)
         if coords:
             self.buffers["tex_coords"].bind_vertex_attribute("InTexCoords", flatten(self.coordArray), 2, GL_FLOAT, 0)
+        if influences:
+            self.buffers["influ_indices"].bind_vertex_attribute("in_joint_indices", flatten(self.windices), 4, GL_FLOAT, 0)
+            self.buffers["influ_weights"].bind_vertex_attribute("in_weights", flatten(self.weights), 4, GL_FLOAT, 0)
+
 
         self.buffers["indices"].bind(flatten(self.indices, data_type=numpy.uint16))
+
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)
         self._update_boundingBox(vertex)
@@ -368,94 +379,24 @@ class Buffer:
         self.add_data(data)
         attributeSlot = self.get_attribute_location(name)
         if attributeSlot >= 0:
-            glVertexAttribPointer(attributeSlot, data_len, data_type, False, offset, None)
+            if data_type == GL_INT:
+                glVertexAttribIPointer(attributeSlot, data_len, data_type, offset, None)
+            elif data_type == GL_FLOAT:
+                glVertexAttribPointer(attributeSlot, data_len, data_type, False, offset, None)
+
             glEnableVertexAttribArray(attributeSlot)
             self.attributes[name] = attributeSlot
 
 
 class Animated_model:
-    def __init__(self, model, rootJoint, jointCount, weights=None, indices=None, renderType=GL_TRIANGLE_STRIP):
+    def __init__(self, model, rootJoint, jointCount):
         self.model = model
         self.rootJoint = rootJoint
         self.jointCount = jointCount
         self.skinned = 1
-        self.renderType = renderType
-        self.joint_indices = indices or [
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-            [0, 1, -1],
-        ]
-        self.weights = weights or [
-            [0.5, 0.5, -1],
-            [0.5, 0.5, -1],
-            [0.5, 0.5, -1],
-            [0.5, 0.5, -1],
-            [0.5, 0.5, -1],
-            [0.5, 0.5, -1],
-            [0.5, 0.5, -1],
-            [0.5, 0.5, -1],
-            [0.5, 0.5, -1],
-            [0.5, 0.5, -1],
-            [0.5, 0.5, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
-            [1, 0, -1],
 
-        ]
-
-        self.JIBuffer = Buffer()
-        self.swBuffer = Buffer()
-
-        glBindVertexArray(self.model.VAO)
-        indicedata = flatten(self.joint_indices,data_type=numpy.int8)
-        self.JIBuffer.bind_vertex_attribute(name="in_joint_indices",
-                                            data=indicedata,
-                                            data_len=4,
-                                            data_type=GL_INT,
-                                            VAO=self.model.VAO)
-
-        self.swBuffer.bind_vertex_attribute(name="in_weights",
-                                            data=flatten(self.weights),
-                                            data_len=4,
-                                            data_type=GL_FLOAT,
-                                            VAO=self.model.VAO)
-    def draw(self):
-        self.model.draw()
+    def draw(self, debug=False):
+        self.model.draw(debug=debug)
 
     def _update_transform(self):
         self.model._update_transform()

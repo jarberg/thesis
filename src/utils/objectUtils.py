@@ -274,7 +274,7 @@ class Matrix:
 
     def __truediv__(self, other):
         result = []
-        if int.__name__ == type(other).__name__:
+        if type(other).__name__ in [int.__name__, float.__name__]:
             for i in range(len(self)):
                 result.append([])
                 for j in range(len(self)):

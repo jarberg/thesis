@@ -32,6 +32,7 @@ class Renderer:
                                  [-1, 1, 0],
                                  [1, -1, 0],
                                  ])
+        self.debug=False
         self.quad.set_rotation([0, 180, 0])
 
     def draw(self, cam, animator=None):
