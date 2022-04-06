@@ -36,16 +36,22 @@ void main(){
             int jointID = int(in_joint_indices[i]);
             mat4 trans = jointTransforms[jointID];
             float det = determinant(trans);
-            vec3 localPos = (trans * poos).xyz;
+            vec3 localPos = (trans/det * poos).xyz;
+            weight=weight/det;
             totalLocalPos += vec4(localPos*weight, weight);
+
+            mat3 trans2 = mat3(trans);
+            float det2 = determinant(trans2);
+            vec3 localnorm = trans2/det2 * inNormal;
+            totalNormal += localnorm*weight;
         }
-        normals = inNormal;
-        pos = (projection*v_matrix*(vec4(totalLocalPos.xyz, 1))).xyz;
+        pos = totalLocalPos.xyz;
+        normals = totalNormal;
         gl_Position = projection*v_matrix*totalLocalPos;
     }
     else{
+        pos = (obj_transform*poos).xyz;
         normals = inNormal;
-        pos = (pv_mat*obj_transform*poos).xyz;
         gl_Position = pv_mat*obj_transform*poos;
     }
 }

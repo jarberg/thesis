@@ -6,7 +6,7 @@ from OpenGL import GL
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
     GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_LINES, \
     GL_RGBA, GL_RGB, glDepthFunc, GL_ALWAYS, GL_LESS, glGenBuffers, glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, \
-    GL_STATIC_DRAW, glBufferData, GL_UNSIGNED_SHORT
+    GL_STATIC_DRAW, glBufferData, GL_UNSIGNED_SHORT, glUniform1f
 from OpenGL.raw.GL.VERSION.GL_1_0 import GL_TRIANGLE_STRIP
 
 from PIL import Image
@@ -32,7 +32,6 @@ class Renderer:
                                  [-1, 1, 0],
                                  [1, -1, 0],
                                  ])
-        self.debug=False
         self.quad.set_rotation([0, 180, 0])
 
     def draw(self, cam, animator=None):
@@ -40,7 +39,7 @@ class Renderer:
 
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
-
+        glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 0)
 
         if animator and len(animator.curPoseList) > 0:
             trans = []
@@ -76,6 +75,81 @@ class Renderer:
 
             obj.draw()
 
+    def skinning_draw(self, cam, animator=None, GPU=False):
+        skin_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "skinned")
+
+        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
+        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
+        glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 0)
+
+        if GPU:
+            glUniform1f(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "timestamp"), flatten(animator.animTime))
+        else:
+            if animator and len(animator.curPoseList) > 0:
+                trans = []
+                for k in range(len(animator.curPoseList)):
+                    trans.append(animator.curPoseList[k])
+                transforms = flatten_list(trans)
+                glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), len(animator.curPoseList),
+                                   False, transforms)
+
+        for obj in self.objects:
+
+            mat = obj.get_material()
+            glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b"), mat.tex_diffuse_b)
+
+            if mat.tex_diffuse_b:
+                loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse")
+                if loc != -1:
+                    slot = mat.get_diffuse()
+                    glUniform1i(loc, slot)
+
+            loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "normal_matrix")
+            if loc != -1:
+                glUniformMatrix3fv(loc, 1, False, flatten(obj.get_normalMatrix()))
+
+            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(obj.getTransform()))
+
+
+            if skin_loc != -1:
+                if hasattr(obj, "skinned"):
+                    glUniform1i(skin_loc, obj.skinned)
+                else:
+                    glUniform1i(skin_loc, 0)
+
+            obj.draw()
+
+    def debug_draw(self, cam, animator=None):
+        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
+        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
+        glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 1)
+        glDepthFunc(GL_ALWAYS)
+        skin_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "skinned")
+
+        if animator and len(animator.curPoseList) > 0:
+            trans = []
+            for k in range(len(animator.curPoseList)):
+                trans.append(animator.curPoseList[k])
+            transforms = flatten_list(trans)
+            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"),
+                               len(animator.curPoseList),
+                               False, transforms)
+
+        for obj in self.objects:
+
+            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False,
+                               flatten(obj.getTransform()))
+
+            if skin_loc != -1:
+                if hasattr(obj, "skinned"):
+                    glUniform1i(skin_loc, obj.skinned)
+                else:
+                    glUniform1i(skin_loc, 0)
+
+            obj.draw(True)
+
+        glDepthFunc(GL_LESS)
+
     def joint_draw(self, objects, cam, animator):
         glDepthFunc(GL_ALWAYS)
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
@@ -92,7 +166,6 @@ class Renderer:
             glDrawArrays(GL_LINES, 0, int(len(obj.vertexArray)))
 
         glDepthFunc(GL_LESS)
-
 
     def light_draw(self, buffer: G_Buffer):
         loc1 = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "pos")

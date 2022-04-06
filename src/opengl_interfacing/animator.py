@@ -55,8 +55,8 @@ class Animator:
             curPose = self.calculateCurrentAnimationPose()
             self.applyPoseToJoints(curPose, self.model.rootJoint, Matrix())
 
-    def increaseAnimationTime(self):
-        self.animTime += self.tpf
+    def increaseAnimationTime(self, tpf=None):
+        self.animTime += tpf or self.tpf
         if self.animTime > len(self.animation.keyframes) - 1:
             self.animTime %= len(self.animation.keyframes) - 1
 

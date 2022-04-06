@@ -3,99 +3,64 @@
 #extension GL_ARB_explicit_attrib_location : enable
 
 
-const int MAX_JOINTS  = 20;
-const int MAX_WEIGHTS = 3;
+const int MAX_JOINTS  = 200;
+const int MAX_KEYFRAMES = 200;
+const int MAX_WEIGHTS = 4;
 
-layout(location = 0) in vec4 a_Position;
+layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec2 InTexCoords;
+layout(location = 2) in vec4 in_joint_indices;
+layout(location = 3) in vec4 in_weights;
 layout(location = 4) in vec3 inNormal;
 
-layout(location = 1) uniform int skinned;
-layout(location = 2) uniform mat4 projection;
-layout(location = 3) uniform mat4 obj_transform;
-layout(location = 4) uniform mat4 v_matrix;
-
-in ivec3 in_joint_indices;
-in vec3 in_weights;
-
-struct Keyframe{
-    int joint_num;
-    mat4[MAX_JOINTS] transforms;
-};
-
-layout(std430, binding = 0) buffer test{
-    mat4 variable_array[];
-}T;
-
-
 uniform mat4 jointTransforms[MAX_JOINTS];
+uniform int skinned;
+uniform mat4 projection;
+uniform mat4 obj_transform;
+uniform mat4 v_matrix;
 
-out vec2 TexCoords;
 
-uniform int anim_length;
+out vec3 normals;
+out vec3 pos;
+
+
+layout(std430, binding = 2) buffer keyframes{
+    mat4[] transforms;
+}K;
+
+
 uniform float timestamp;
 
 
-//int[] getPreviousAndNextFrames(animTime){
-//    previousFrameID = int(floor(animTime));
-//    nextFrameID = int(ceil(animTime));
-//    if(previousFrameID == 0 && previousFrameID == nextFrameID){
-//        nextFrameID = 1;
-//    }
-//    frames = getNextAndPreviousKeyFrames(previousFrameID, nextFrameID);
-//    return frames;
-//}
-
-
-//float calculateProgression(self, timestamp1, timestamp2, animTime){
-//    totalTime = timestamp2 - timestamp1;
-//    currentTime = animTime - timestamp1;
-//
-//    if (totalTime == 0){
-//        return 0;
-//    }
-//    else{
-//        return currentTime / totalTime;
-//    }
-//
-//}
-
-
-void main() {
-    vec4 poos = vec4(a_Position.xyz, 1.0);
+void main(){
+    vec4 poos = vec4(a_Position, 1.0);
     mat4 pv_mat = projection*v_matrix;
+    vec4 totalLocalPos = vec4(0.0);
+    vec3 totalNormal = vec3(0.0);
+    highp int frameint = int(timestamp);
     if(skinned==1){
-        
-        //int[] frame_id = getPreviousAndNextFrames(timestamp);
-        //float progression = calculateProgression(frame_id[0], frame_id[1], timestamp);
 
-        vec4 totalLocalPos = vec4(0.0,0.0,0.1,0);
-        vec4 totalNormal = vec4(0.0);
-        mat4 trans;
-        float weight;
-        int jointID;
         for(int i =0;i<MAX_WEIGHTS;i++){
-            jointID = in_joint_indices[i];
-            trans = jointTransforms[i];
-            weight = in_weights[i];
-            if (weight==0) {
-                continue;
-            }
-            if(jointID < 0 ||weight< 0){
-                break;
-            }
-            vec4 localPos = trans * poos;
-            totalLocalPos = localPos * weight;
+            float weight = in_weights[i];
+            int jointID = int(in_joint_indices[i]);
+            mat4 trans = K.transforms[frameint+jointID];
+            float det = determinant(trans);
+            vec3 localPos = (trans/det * poos).xyz;
+            weight=weight/det;
+            totalLocalPos += vec4(localPos*weight, weight);
 
-            vec4 worldNormal = trans * vec4(inNormal, 1.0);
-            totalNormal += worldNormal * weight;
+            mat3 trans2 = mat3(trans);
+            float det2 = determinant(trans2);
+            vec3 localnorm = trans2/det2 * inNormal;
+            totalNormal += localnorm*weight;
         }
-        TexCoords = InTexCoords;
-        gl_Position = pv_mat*totalLocalPos;
+        pos = totalLocalPos.xyz;
+        normals = totalNormal;
+        gl_Position = projection*v_matrix*totalLocalPos;
     }
     else{
-        TexCoords = InTexCoords;
-        gl_Position = projection*v_matrix*T.variable_array[0]*a_Position;
+        pos = (obj_transform*poos).xyz;
+        normals = inNormal;
+        gl_Position = pv_mat*obj_transform*poos;
     }
 }
-

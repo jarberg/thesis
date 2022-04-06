@@ -4,7 +4,8 @@ import numpy
 from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM, glGenVertexArrays, \
     glBindVertexArray, glGenBuffers, glGetIntegerv, GL_FLOAT, glBindBuffer, GL_ARRAY_BUFFER, glBufferData, \
     GL_STATIC_DRAW, glEnableVertexAttribArray, glGetAttribLocation, GL_INT, GL_TRIANGLE_STRIP, GL_ELEMENT_ARRAY_BUFFER, \
-    glDrawArrays, GL_TRIANGLES, GL_UNSIGNED_SHORT, glDrawElements, GL_LINES, GL_UNSIGNED_INT, glVertexAttribIPointer
+    glDrawArrays, GL_TRIANGLES, GL_UNSIGNED_SHORT, glDrawElements, GL_LINES, GL_UNSIGNED_INT, glVertexAttribIPointer, \
+    glDepthFunc, GL_ALWAYS, GL_LESS, GL_LINE_STRIP
 
 from src.utils.objectUtils import Matrix, get_pointLight_radius, \
     flatten, cross, normal_matrix, inverse, euler_to_matrix, det4
@@ -283,10 +284,12 @@ class IndicedModel(Transform):
         self.initDataToBuffers(normals, coords,( self.have_weights and self.have_windices))
 
     def draw(self, debug=False):
-        glBindVertexArray(self.getVAO())
-        glDrawElements(self.renderType, len(self.indices), GL_UNSIGNED_SHORT, None)
         if debug:
-            glDrawElements(GL_LINES, len(self.indices), GL_UNSIGNED_SHORT, None)
+            glBindVertexArray(self.getVAO())
+            glDrawElements(GL_LINE_STRIP, len(self.indices), GL_UNSIGNED_SHORT, None)
+        else:
+            glBindVertexArray(self.getVAO())
+            glDrawElements(self.renderType, len(self.indices), GL_UNSIGNED_SHORT, None)
 
     def _update_transform(self):
         super()._update_transform()
@@ -335,7 +338,7 @@ class IndicedModel(Transform):
 
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)
-        self._update_boundingBox(vertex)
+        #self._update_boundingBox(vertex)
 
     def _update_boundingBox(self, p):
         if len(self.boundingBox) > 3:

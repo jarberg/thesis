@@ -1,6 +1,11 @@
 import time
 
-global debug
+import numpy
+
+from utils.objects import Transform
+
+global debug, GPU
+GPU = False
 debug = False
 
 from OpenGL import GL
@@ -13,7 +18,7 @@ from utils.Charlie import init_Charlie
 from opengl_interfacing.camera import Camera
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.renderer import ImagePlane, Renderer, Cube
-from utils.objectUtils import Vector
+from utils.objectUtils import Vector, flatten, flatten_list
 
 width, height = 200, 200
 aspectRatio = width / height
@@ -32,11 +37,15 @@ def update_persp_event(w, h):
 
 
 def buttons(key, x, y):
-    # print(key, x, y)
+    #print(key, x, y)
+    global debug, renderer, GPU
     if key == b'd':
-        global debug, renderer
         debug = not debug
         renderer.debug = not renderer.debug
+    if key == b'g':
+        GPU = not GPU
+
+
 
 def on_click(button, state, x, y):
     global buttonPressed, cam, dragx_start, dragy_start, dragx_mid_start, dragy_mid_start
@@ -113,17 +122,17 @@ def init():
     window = glutCreateWindow("Opengl Window In Python")
 
     glutReshapeFunc(update_persp_event)
-    GL.glLineWidth(1)
+    GL.glLineWidth(2)
     GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
 
     GL.glEnable(GL.GL_BLEND)
     glEnable(GL_DEPTH_TEST)
 
-    glDisable(GL_CULL_FACE)
+    #glDisable(GL_CULL_FACE)
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
-    program = initShaders("/shader/skinning/skinning_v_cpu_interpolate.glsl", "/shader/skinning/skinning_f.glsl")
+    program = initShaders("/shader/skinning/skinning_v_gpu_interpolate.glsl", "/shader/skinning/skinning_f.glsl")
     jointProgram = initShaders("/shader/debug/joint_v_shader.glsl", "/shader/debug/joint_f_shader.glsl")
     glUseProgram(program)
 
@@ -132,7 +141,8 @@ def init():
     t = ImagePlane("/res/images/box.png")
     t2 = ImagePlane("/res/images/box.png")
     cube.material.set_tex_diffuse(t.get_material().tex_diffuse)
-    cube.set_position([6, 0, 0])
+    cube.set_position([0, 1, 2])
+    cube.set_scale([0.1, 0.1, 0.1])
 
     glutKeyboardFunc(buttons)
     glutMotionFunc(mouseControl)
@@ -144,24 +154,37 @@ def init():
     renderer = Renderer(_obj=[cube, animated.model, animated])
 
 
-    # te1 = Transform()
-    # te2 = Transform()
-    # te2.set_position([1, 0, 0])
-    # data = flatten([flatten(te1.m), flatten(te2.m)], numpy.float32, )
-    ## data = flatten(2, data_type=numpy.int8)
-    ## data2= flatten(te1.m)
-    # global test_ssbo
-    # test_ssbo = glGenBuffers(1)
-    # glBindBuffer(GL_SHADER_STORAGE_BUFFER, test_ssbo)
-    ## glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.nbytes, data)
-    ## glBufferSubData(GL_SHADER_STORAGE_BUFFER, data.nbytes, data2.nbytes, data2)
-    #
-    # glBufferData(GL_SHADER_STORAGE_BUFFER, data.nbytes, data=data, usage=GL_DYNAMIC_COPY)
-    # glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, test_ssbo)
-    #
-    ## pog = glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.nbytes, None)
-    #
-    # glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+    te1 = Transform()
+    te2 = Transform()
+    te2.set_position([1, 0, 0])
+
+
+    data = flatten(te1.m)
+    data2= flatten(te2.m)
+    glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "frames[1]"), 1, False,
+                       data2)
+
+    global test_ssbo
+    test_ssbo = glGenBuffers(1)
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, test_ssbo)
+
+
+
+    totaltransforms =0
+    data4 =[]
+    for i in range(len(animator.animation.keyframes)):
+        for j, joint in enumerate(animator.animation.keyframes[i].transforms):
+            totaltransforms+=j
+            data4.append(animator.animation.keyframes[i].transforms[joint])
+            print(i,j)
+
+    data5 = flatten_list(data4)
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, test_ssbo)
+    glBufferData(GL_SHADER_STORAGE_BUFFER, data5.nbytes, data=data5, usage=GL_STATIC_DRAW)
+
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 
     glutMainLoop()
 
@@ -180,16 +203,19 @@ def fps_update():
 
 
 def render():
-    global renderer, animator, debug, buffer, program, lightProgram, cube, bbj, joint, joint2, start_time, cam, test_ssbo, joint_list
+    global renderer, GPU, animator, debug, buffer, program, lightProgram, cube, bbj, joint, joint2, start_time, cam, test_ssbo, joint_list
     start_time = time.time()
 
     clear_framebuffer()
     glUseProgram(program)
-    renderer.draw(cam, animator)
+    renderer.debug = debug
+    renderer.skinning_draw(cam, animator, GPU)
 
     if debug:
+        renderer.debug_draw(cam, animator)
         glUseProgram(jointProgram)
         renderer.joint_draw(joint_list, cam,  animator)
+
 
     animator.update(time_per_frame)
     glFlush()
