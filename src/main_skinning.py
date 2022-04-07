@@ -14,7 +14,7 @@ from OpenGL.GLUT import *
 
 
 from opengl_interfacing.framebuffer import clear_framebuffer
-from utils.Charlie import init_Charlie
+from utils.Charlie import init_geo_anim
 from opengl_interfacing.camera import Camera
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.renderer import ImagePlane, Renderer, Cube
@@ -61,9 +61,9 @@ def on_click(button, state, x, y):
             dragx_mid_start = x
             dragy_mid_start = y
     elif button == 3:
-        cam.adjustDistance(-3)
+        cam.adjustDistance(-1)
     elif button == 4:
-        cam.adjustDistance(3)
+        cam.adjustDistance(1)
         # scrool backward
 
 
@@ -137,9 +137,7 @@ def init():
     glUseProgram(program)
 
     cube = Cube()
-    cube2 = Cube()
     t = ImagePlane("/res/images/box.png")
-    t2 = ImagePlane("/res/images/box.png")
     cube.material.set_tex_diffuse(t.get_material().tex_diffuse)
     cube.set_position([0, 1, 2])
     cube.set_scale([0.1, 0.1, 0.1])
@@ -148,40 +146,28 @@ def init():
     glutMotionFunc(mouseControl)
     glutMouseFunc(on_click)
 
-    animator, animated, joint_list = init_Charlie()
+    animator, animated, joint_list = init_geo_anim()
 
     cam = Camera()
     renderer = Renderer(_obj=[cube, animated.model, animated])
 
 
-    te1 = Transform()
-    te2 = Transform()
-    te2.set_position([1, 0, 0])
-
-
-    data = flatten(te1.m)
-    data2= flatten(te2.m)
-    glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "frames[1]"), 1, False,
-                       data2)
 
     global test_ssbo
     test_ssbo = glGenBuffers(1)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, test_ssbo)
 
 
-
-    totaltransforms =0
-    data4 =[]
+    data =[]
     for i in range(len(animator.animation.keyframes)):
         for j, joint in enumerate(animator.animation.keyframes[i].transforms):
-            totaltransforms+=j
-            data4.append(animator.animation.keyframes[i].transforms[joint])
-            print(i,j)
+            data.append(animator.animation.keyframes[i].transforms[joint])
 
-    data5 = flatten_list(data4)
+
+    data = flatten_list(data)
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, test_ssbo)
-    glBufferData(GL_SHADER_STORAGE_BUFFER, data5.nbytes, data=data5, usage=GL_STATIC_DRAW)
+    glBufferData(GL_SHADER_STORAGE_BUFFER, data.nbytes, data=data, usage=GL_DYNAMIC_DRAW)
 
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
@@ -201,7 +187,6 @@ def fps_update():
         #print("FPS: ", 1 / tim)
 
 
-
 def render():
     global renderer, GPU, animator, debug, buffer, program, lightProgram, cube, bbj, joint, joint2, start_time, cam, test_ssbo, joint_list
     start_time = time.time()
@@ -216,11 +201,9 @@ def render():
         glUseProgram(jointProgram)
         renderer.joint_draw(joint_list, cam,  animator)
 
-
     animator.update(time_per_frame)
     glFlush()
 
     fps_update()
-
 
 init()

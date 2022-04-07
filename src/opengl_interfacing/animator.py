@@ -42,6 +42,7 @@ class Animator:
         self.animation = animation
         self.animTime = 0
         self.curPoseList = []
+        self.truePoseList =[]
 
     def doAnimation(self, anim):
         self.animTime = 0
@@ -52,59 +53,58 @@ class Animator:
         if self.animation is not None:
             self.increaseAnimationTime()
             self.curPoseList = []
-            curPose = self.calculateCurrentAnimationPose()
-            self.applyPoseToJoints(curPose, self.model.rootJoint, Matrix())
+            curPose = calculateCurrentAnimationPose(self)
+            applyPoseToJoints(self, curPose, self.model.rootJoint, Matrix())
 
     def increaseAnimationTime(self, tpf=None):
         self.animTime += tpf or self.tpf
         if self.animTime > len(self.animation.keyframes) - 1:
             self.animTime %= len(self.animation.keyframes) - 1
 
-    def getPreviousAndNextFrames(self):
-        previousFrameID = int(floor(self.animTime))
-        nextFrameID = int(ceil(self.animTime))
-        if previousFrameID == 0 and previousFrameID == nextFrameID:
-            nextFrameID = 1
-        frames = self.animation.getNextAndPreviousKeyFrames(previousFrameID, nextFrameID)
-        return frames
+def getPreviousAndNextFrames(animator):
+    previousFrameID = int(floor(animator.animTime))
+    nextFrameID = int(ceil(animator.animTime))
+    if previousFrameID == 0 and previousFrameID == nextFrameID:
+        nextFrameID = 1
+    frames = animator.animation.getNextAndPreviousKeyFrames(previousFrameID, nextFrameID)
+    return frames
 
-    def calculateProgression(self, keyframes):
-        totalTime = keyframes[1].getTimeStamp() - keyframes[0].getTimeStamp()
-        currentTime = self.animTime - keyframes[0].getTimeStamp()
+def calculateProgression(animator, keyframes):
+    totalTime = keyframes[1].getTimeStamp() - keyframes[0].getTimeStamp()
+    currentTime = animator.animTime - keyframes[0].getTimeStamp()
 
-        if totalTime == 0:
-            return 0
-        else:
-            return currentTime / totalTime
+    if totalTime == 0:
+        return 0
+    else:
+        return currentTime / totalTime
 
-    def calculateCurrentAnimationPose(self):
-        frames = self.getPreviousAndNextFrames()
-        progression = self.calculateProgression(frames)
-        return self.interpolatePoses(frames[0], frames[1], progression)
+def calculateCurrentAnimationPose(animator):
+    frames = getPreviousAndNextFrames(animator)
+    progression = calculateProgression(animator, frames)
+    return interpolatePoses(frames[0], frames[1], progression)
 
-    def applyPoseToJoints(self, curPose: OrderedDict, rootJoint: Joint, parentTransform):
-        curLocalTransform = curPose.get(rootJoint.name)
-        curTransform = parentTransform * curLocalTransform
-        final = curTransform*rootJoint.inverseBindTransform
+def applyPoseToJoints(animator, curPose: OrderedDict, rootJoint: Joint, parentTransform):
+    curLocalTransform = curPose.get(rootJoint.name)
+    curTransform = parentTransform * curLocalTransform
+    final = curTransform*rootJoint.inverseBindTransform
 
-        rootJoint.set_transform(curTransform)
+    #rootJoint.set_transform(curTransform)
 
-        self.curPoseList.append(final)
+    animator.curPoseList.append(final)
 
-        for child in rootJoint.children:
-            self.applyPoseToJoints(curPose, child, curTransform)
+    for child in rootJoint.children:
+        applyPoseToJoints(animator, curPose, child, curTransform)
 
 
+def interpolatePoses(prevFrame: KeyFrame, nexFrame: KeyFrame, progression: float):
+    curPose = OrderedDict()
+    for joint in prevFrame.getJointKeyFrames().keys():
+        previousTransform = prevFrame.getJointKeyFrames().get(joint)
+        nextTransform = nexFrame.getJointKeyFrames().get(joint)
+        curTransform = interpolate(previousTransform, nextTransform, progression)
+        curPose[joint] = curTransform
 
-    def interpolatePoses(self, prevFrame: KeyFrame, nexFrame: KeyFrame, progression: float):
-        curPose = OrderedDict()
-        for joint in prevFrame.getJointKeyFrames().keys():
-            previousTransform = prevFrame.getJointKeyFrames().get(joint)
-            nextTransform = nexFrame.getJointKeyFrames().get(joint)
-            curTransform = interpolate(previousTransform, nextTransform, progression)
-            curPose[joint] = curTransform
-
-        return curPose
+    return curPose
 
 
 def interpolate(prevTransfrom: Transform, nexTransform: Transform, progression):

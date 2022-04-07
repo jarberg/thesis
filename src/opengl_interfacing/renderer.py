@@ -83,7 +83,10 @@ class Renderer:
         glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 0)
 
         if GPU:
+            print(len(animator.animation.keyframes))
             glUniform1f(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "timestamp"), flatten(animator.animTime))
+            glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "rowLength"),
+                        flatten(len(animator.animation.keyframes[0].transforms)-1, data_type=numpy.int16))
         else:
             if animator and len(animator.curPoseList) > 0:
                 trans = []
