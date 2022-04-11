@@ -1,14 +1,18 @@
 import math
+import os
 
 import numpy
 from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM, glGenVertexArrays, \
     glBindVertexArray, glGenBuffers, glGetIntegerv, GL_FLOAT, glBindBuffer, GL_ARRAY_BUFFER, glBufferData, \
     GL_STATIC_DRAW, glEnableVertexAttribArray, glGetAttribLocation, GL_INT, GL_TRIANGLE_STRIP, GL_ELEMENT_ARRAY_BUFFER, \
-    glDrawArrays, GL_TRIANGLES, GL_UNSIGNED_SHORT, glDrawElements, GL_LINES, GL_UNSIGNED_INT, glVertexAttribIPointer, \
-    glDepthFunc, GL_ALWAYS, GL_LESS, GL_LINE_STRIP
+    glDrawArrays, GL_UNSIGNED_SHORT, glDrawElements, GL_LINES, glVertexAttribIPointer, \
+    GL_LINE_STRIP
 
+from PIL import Image
+import constants
+from opengl_interfacing.texture import Texture
 from src.utils.objectUtils import Matrix, get_pointLight_radius, \
-    flatten, cross, normal_matrix, inverse, euler_to_matrix, det4
+    flatten, cross, normal_matrix, inverse, euler_to_matrix, det4, get_opengl_format, is_mipmapable
 from src.utils.objectUtils import Vector
 
 
@@ -402,6 +406,10 @@ class Animated_model:
         self.rootJoint = rootJoint
         self.jointCount = jointCount
         self.skinned = 1
+        self.animator = None
+
+    def set_animator(self, animator):
+        self.animator = animator
 
     def draw(self, debug=False):
         self.model.draw(debug=debug)
@@ -473,6 +481,117 @@ class Material:
     def set_tex_diffuse(self, tex):
         self.tex_diffuse_b = True
         self.tex_diffuse = tex
+
+
+
+class Plane(Model):
+    def __init__(self, plane=None):
+        plane = plane or [
+            [0.5, 0.5, 0],
+            [0.5, -0.5, 0],
+            [-0.5, 0.5, 0],
+            [-0.5, -0.5, 0],
+            [-0.5, 0.5, 0],
+            [0.5, -0.5, 0],
+        ]
+        self.coordArray = [
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 0.0],
+            [0.0, 1.0],
+        ]
+        super().__init__(plane, self.coordArray)
+
+
+
+
+class ImagePlane(Plane):
+
+    def __init__(self, path=None, size=None):
+        super().__init__()
+        if path:
+            root = constants.ROOT_DIR
+            path = os.path.abspath(root + path).replace("\\", "/")
+            im = Image.open(fp=path)
+            im_data = numpy.array(im.getdata())
+
+            image_format = get_opengl_format(im.format)
+
+            im_mipmap = is_mipmapable(im.size[0], im.size[1])
+
+            self.material.set_tex_diffuse(
+                Texture(size=[im.size[0], im.size[1]], data=im_data, mipmap=im_mipmap, format=image_format))
+        else:
+            im_mipmap = is_mipmapable(size[0], size[1])
+            self.material.set_tex_diffuse(Texture(size=[size[0], size[1]]))
+
+
+class Cube(Model):
+    def __init__(self):
+        vertexes = [
+            [-1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0],
+            [-1.0, -1.0, 1.0],
+            [1.0, -1.0, 1.0],
+
+            [1.0, -1.0, -1.0],
+            [1.0, 1.0, 1.0],
+            [1.0, 1.0, -1.0],
+            [-1.0, 1.0, 1.0],
+
+            [-1.0, 1.0, -1.0],
+            [-1.0, -1.0, 1.0],
+            [-1.0, -1.0, -1.0],
+            [1.0, -1.0, -1.0],
+
+            [-1.0, 1.0, -1.0],
+            [1.0, 1.0, -1.0],
+            ]
+        vertexcoord = [
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [1.0, 1.0],
+            [1.0, 1.0],
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [1.0, 0.0],
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [1.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 1.0],
+            [0.0, 1.0],
+
+            [1.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 0.0],
+
+            [1.0, 1.0],
+            [0.0, 1.0],
+            [1.0, 0.0]]
+        super().__init__(vertexes, coordArray=vertexcoord)
+
+
+
 
 
 def initAttributeVariable(a_attribute, buffer, size, var_type, offset=0, step=0):

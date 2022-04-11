@@ -34,7 +34,7 @@ float LinearizeDepth(float depth)
 
 in vec4 a_pos;
 in vec2 OutTexCoords;
-layout(location = 4) uniform sampler2D tex_diffuse;
+layout(location = 8) uniform sampler2D tex_diffuse;
 layout(location = 6) uniform int tex_diffuse_b;
 
 layout(location = 7) uniform sampler2D depthTexture;

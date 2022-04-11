@@ -1,6 +1,8 @@
 import math
 from typing import Union
 
+from OpenGL.raw.GL.VERSION.GL_1_0 import GL_RGB, GL_RGBA
+
 from constants import PI, EPISLON_LEN
 
 
@@ -1112,6 +1114,20 @@ def quat_2_euler(q: Quaternion):
     return degrees(heading), degrees(attitude), degrees(bank)
 
 
+def get_opengl_format(format):
+    if format == "JPEG":
+        return GL_RGB
+    elif format == "PNG":
+        return GL_RGBA
+    else:
+        return GL_RGB
+
+
+def is_mipmapable(x, y):
+    return x == y
+
+
+
 def within_radius(position, light):
     if type(light).__name__ == "PointLight":
         if vlength(light - position) <= light.radius:
@@ -1135,3 +1151,6 @@ def get_pointLight_radius(pointLight):
 
     ret = (-linear + math.sqrt(linear * linear - 4 * exp * (const - colour_range * maxchannel * intensity))) / 2 * exp
     return ret
+
+
+

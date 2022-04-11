@@ -193,14 +193,14 @@ mat4 interpolate(mat4 prevTransfrom, mat4 nexTransform, float progression){
     t[3] = vec4(finalpos, 1);
     mat4 r = mat4(0.0);
 
-    vec4 quat1 = matrix_to_quaternion(prevTransfrom);
-    vec4 quat2 = matrix_to_quaternion(nexTransform);
-    vec4 quat3 = slerp(quat1, quat2, progression, true);
+    //vec4 quat1 = matrix_to_quaternion(prevTransfrom);
+    //vec4 quat2 = matrix_to_quaternion(nexTransform);
+    //vec4 quat3 = slerp(quat1, quat2, progression, true);
 
-    r = quaternion_to_matrix(quat3);
-    float det = determinant(r);
+    //r = quaternion_to_matrix(quat3);
+    //float det = determinant(r);
     //r /= sqrt(det);
-    return t*r;
+    return t;
 
 }
 
@@ -209,9 +209,11 @@ mat4 calculateCurrentAnimationPose(int jointID){
     float progression = calculateProgression(frames[0], frames[1]);
 
     mat4 trans0 = K.transforms[rowLength*frames[0]+jointID];
-    mat4 trans1 = K.transforms[rowLength*frames[0]+jointID];
+    mat4 trans1 = K.transforms[rowLength*frames[1]+jointID];
 
-    return interpolate(trans0, trans1, progression);
+    mat4 pose = interpolate(trans0, trans1, progression);
+
+    return pose;
 }
 
 void main(){

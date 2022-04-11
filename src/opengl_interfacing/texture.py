@@ -90,10 +90,11 @@ class Texture_depth:
 
 class Texture2dMS:
 
-    def __init__(self, size, samples, mipmap=False, repeat=False):
+    def __init__(self, size, samples, mipmap=False, format=GL_RGB, repeat=False):
         self.mipmap = mipmap
         self.samples = samples
         self.repeat = repeat
+        self.format = format
         self.genMipmap = False
         self.texType = GL_TEXTURE_2D_MULTISAMPLE
         self.slot = glGenTextures(1)
@@ -102,7 +103,7 @@ class Texture2dMS:
 
         self.width = size[0]
         self.height = size[1]
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, self.samples, GL_RGB, self.width, self.height, True)
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, self.samples, self.format, self.width, self.height, True)
 
         bind(self)
 

@@ -88,7 +88,7 @@ def applyPoseToJoints(animator, curPose: OrderedDict, rootJoint: Joint, parentTr
     curTransform = parentTransform * curLocalTransform
     final = curTransform*rootJoint.inverseBindTransform
 
-    #rootJoint.set_transform(curTransform)
+    rootJoint.set_transform(curTransform)
 
     animator.curPoseList.append(final)
 

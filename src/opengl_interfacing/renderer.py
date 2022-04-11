@@ -1,30 +1,21 @@
-import os
 from random import randrange
 
 import numpy
 from OpenGL import GL
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
     GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_LINES, \
-    GL_RGBA, GL_RGB, glDepthFunc, GL_ALWAYS, GL_LESS, glGenBuffers, glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, \
-    GL_STATIC_DRAW, glBufferData, GL_UNSIGNED_SHORT, glUniform1f
-from OpenGL.raw.GL.VERSION.GL_1_0 import GL_TRIANGLE_STRIP
+    glDepthFunc, GL_ALWAYS, GL_LESS, glUniform1f
 
-from PIL import Image
-
-import constants
 from opengl_interfacing.framebuffer import G_Buffer
-from opengl_interfacing.texture import Texture_Manager, Texture
-from utils.objectUtils import flatten, perspective, det4, flatten_list
-from utils.objects import Model, IndicedModel
-
-
+from utils.objectUtils import flatten, perspective, flatten_list
+from utils.objects import Plane
 
 
 class Renderer:
 
-    def __init__(self, _obj=None):
-        self.objects = _obj or []
-        self.persp = flatten(perspective(120, 1, 0.01, 100))
+    def __init__(self, currScene):
+
+        self.currScene = currScene
         self.quad = Plane(plane=[[1, 1, 0],
                                  [1, -1, 0],
                                  [-1, 1, 0],
@@ -34,136 +25,64 @@ class Renderer:
                                  ])
         self.quad.set_rotation([0, 180, 0])
 
-    def draw(self, cam, animator=None):
-        skin_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "skinned")
 
-        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
-        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
-        glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 0)
+    def draw(self):
+        _set_cam_attributes(self.currScene.get_current_camera())
 
-        if animator and len(animator.curPoseList) > 0:
-            trans = []
-            for k in range(len(animator.curPoseList)):
-                trans.append(animator.curPoseList[k])
-            transforms = flatten_list(trans)
-            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), len(animator.curPoseList),
-                               False, transforms)
+        for obj in self.currScene.get_entity_list():
 
-        for obj in self.objects:
-
-            mat = obj.get_material()
-            glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b"), mat.tex_diffuse_b)
-
-            if mat.tex_diffuse_b:
-                loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse")
-                if loc != -1:
-                    slot = mat.get_diffuse()
-                    glUniform1i(loc, slot)
-
-            loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "normal_matrix")
-            if loc != -1:
-                glUniformMatrix3fv(loc, 1, False, flatten(obj.get_normalMatrix()))
-
-            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(obj.getTransform()))
-
-
-            if skin_loc != -1:
-                if hasattr(obj, "skinned"):
-                    glUniform1i(skin_loc, obj.skinned)
-                else:
-                    glUniform1i(skin_loc, 0)
+            _set_obj_mat_attributes(obj)
+            _set_normalMatrix_attribute(obj)
+            _set_obj_transform_attributes(obj)
 
             obj.draw()
 
-    def skinning_draw(self, cam, animator=None, GPU=False):
-        skin_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "skinned")
+    def skinning_draw(self):
 
-        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
-        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
-        glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 0)
+        _set_cam_attributes(self.currScene.get_current_camera())
 
-        if GPU:
-            print(len(animator.animation.keyframes))
-            glUniform1f(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "timestamp"), flatten(animator.animTime))
-            glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "rowLength"),
-                        flatten(len(animator.animation.keyframes[0].transforms)-1, data_type=numpy.int16))
-        else:
-            if animator and len(animator.curPoseList) > 0:
-                trans = []
-                for k in range(len(animator.curPoseList)):
-                    trans.append(animator.curPoseList[k])
-                transforms = flatten_list(trans)
-                glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"), len(animator.curPoseList),
-                                   False, transforms)
+        for obj in self.currScene.get_entity_list():
+            if self.currScene.GPU:
+                _set_animator_attributes(obj)
+            else:
+                _set_animator_attributes(obj)
 
-        for obj in self.objects:
-
-            mat = obj.get_material()
-            glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b"), mat.tex_diffuse_b)
-
-            if mat.tex_diffuse_b:
-                loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse")
-                if loc != -1:
-                    slot = mat.get_diffuse()
-                    glUniform1i(loc, slot)
-
-            loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "normal_matrix")
-            if loc != -1:
-                glUniformMatrix3fv(loc, 1, False, flatten(obj.get_normalMatrix()))
-
-            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(obj.getTransform()))
-
-
-            if skin_loc != -1:
-                if hasattr(obj, "skinned"):
-                    glUniform1i(skin_loc, obj.skinned)
-                else:
-                    glUniform1i(skin_loc, 0)
+            _set_obj_mat_attributes(obj)
+            _set_normalMatrix_attribute(obj)
+            _set_obj_transform_attributes(obj)
+            _set_obj_skin_attributes(obj)
 
             obj.draw()
 
-    def debug_draw(self, cam, animator=None):
-        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
-        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
+    def debug_draw(self):
+
+        _set_cam_attributes(self.currScene.get_current_camera())
+
         glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 1)
         glDepthFunc(GL_ALWAYS)
-        skin_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "skinned")
 
-        if animator and len(animator.curPoseList) > 0:
-            trans = []
-            for k in range(len(animator.curPoseList)):
-                trans.append(animator.curPoseList[k])
-            transforms = flatten_list(trans)
-            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"),
-                               len(animator.curPoseList),
-                               False, transforms)
-
-        for obj in self.objects:
-
-            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False,
-                               flatten(obj.getTransform()))
-
-            if skin_loc != -1:
-                if hasattr(obj, "skinned"):
-                    glUniform1i(skin_loc, obj.skinned)
-                else:
-                    glUniform1i(skin_loc, 0)
+        for obj in self.currScene.get_entity_list():
+            _set_animator_attributes(obj)
+            _set_obj_transform_attributes(obj)
+            _set_obj_skin_attributes(obj)
 
             obj.draw(True)
 
+        glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 0)
         glDepthFunc(GL_LESS)
 
-    def joint_draw(self, objects, cam, animator):
+    def joint_draw(self):
+        cam = self.currScene.get_current_camera()
         glDepthFunc(GL_ALWAYS)
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False, cam.pMatrix)
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
 
 
-        for obj in objects:
-            if len(animator.curPoseList) > 0 and False:
-                glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(animator.curPoseList[obj.id]))
-            else:
-                glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(obj.getTransform()))
+        for obj in  self.currScene.get_entity_list():
+            #if len(animator.curPoseList) > 0 and False:
+            #    glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(animator.curPoseList[obj.id]))
+            #else:
+            #    glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(obj.getTransform()))
 
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_LINES, 0, int(len(obj.vertexArray)))
@@ -184,12 +103,18 @@ class Renderer:
         glBindVertexArray(self.quad.VAO)
         glDrawArrays(GL_TRIANGLES, 0, len(self.quad.vertexArray))
 
-    def postDraw(self, program, tex):
+    def postDraw(self, program, tex, postBuffer):
         GL.glUseProgram(program)
 
         loc = glGetUniformLocation(program, "screencapture")
         if loc != -1:
             glUniform1i(loc, tex.slot)
+
+
+        glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "viewport_width"), postBuffer.width)
+        glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "viewport_height"), postBuffer.height)
+        glUniform1i(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "samples"), postBuffer.get_samples())
+
 
         glUniformMatrix4fv(3, 1, False, flatten(self.quad.getTransform()))
 
@@ -214,122 +139,62 @@ class Renderer:
             glBindVertexArray(obj.VAO)
             glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
 
+def _set_cam_attributes(cam):
+    if cam:
+        p_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "projection")
+        v_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix")
+        if p_loc != -1:
+            glUniformMatrix4fv(p_loc, 1, False, cam.pMatrix)
+        if v_loc != -1:
+            glUniformMatrix4fv(v_loc, 1, False, flatten(cam._getTransform()), False)
 
-class Plane(Model):
-    def __init__(self, plane=None):
-        plane = plane or [
-            [0.5, 0.5, 0],
-            [0.5, -0.5, 0],
-            [-0.5, 0.5, 0],
-            [-0.5, -0.5, 0],
-            [-0.5, 0.5, 0],
-            [0.5, -0.5, 0],
-        ]
-        self.coordArray = [
-            [0.0, 0.0],
-            [0.0, 1.0],
-            [1.0, 0.0],
-            [1.0, 1.0],
-            [1.0, 0.0],
-            [0.0, 1.0],
-        ]
-        super().__init__(plane, self.coordArray)
+def _set_animator_attributes(obj):
+    if hasattr(obj, "animator"):
+        animator = obj.animator
+        if animator and len(animator.curPoseList) > 0:
+            trans = []
+            for k in range(len(animator.curPoseList)):
+                trans.append(animator.curPoseList[k])
+            transforms = flatten_list(trans)
+            glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"),
+                               len(animator.curPoseList),
+                               False, transforms)
 
+def _set_obj_mat_attributes(obj):
+    mat = obj.get_material()
 
-def get_opengl_format(format):
-    if format == "JPEG":
-        return GL_RGB
-    elif format == "PNG":
-        return GL_RGBA
-    else:
-        return GL_RGB
+    if mat.tex_diffuse_b:
+        b_tex_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b")
+        if b_tex_loc != -1:
+            glUniform1i(b_tex_loc, mat.tex_diffuse_b)
+        tex_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse")
+        if tex_loc != -1:
+            slot = mat.get_diffuse()
+            glUniform1i(tex_loc, slot)
 
+def _set_obj_transform_attributes(obj):
+    t_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform")
+    if t_loc != -1:
+        glUniformMatrix4fv(t_loc, 1, False, flatten(obj.getTransform()))
 
-def is_mipmapable(x, y):
-    return x == y
-
-
-class ImagePlane(Plane):
-
-    def __init__(self, path=None, size=None):
-        super().__init__()
-        if path:
-            root = constants.ROOT_DIR
-            path = os.path.abspath(root + path).replace("\\", "/")
-            im = Image.open(fp=path)
-            im_data = numpy.array(im.getdata())
-
-            image_format = get_opengl_format(im.format)
-
-            im_mipmap = is_mipmapable(im.size[0], im.size[1])
-
-            self.material.set_tex_diffuse(
-                Texture(size=[im.size[0], im.size[1]], data=im_data, mipmap=im_mipmap, format=image_format))
+def _set_obj_skin_attributes(obj):
+    skin_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "skinned")
+    if skin_loc != -1:
+        if hasattr(obj, "skinned"):
+            glUniform1i(skin_loc, obj.skinned)
         else:
-            self.material.set_tex_diffuse(
-                Texture_Manager().createNewTexture(size=[size[0], size[1]]))
+            glUniform1i(skin_loc, 0)
 
+def _set_normalMatrix_attribute(obj):
+    loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "normal_matrix")
+    if loc != -1:
+        glUniformMatrix3fv(loc, 1, False, flatten(obj.get_normalMatrix()))
 
-class Cube(Model):
-    def __init__(self):
-        vertexes = [
-            [-1.0, 1.0, 1.0],
-            [1.0, 1.0, 1.0],
-            [-1.0, -1.0, 1.0],
-            [1.0, -1.0, 1.0],
-
-            [1.0, -1.0, -1.0],
-            [1.0, 1.0, 1.0],
-            [1.0, 1.0, -1.0],
-            [-1.0, 1.0, 1.0],
-
-            [-1.0, 1.0, -1.0],
-            [-1.0, -1.0, 1.0],
-            [-1.0, -1.0, -1.0],
-            [1.0, -1.0, -1.0],
-
-            [-1.0, 1.0, -1.0],
-            [1.0, 1.0, -1.0],
-            ]
-        vertexcoord = [
-            [0.0, 0.0],
-            [0.0, 1.0],
-            [1.0, 1.0],
-            [1.0, 1.0],
-            [0.0, 0.0],
-            [0.0, 1.0],
-            [1.0, 0.0],
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [1.0, 1.0],
-            [1.0, 0.0],
-            [0.0, 0.0],
-            [0.0, 0.0],
-            [0.0, 1.0],
-            [0.0, 1.0],
-            [1.0, 0.0],
-            [0.0, 0.0],
-            [0.0, 0.0],
-            [0.0, 1.0],
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [1.0, 1.0],
-            [1.0, 0.0],
-            [1.0, 1.0],
-            [1.0, 0.0],
-            [1.0, 1.0],
-            [1.0, 0.0],
-            [1.0, 1.0],
-            [1.0, 1.0],
-            [0.0, 1.0],
-
-            [1.0, 1.0],
-            [0.0, 1.0],
-            [0.0, 0.0],
-
-            [1.0, 1.0],
-            [0.0, 1.0],
-            [1.0, 0.0]]
-        super().__init__(vertexes, coordArray=vertexcoord)
-
+def _set_GPU_animation_attributes(animator):
+    stamp_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "timestamp")
+    if stamp_loc > -1:
+        glUniform1f(stamp_loc, flatten(animator.animTime))
+    rowLength_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "rowLength")
+    if rowLength_loc:
+        glUniform1i(rowLength_loc, flatten(len(animator.animation.keyframes[0].transforms), data_type=numpy.int16))
 

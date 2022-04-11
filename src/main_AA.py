@@ -5,9 +5,12 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from PIL import Image, ImageOps
 
-from opengl_interfacing.framebuffer import FrameBuffer_Tex_MS, blit_to_default
+from opengl_interfacing.camera import Camera
+from opengl_interfacing.framebuffer import FrameBuffer_Tex_MS
 from opengl_interfacing.initshader import initShaders
-from opengl_interfacing.renderer import ImagePlane, Renderer, Plane, Cube
+from opengl_interfacing.renderer import  Renderer
+from utils.objects import ImagePlane, Cube
+from utils.scene import Scene
 from utils.objectUtils import flatten, perspective
 
 width, height = 400, 400
@@ -24,10 +27,11 @@ global target
 
 
 def update_persp_event(w, h):
-    global renderer
+    global renderer, post, currScene
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
-    renderer.persp = flatten(perspective(90, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0.1, 100))
-
+    cam = currScene.get_current_camera()
+    cam.update_pMatrix()
+    post.resize(w,  h)
 
 def init():
     global start_time
@@ -41,6 +45,11 @@ def init():
     global blit
     global target
     global quad
+
+
+    global currScene
+
+
     fps_counter = 0
     start_time = time.time()
 
@@ -62,14 +71,14 @@ def init():
 
     glEnable(GL_MULTISAMPLE)
 
-    post = FrameBuffer_Tex_MS(width, height)
+    post = FrameBuffer_Tex_MS(width, height, 1)
 
     program = initShaders("/shader/vertex-shader.glsl", "/shader/fragment-shader.glsl")
-    postProgram = initShaders("/shader/aa_v_shader.glsl", "/shader/aa_f_shader.glsl")
+    postProgram = initShaders("/shader/antiAlias/aa_v_shader.glsl", "/shader/antiAlias/aa_f_shader.glsl")
 
     glUseProgram(program)
-
-
+    global cam
+    cam = Camera()
     t = ImagePlane("/res/images/body_05.png")
     t.set_position([0.5, 0, -1])
     t.set_scale([-1, 1, 1])
@@ -79,13 +88,20 @@ def init():
     t2.set_rotation([45, 0, 0])
 
     cube = Cube()
-    cube.set_position([1, -1, -4])
-    renderer = Renderer([t, cube, t2])
+    cube.set_position([1, -1, 0])
+    cube.set_scale([0.5,0.5,0.5])
+
+    currScene = Scene()
+    currScene.inputMan.set_plusminus_callback(set_samples)
+    renderer = Renderer(currScene, [t, cube, t2])
 
     glutDisplayFunc(render)
     glutIdleFunc(render)
     glutMainLoop()
 
+def set_samples(samples):
+    global post
+    post.set_samples(samples)
 
 def save_current_framebuffer_as_png(bufferid):
     glPixelStorei(GL_PACK_ALIGNMENT, 1)
@@ -103,7 +119,7 @@ def fps_update():
     tim = (time.time() - start_time)
     if (time.time() - start_time) > 1 and fps_counter*tim != 0:
         time_per_frame = 1 / fps_counter * tim
-        print("FPS: ", fps_counter / (time.time() - start_time))
+        #("FPS: ", fps_counter / (time.time() - start_time))
         fps_counter = 0
         start_time = time.time()
 
@@ -120,14 +136,15 @@ def render():
     global postProgram
     global renderer
     global post
-    global quad
+    global quad, gsamples
 
     post.bind()
+
     clear_framebuffer()
     glUseProgram(program)
     renderer.draw()
     post.unbind()
-    renderer.postDraw(postProgram, post.texture)
+    renderer.postDraw(postProgram, post.texture, post)
     glFlush()
     fps_update()
 

@@ -26,8 +26,6 @@ def animsetup(frame, rootJoint, parentTransform):
         animsetup(frame, child, parentTransform*curLocalTransform)
 
 
-
-
 def setup_test_anim_GPU(bones, model):
 
 
@@ -36,18 +34,18 @@ def setup_test_anim_GPU(bones, model):
     bones[2].set_position([0, 0, 0])
     bones[3].set_position([0, 0, 0])
 
-    new_joint_dict = get_transformDict(bones)
-    animsetup(new_joint_dict, bones[0], Matrix())
+    #new_joint_dict = get_transformDict(bones)
+    #animsetup(new_joint_dict, bones[0], Matrix())
     new_joint_dict = get_transformDict(bones)
 
     key1 = KeyFrame(new_joint_dict, 0)
 
-    bones[0].set_position([-2, 0, 0])
+    bones[0].set_position([2, 0, 0])
     bones[1].set_position([0, 0, 0])
     bones[2].set_position([0, 0, 0])
     bones[3].set_position([0, 0, 0])
-    new_joint_dict = get_transformDict(bones)
-    animsetup(new_joint_dict, bones[0], Matrix())
+    #new_joint_dict = get_transformDict(bones)
+    #animsetup(new_joint_dict, bones[0], Matrix())
     new_joint_dict = get_transformDict(bones)
 
     key2 = KeyFrame(new_joint_dict, 1)
@@ -59,7 +57,6 @@ def setup_test_anim_GPU(bones, model):
     new_joint_dict = get_transformDict(bones)
 
     key3 = KeyFrame(new_joint_dict, 2)
-
 
     anim = Animation([key1, key2, key3])
 
@@ -189,6 +186,7 @@ def init_geo_anim_GPU():
     animated = Animated_model(model, j1, 4)
 
     animator = setup_test_anim_GPU(joint_list, animated)
+    animated.set_animator(animator)
     return animator, animated, joint_list
 
 def init_geo_anim():
@@ -270,6 +268,6 @@ def init_geo_anim():
     model.set_position([0, 2, 0])
     animated = Animated_model(model, j1, 4)
 
-    animator = setup_test_anim_GPU(joint_list, animated)
+    animator = setup_test_anim_CPU(joint_list, animated)
     return animator, animated, joint_list
 

@@ -1,18 +1,15 @@
-import numpy
+from OpenGL import GL
+import time
+
 from OpenGL import GL
 from OpenGL.GL import *
 from OpenGL.GLUT import *
-from OpenGL.raw.GL.NV.multisample_filter_hint import GL_MULTISAMPLE_FILTER_HINT_NV
-from OpenGL.raw.GLU import gluPerspective
 from PIL import Image, ImageOps
-import time
 
-from opengl_interfacing.framebuffer import FrameBuffer, FrameBuffer_Tex_MS, FrameBuffer_blit_MS, FrameBuffer_target_MS, \
-    blit_to_default
 from opengl_interfacing.initshader import initShaders
-from opengl_interfacing.renderer import ImagePlane, Renderer, Plane, Cube
-from opengl_interfacing.texture import bind
-from utils.objectUtils import flatten, Matrix, ortho, perspective, transpose
+from opengl_interfacing.renderer import Renderer, Plane
+from utils.objectUtils import flatten, perspective
+from utils.objects import Cube, ImagePlane
 
 width, height = 800, 800
 aspectRatio = width / height
@@ -68,7 +65,7 @@ def init():
     glutIdleFunc(render)
 
     program = initShaders("/shader/vertex-shader.glsl", "/shader/fragment-shader.glsl")
-    randProgram = initShaders("/shader/ran_v_shader.glsl", "/shader/ran_f_shader.glsl")
+    randProgram = initShaders("/shader/random/ran_v_shader.glsl", "/shader/random/ran_f_shader.glsl")
 
 
     glUseProgram(program)

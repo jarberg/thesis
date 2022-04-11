@@ -4,13 +4,13 @@ from OpenGL.GL import GL_FRAMEBUFFER, glBindRenderbuffer, GL_RENDERBUFFER, GL_DE
     glClearColor, glClear, GL_COLOR_BUFFER_BIT, \
     GL_DEPTH_BUFFER_BIT, glFlush, GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, glFramebufferTexture2D, GL_TEXTURE_2D, \
     GL_READ_FRAMEBUFFER, GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_FRONT, GL_SAMPLES, GL_COLOR_ATTACHMENT2, glDrawBuffers, \
-    GL_UNSIGNED_BYTE, glBindTexture
+    GL_UNSIGNED_BYTE, glBindTexture, glTexImage2DMultisample, GL_TEXTURE_2D_MULTISAMPLE
 from OpenGL.GL import glBindFramebuffer, GL_DEPTH_COMPONENT, GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE
 from OpenGL.raw.GL.VERSION.GL_1_0 import GL_RGB
 from OpenGL.raw.GL.VERSION.GL_1_4 import GL_DEPTH_COMPONENT32
 
 from opengl_interfacing import texture
-from opengl_interfacing.texture import Texture_depth, Texture
+from opengl_interfacing.texture import Texture_depth, Texture, bind
 
 
 class FrameBuffer:
@@ -138,15 +138,15 @@ class G_Buffer:
 
 
 class FrameBuffer_Tex_MS:
-    def __init__(self, width, height):
+    def __init__(self, width, height, samples=0):
         self.width = width
         self.height = height
 
         self.framebuffer = glGenFramebuffers(1)
-        self.samples = 4
+        self.samples = samples
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 
-        self.texture = texture.Texture2dMS([width, height], 4)
+        self.texture = texture.Texture2dMS([width, height], samples)
         texture.bind(self.texture)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.texture.texType, self.texture.slot, 0)
 
@@ -161,6 +161,12 @@ class FrameBuffer_Tex_MS:
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
         self.bound = False
+
+    def set_samples(self, samples):
+        self.samples = max(self.samples+samples, 0)
+
+    def get_samples(self):
+        return pow(2, self.samples)
 
     def bind(self):
         if self.bound:
@@ -188,6 +194,19 @@ class FrameBuffer_Tex_MS:
         glClearColor(0.0, 0.5, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.bound = False
+
+    def resize(self, w, h):
+        self.width = w
+        self.height = h
+        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+
+        GL.glActiveTexture(GL.GL_TEXTURE0 + self.texture.slot)
+        GL.glBindTexture(self.texture.texType, self.texture.slot)
+
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, self.get_samples(), self.texture.format, self.width, self.height, True)
+
+        GL.glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
+        GL.glRenderbufferStorageMultisample(GL_RENDERBUFFER, self.get_samples(), GL_DEPTH_COMPONENT32, self.width, self.height)
 
 
 class FrameBuffer_depth:
