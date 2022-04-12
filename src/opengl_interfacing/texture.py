@@ -1,3 +1,6 @@
+import os
+
+import numpy
 from OpenGL import GL
 from OpenGL.GL import GL_TEXTURE_2D, GL_UNSIGNED_BYTE, GL_REPEAT, GL_TEXTURE_WRAP_S, \
     GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER, GL_RGB, GL_NEAREST, GL_TEXTURE_MAG_FILTER, \
@@ -5,6 +8,10 @@ from OpenGL.GL import GL_TEXTURE_2D, GL_UNSIGNED_BYTE, GL_REPEAT, GL_TEXTURE_WRA
     GL_LINEAR_MIPMAP_NEAREST, GL_TEXTURE_2D_MULTISAMPLE, glTexImage2DMultisample, glBindTexture, GL_DEPTH_COMPONENT, \
     glTexParameteri, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL, GL_NONE, GL_TEXTURE_COMPARE_MODE
 from OpenGL.GL.framebufferobjects import glGenerateMipmap
+from PIL import Image
+
+import constants
+from utils.objectUtils import get_opengl_format, is_mipmapable
 
 
 class Texture_Manager:
@@ -17,13 +24,28 @@ class Texture_Manager:
 
     def __init__(self):
         self.txtDict = {}
-        self.usedSlots = []
 
-    def createNewTexture(self, size=None, data=None, mipmap=False):
-        return
+    def createNewTexture(self, path):
+        pos_tex = self.txtDict.get(path, None)
+        if pos_tex:
+           return pos_tex
+        else:
+            root = constants.ROOT_DIR
+            wholepath = os.path.abspath(root + path).replace("\\", "/")
+            im = Image.open(fp=wholepath)
+            im_data = numpy.array(im.getdata())
 
-    def _register(self):
-        pass
+            image_format = get_opengl_format(im.format)
+
+            im_mipmap = is_mipmapable(im.size[0], im.size[1])
+            tex = Texture(size=[im.size[0], im.size[1]], data=im_data, mipmap=im_mipmap, format=image_format)
+            self._register(path, tex)
+
+            return tex
+
+
+    def _register(self, path, tex):
+        self.txtDict[path] = tex
 
     def _unregister(self):
         pass

@@ -7,7 +7,7 @@ from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL
     glDepthFunc, GL_ALWAYS, GL_LESS, glUniform1f
 
 from opengl_interfacing.framebuffer import G_Buffer
-from utils.objectUtils import flatten, perspective, flatten_list
+from utils.objectUtils import flatten, flatten_list
 from utils.objects import Plane
 
 
@@ -16,13 +16,7 @@ class Renderer:
     def __init__(self, currScene):
 
         self.currScene = currScene
-        self.quad = Plane(plane=[[1, 1, 0],
-                                 [1, -1, 0],
-                                 [-1, 1, 0],
-                                 [-1, -1, 0],
-                                 [-1, 1, 0],
-                                 [1, -1, 0],
-                                 ])
+        self.quad = Plane()
         self.quad.set_rotation([0, 180, 0])
 
 
@@ -78,30 +72,30 @@ class Renderer:
         glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False, flatten(cam._getTransform()), False)
 
 
-        for obj in  self.currScene.get_entity_list():
-            #if len(animator.curPoseList) > 0 and False:
-            #    glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(animator.curPoseList[obj.id]))
-            #else:
-            #    glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(obj.getTransform()))
+        for obj in  self.currScene.get_joints():
+            if len(self.currScene.animators[0].curPoseList) > 0 and False:
+                glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(animator.curPoseList[obj.id]))
+            else:
+                glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False, flatten(obj.getTransform()))
 
-            glBindVertexArray(obj.VAO)
-            glDrawArrays(GL_LINES, 0, int(len(obj.vertexArray)))
+            glBindVertexArray(obj.getVAO())
+            glDrawArrays(GL_LINES, 0, obj.get_vertexArray_len())
 
         glDepthFunc(GL_LESS)
 
     def light_draw(self, buffer: G_Buffer):
-        loc1 = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "pos")
+        currProgram = GL.glGetIntegerv(GL_CURRENT_PROGRAM)
+        loc1 = glGetUniformLocation(currProgram, "pos")
         glUniform1i(loc1, buffer.position_tex.slot)
-        loc2 = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "norm")
+        loc2 = glGetUniformLocation(currProgram, "norm")
         glUniform1i(loc2, buffer.normal_tex.slot)
-        loc3 = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "albedo")
+        loc3 = glGetUniformLocation(currProgram, "albedo")
         glUniform1i(loc3, buffer.normal_tex.slot)
 
-        glUniformMatrix4fv(glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1, False,
+        glUniformMatrix4fv(glGetUniformLocation(currProgram, "obj_transform"), 1, False,
                            flatten(self.quad.getTransform()))
 
-        glBindVertexArray(self.quad.VAO)
-        glDrawArrays(GL_TRIANGLES, 0, len(self.quad.vertexArray))
+        self.quad.draw()
 
     def postDraw(self, program, tex, postBuffer):
         GL.glUseProgram(program)
@@ -163,14 +157,13 @@ def _set_animator_attributes(obj):
 def _set_obj_mat_attributes(obj):
     mat = obj.get_material()
 
-    if mat.tex_diffuse_b:
-        b_tex_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b")
-        if b_tex_loc != -1:
-            glUniform1i(b_tex_loc, mat.tex_diffuse_b)
-        tex_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse")
-        if tex_loc != -1:
-            slot = mat.get_diffuse()
-            glUniform1i(tex_loc, slot)
+    b_tex_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b")
+    if b_tex_loc != -1:
+        glUniform1i(b_tex_loc, mat.tex_diffuse_b)
+    tex_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse")
+    if tex_loc != -1 and mat.tex_diffuse_b:
+        slot = mat.get_diffuse()
+        glUniform1i(tex_loc, slot)
 
 def _set_obj_transform_attributes(obj):
     t_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform")

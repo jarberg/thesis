@@ -111,24 +111,22 @@ def interpolate(prevTransfrom: Transform, nexTransform: Transform, progression):
     trans = Vector([prevTransfrom.m[0][3], prevTransfrom.m[1][3], prevTransfrom.m[2][3]])
     trans2 = Vector([nexTransform.m[0][3], nexTransform.m[1][3], nexTransform.m[2][3]])
 
-    sx, sy, sz = get_scale(prevTransfrom.m)
-    sx1, sy1, sz1 = get_scale(nexTransform.m)
-
-    quat1 = matrix_to_quaternion(prevTransfrom)
-    quat2 = matrix_to_quaternion(nexTransform)
-
-    quat3 = slerp(quat1, quat2, progression, True)
-
     t = Matrix()
     final_pos = trans * (1 - progression) + trans2 * progression
     t[0][3] = final_pos[0]
     t[1][3] = final_pos[1]
     t[2][3] = final_pos[2]
 
+    quat1 = matrix_to_quaternion(prevTransfrom)
+    quat2 = matrix_to_quaternion(nexTransform)
+    quat3 = quat1 * (1 - progression) + quat2 * progression #slerp(quat1, quat2, progression, True)
+
     r = quaternion_to_matrix(quat3)
     det = det4(r)
     r /= det
 
+    sx, sy, sz = get_scale(prevTransfrom.m)
+    sx1, sy1, sz1 = get_scale(nexTransform.m)
     sca1 = Vector(sx, sy, sz)
     sca2 = Vector(sx1, sy1, sz1)
 

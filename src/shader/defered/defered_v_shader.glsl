@@ -2,7 +2,7 @@
 #extension GL_ARB_explicit_uniform_location : enable
 #extension GL_ARB_explicit_attrib_location : enable
 
-layout(location = 0) in vec4 a_Position;
+layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec2 InTexCoords;
 layout(location = 4) in vec3 inNormal;
 
@@ -19,8 +19,8 @@ out vec3 Normal;
 void main() {
     mat4 pv_mat = projection*v_matrix;
 
-    g_pos = obj_transform*a_Position;
+    g_pos = obj_transform*vec4(a_Position,1);
     Normal = normal_matrix*inNormal;
     TexCoords = InTexCoords;
-    gl_Position = pv_mat*obj_transform*a_Position;
+    gl_Position = pv_mat*obj_transform*vec4(a_Position,1);
 }

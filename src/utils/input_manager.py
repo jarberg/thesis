@@ -32,6 +32,8 @@ class Input_manager:
             self.plusminus(1)
         if key == b'-':
             self.plusminus(-1)
+        if key == b'p':
+            self.currScene.play = not self.currScene.play
 
     def on_click(self, button, state, x, y):
 
@@ -61,7 +63,7 @@ class Input_manager:
 
             deltax = ((mx - self.dragx_start) * ratio) / glutGet(GLUT_WINDOW_WIDTH)
             deltay = (my - self.dragy_start) / glutGet(GLUT_WINDOW_HEIGHT)
-            print(deltax, deltay)
+
             cam.updateHorizontal(-deltax * 100)
             cam.updateVertical(-deltay * 100)
 

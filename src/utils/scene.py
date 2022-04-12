@@ -10,10 +10,13 @@ class Scene:
         self.camera = camera or Camera()
         self.inputMan = input_manager.Input_manager(self)
         self.entities = []
+        self.joints = []
         self.animators = []
         self.lights = []
         self.cubes = {}
+
         self.debug = False
+        self.play = False
         self.GPU = False
 
     def add_entities(self, entity_list):
@@ -33,6 +36,12 @@ class Scene:
     def get_entity_list(self):
         return self.entities
 
+    def add_joints(self, joint_list):
+        for joint in joint_list:
+            self.joints.append(joint)
+    def get_joints(self):
+        return self.joints
+
     def set_debug(self):
         self.debug = not self.debug
 
@@ -40,8 +49,9 @@ class Scene:
         self.GPU = not self.GPU
 
     def update(self, time_per_frame):
-        for ani in self.animators:
-            ani.update(time_per_frame)
+        if self.play:
+            for ani in self.animators:
+                ani.update(time_per_frame)
 
 
 cubesize = 10

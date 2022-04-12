@@ -27,6 +27,12 @@ out vec3 pos;
 layout(std430, binding = 2) buffer keyframes{
     mat4[] transforms;
 }K;
+layout(std430, binding = 3) buffer bind{
+    mat4[] transforms;
+}B;
+layout(std430, binding = 4) buffer parentIDs{
+    int[] parentIDs;
+}P;
 
 uniform float timestamp;
 uniform int rowLength;
@@ -210,6 +216,10 @@ mat4 calculateCurrentAnimationPose(int jointID){
 
     mat4 trans0 = K.transforms[rowLength*frames[0]+jointID];
     mat4 trans1 = K.transforms[rowLength*frames[1]+jointID];
+
+    mat4 totalParent = mat4(0.0);
+    int parentID = P.parentIDs[rowLength*frames[0]+jointID];
+
 
     mat4 pose = interpolate(trans0, trans1, progression);
 

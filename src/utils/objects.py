@@ -10,7 +10,7 @@ from OpenGL.GL import glVertexAttribPointer, GL_CURRENT_PROGRAM, glGenVertexArra
 
 from PIL import Image
 import constants
-from opengl_interfacing.texture import Texture
+from opengl_interfacing.texture import Texture, Texture_Manager
 from src.utils.objectUtils import Matrix, get_pointLight_radius, \
     flatten, cross, normal_matrix, inverse, euler_to_matrix, det4, get_opengl_format, is_mipmapable
 from src.utils.objectUtils import Vector
@@ -138,6 +138,9 @@ class Joint(Transform):
         glBufferData(GL_ARRAY_BUFFER, v_array.nbytes, v_array, GL_STATIC_DRAW)
         glVertexAttribPointer(0, 3, GL_FLOAT, False, 0, None)
         glEnableVertexAttribArray(self.vPosition)
+
+    def getVAO(self):
+        return self.VAO
 
     def get_vertexArray_len(self):
         return len(self.vertexArray)
@@ -485,16 +488,15 @@ class Material:
 
 
 class Plane(Model):
-    def __init__(self, plane=None):
-        plane = plane or [
-            [0.5, 0.5, 0],
-            [0.5, -0.5, 0],
-            [-0.5, 0.5, 0],
-            [-0.5, -0.5, 0],
-            [-0.5, 0.5, 0],
-            [0.5, -0.5, 0],
-        ]
-        self.coordArray = [
+    def __init__(self):
+        plane = [[1, 1, 0],
+                 [1, -1, 0],
+                 [-1, 1, 0],
+                 [-1, -1, 0],
+                 [-1, 1, 0],
+                 [1, -1, 0],
+                 ]
+        coordArray = [
             [0.0, 0.0],
             [0.0, 1.0],
             [1.0, 0.0],
@@ -502,7 +504,7 @@ class Plane(Model):
             [1.0, 0.0],
             [0.0, 1.0],
         ]
-        super().__init__(plane, self.coordArray)
+        super().__init__(plane, coordArray)
 
 
 
@@ -512,17 +514,7 @@ class ImagePlane(Plane):
     def __init__(self, path=None, size=None):
         super().__init__()
         if path:
-            root = constants.ROOT_DIR
-            path = os.path.abspath(root + path).replace("\\", "/")
-            im = Image.open(fp=path)
-            im_data = numpy.array(im.getdata())
-
-            image_format = get_opengl_format(im.format)
-
-            im_mipmap = is_mipmapable(im.size[0], im.size[1])
-
-            self.material.set_tex_diffuse(
-                Texture(size=[im.size[0], im.size[1]], data=im_data, mipmap=im_mipmap, format=image_format))
+            Texture_Manager().createNewTexture(path)
         else:
             im_mipmap = is_mipmapable(size[0], size[1])
             self.material.set_tex_diffuse(Texture(size=[size[0], size[1]]))

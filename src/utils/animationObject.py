@@ -17,25 +17,22 @@ def get_transformDict(joints):
 
 
 def animsetup(frame, rootJoint, parentTransform):
-
     curLocalTransform = frame.get(rootJoint.name)
-    curTransform = parentTransform*rootJoint.inverseBindTransform*curLocalTransform
+    curTransform = parentTransform * rootJoint.inverseBindTransform * curLocalTransform
     rootJoint.set_transform(curTransform)
 
     for child in rootJoint.children:
-        animsetup(frame, child, parentTransform*curLocalTransform)
+        animsetup(frame, child, parentTransform * curLocalTransform)
 
 
 def setup_test_anim_GPU(bones, model):
-
-
     bones[0].set_position([0, 0, 0])
     bones[1].set_position([0, 0, 0])
     bones[2].set_position([0, 0, 0])
     bones[3].set_position([0, 0, 0])
 
-    #new_joint_dict = get_transformDict(bones)
-    #animsetup(new_joint_dict, bones[0], Matrix())
+    # new_joint_dict = get_transformDict(bones)
+    # animsetup(new_joint_dict, bones[0], Matrix())
     new_joint_dict = get_transformDict(bones)
 
     key1 = KeyFrame(new_joint_dict, 0)
@@ -44,16 +41,15 @@ def setup_test_anim_GPU(bones, model):
     bones[1].set_position([0, 0, 0])
     bones[2].set_position([0, 0, 0])
     bones[3].set_position([0, 0, 0])
-    #new_joint_dict = get_transformDict(bones)
-    #animsetup(new_joint_dict, bones[0], Matrix())
+    # new_joint_dict = get_transformDict(bones)
+    # animsetup(new_joint_dict, bones[0], Matrix())
     new_joint_dict = get_transformDict(bones)
 
     key2 = KeyFrame(new_joint_dict, 1)
 
+    # bones[0].set_position([-1, 1, 0])
 
-    #bones[0].set_position([-1, 1, 0])
-
-    #animsetup(get_transformDict(bones), bones[0], Matrix())
+    # animsetup(get_transformDict(bones), bones[0], Matrix())
     new_joint_dict = get_transformDict(bones)
 
     key3 = KeyFrame(new_joint_dict, 2)
@@ -62,52 +58,56 @@ def setup_test_anim_GPU(bones, model):
 
     animator_obj = Animator(model=model, animation=anim)
 
-
     return animator_obj
+
 
 def setup_test_anim_CPU(bones, model):
     key1 = KeyFrame(get_transformDict(bones), 0)
-    # bones[86].set_rotation([-45, 0, 0])
-    # bones[87].set_rotation([90, 0, 0])
+
+    bones[0].set_position([1, 0, 0])
     bones[0].set_rotation([0, -45, 0])
     bones[1].set_rotation([0, -45, 0])
     bones[2].set_rotation([0, -45, 0])
     bones[3].set_rotation([0, -45, 0])
-    # bones[2].set_rotation([0, 45*0.25, 0])
-    # bones[3].set_rotation([0, -45*0.25, 0])
     key2 = KeyFrame(get_transformDict(bones), 1)
+
+    bones[0].set_position([-1, 0, 0])
     bones[0].set_rotation([90, 0, 0])
     bones[1].set_rotation([90, 0, 0])
     bones[2].set_rotation([90, 0, 0])
     bones[3].set_rotation([90, 0, 0])
     key3 = KeyFrame(get_transformDict(bones), 2)
+
+    bones[0].set_position([0, 0, 1])
     bones[0].set_rotation([0, 45, 0])
     bones[1].set_rotation([0, 45, 0])
     bones[2].set_rotation([0, 45, 0])
     bones[3].set_rotation([0, 45, 0])
     key4 = KeyFrame(get_transformDict(bones), 3)
 
+    bones[0].set_position([0, 0, -1])
     bones[0].set_rotation([0, 0, 90])
     bones[1].set_rotation([0, 0, 90])
     bones[2].set_rotation([0, 0, 90])
     bones[3].set_rotation([0, 0, 90])
     key5 = KeyFrame(get_transformDict(bones), 4)
 
+    bones[0].set_position([0, 0, 0])
     bones[0].set_rotation([0, 0, 0])
     bones[1].set_rotation([0, 0, 0])
     bones[2].set_rotation([0, 0, 0])
     bones[3].set_rotation([0, 0, 0])
     key6 = KeyFrame(get_transformDict(bones), 5)
+
+
     anim = Animation([key1, key2, key3, key4, key5, key6])
 
     animator_obj = Animator(model=model, animation=anim)
 
-
-
     return animator_obj
 
-def init_geo_anim_GPU():
 
+def init_geo_anim_GPU():
     j1 = Joint(0, "joint1", None)
     j2 = Joint(1, "joint2", j1)
     j3 = Joint(2, "joint3", j2)
@@ -133,7 +133,7 @@ def init_geo_anim_GPU():
 
     j1.calcInverseBindTransform(Matrix())
 
-    vertexList =[[-2.0, -0.5, 0.0],
+    vertexList = [[-2.0, -0.5, 0.0],
                   [-2.0, 0.5, 0.0],
                   [-1.0, 0.5, 0.0],
                   [-1.0, -0.5, 0.0],
@@ -189,8 +189,8 @@ def init_geo_anim_GPU():
     animated.set_animator(animator)
     return animator, animated, joint_list
 
-def init_geo_anim():
 
+def init_geo_anim():
     j1 = Joint(0, "joint1", None)
     j2 = Joint(1, "joint2", j1)
     j3 = Joint(2, "joint3", j2)
@@ -216,7 +216,7 @@ def init_geo_anim():
 
     j1.calcInverseBindTransform(Matrix())
 
-    vertexList =[[-2.0, -0.5, 0.0],
+    vertexList = [[-2.0, -0.5, 0.0],
                   [-2.0, 0.5, 0.0],
                   [-1.0, 0.5, 0.0],
                   [-1.0, -0.5, 0.0],
@@ -270,4 +270,3 @@ def init_geo_anim():
 
     animator = setup_test_anim_CPU(joint_list, animated)
     return animator, animated, joint_list
-

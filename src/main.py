@@ -1,19 +1,19 @@
-import math
 import time
-from collections import OrderedDict
 
-import numpy
 from OpenGL import GL
-from OpenGL.GL import *
-from OpenGL.GLUT import *
-from PIL import Image, ImageOps
+from OpenGL.GLUT import glutInit, GLUT_RGBA, GLUT_DEPTH, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT
+from OpenGL.raw.GL.VERSION.GL_1_0 import GL_DEPTH_TEST, glEnable, glDisable, GL_CULL_FACE, glFlush, glViewport
+from OpenGL.raw.GL.VERSION.GL_2_0 import glUseProgram
+from OpenGL.GLUT import glutInitDisplayMode, glutInitWindowSize, glutInitWindowPosition, glutCreateWindow, \
+    glutReshapeFunc, glutDisplayFunc, glutIdleFunc, glutMainLoop, glutGet
 
-from opengl_interfacing.animator import Animator, Animation, KeyFrame
-from opengl_interfacing.camera import Camera
-from opengl_interfacing.framebuffer import G_Buffer
+
+from opengl_interfacing.framebuffer import G_Buffer, clear_framebuffer, blit_col_0, blit_to_default
 from opengl_interfacing.initshader import initShaders
-from opengl_interfacing.renderer import ImagePlane, Renderer, Cube
-from utils.objects import Joint, Animated_model
+from opengl_interfacing.renderer import Renderer
+from opengl_interfacing.texture import Texture_Manager
+from utils.objects import Cube, ImagePlane, Plane
+from utils.scene import Scene
 
 width, height = 200, 200
 aspectRatio = width / height
@@ -22,64 +22,37 @@ postProgram = None
 window = None
 
 global renderer
-global t2
-global blit
-global target
-global count, cube, animator
-count = 0
 
 
 def update_persp_event(w, h):
-    global renderer, buffer, cam
+    global renderer, buffer, currScene
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
-    cam.update_pMatrix()
+    currScene.get_current_camera().update_pMatrix()
     buffer.resize(w, h)
 
-    clear_framebuffer()
+    clear_framebuffer([0,0,1,1])
 
 
-def buttons(key, x, y):
-    pass  # print(key, x, y)
+def set_up_scene_entities(scene):
+
+    p = Plane()
+    p.set_scale([2,2,2])
+    p.set_position([0,0,-1])
 
 
-def on_click(button, state, x, y):
-    global cam, dragx_start, dragy_start
-    if button == 0:
-        if state == 0:
-            dragx_start = x
-            dragy_start = y
+    cube = Cube()
+    cube.set_position([0,0,-3])
+    cube.material.set_tex_diffuse(Texture_Manager().createNewTexture("/res/images/box.png"))
 
-    if button == 3:
-        cam.adjustDistance(-0.1)
-    elif button == 4:
-        cam.adjustDistance(0.1)
-        # scrool backward
-
-
-def mouseControl(mx, my):
-    global cam, dragx_start, dragy_start
-    ratio = glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT)
-
-    deltax = ((mx - dragx_start) * ratio) / glutGet(GLUT_WINDOW_WIDTH)
-    deltay = (my - dragy_start) / glutGet(GLUT_WINDOW_HEIGHT)
-
-    cam.updateHorizontal(-deltax * 100)
-    cam.updateVertical(-deltay * 100)
-
-    dragx_start = mx
-    dragy_start = my
+    scene.add_entities([cube, p])
 
 
 def init():
     global start_time
     global fps_counter
 
-    global renderer, cube, program, lightProgram, jointProgram, animator, time_per_frame
-    global blit
-    global target
-    global buffer, bbj, joint, joint2
-    time_per_frame = 0
-    fps_counter = 0
+    global renderer, program, lightProgram, buffer, currScene
+
     start_time = time.time()
 
     glutInit()
@@ -103,50 +76,18 @@ def init():
     program = initShaders("/shader/defered/defered_v_shader.glsl", "/shader/defered/defered_f_shader.glsl")
     lightProgram = initShaders("/shader/defered/defered_light_v_shader.glsl",
                                "/shader/defered/defered_light_f_shader.glsl")
-    jointProgram = initShaders("/shader/debug/joint_v_shader.glsl", "/shader/debug/joint_f_shader.glsl")
     glUseProgram(program)
 
-    cube = Cube()
-    # cube.set_position([0.5, 0.3, -2])
-    # cube.set_rotation([30, 0, 45])
-
-    cube2 = Cube()
-    # cube2.set_position([-0.5, 0, -2])
-
-    t = ImagePlane("/res/images/box.png")
-    t.set_position([0.5, 0, -1])
-    t.set_rotation([0, 135, 0])
-
-    t2 = ImagePlane("/res/images/box.png")
-    t2.set_position([-0.5, 0, -1])
-    t2.set_rotation([0, -135, 0])
 
     buffer = G_Buffer([width, height])
 
-    glutKeyboardFunc(buttons)
-    glutMotionFunc(mouseControl)
-    glutMouseFunc(on_click)
+    currScene = Scene()
 
-    cube.material.set_tex_diffuse(t.get_material().tex_diffuse)
+    set_up_scene_entities(currScene)
 
-    global cam
-    cam = Camera()
-
-    cube.set_position([1, 0, 0])
-    renderer = Renderer()
-    renderer.objects = [cube]
+    renderer = Renderer(currScene)
 
     glutMainLoop()
-
-
-def save_current_framebuffer_as_png(bufferid):
-    glPixelStorei(GL_PACK_ALIGNMENT, 1)
-    GL.glBindFramebuffer(GL_READ_FRAMEBUFFER, bufferid)
-    data = glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE)
-    image = Image.frombytes("RGBA", (width, height), data)
-    image = ImageOps.flip(image)  # in my case image is flipped top-bottom for some reason
-    image.save('glutout.png', 'PNG')
-    GL.glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
 
 def fps_update():
@@ -160,20 +101,15 @@ def fps_update():
         # print("FPS: ", 1 / tim)
 
 
-def clear_framebuffer():
-    glClearColor(0.0, 1.0, 1, 1.0)
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-
 def render():
     global renderer, buffer, program, lightProgram, cube, bbj, joint, joint2, start_time, cam
     start_time = time.time()
 
     buffer.bind()
     glUseProgram(program)
-    renderer.draw(cam)
-
+    renderer.draw()
     buffer.unbind()
+
 
     glUseProgram(lightProgram)
     renderer.light_draw(buffer)

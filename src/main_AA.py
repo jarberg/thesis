@@ -71,7 +71,7 @@ def init():
 
     glEnable(GL_MULTISAMPLE)
 
-    post = FrameBuffer_Tex_MS(width, height, 1)
+    post = FrameBuffer_Tex_MS(width, height, 0)
 
     program = initShaders("/shader/vertex-shader.glsl", "/shader/fragment-shader.glsl")
     postProgram = initShaders("/shader/antiAlias/aa_v_shader.glsl", "/shader/antiAlias/aa_f_shader.glsl")
@@ -88,12 +88,14 @@ def init():
     t2.set_rotation([45, 0, 0])
 
     cube = Cube()
+    cube.material.tex_diffuse_b = False
     cube.set_position([1, -1, 0])
     cube.set_scale([0.5,0.5,0.5])
 
     currScene = Scene()
+    currScene.add_entities([t, cube, t2])
     currScene.inputMan.set_plusminus_callback(set_samples)
-    renderer = Renderer(currScene, [t, cube, t2])
+    renderer = Renderer(currScene)
 
     glutDisplayFunc(render)
     glutIdleFunc(render)
@@ -102,6 +104,7 @@ def init():
 def set_samples(samples):
     global post
     post.set_samples(samples)
+    post.resize()
 
 def save_current_framebuffer_as_png(bufferid):
     glPixelStorei(GL_PACK_ALIGNMENT, 1)
