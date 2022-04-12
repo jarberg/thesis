@@ -4,7 +4,7 @@ from OpenGL.GL import GL_FRAMEBUFFER, glBindRenderbuffer, GL_RENDERBUFFER, GL_DE
     glClearColor, glClear, GL_COLOR_BUFFER_BIT, \
     GL_DEPTH_BUFFER_BIT, GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, glFramebufferTexture2D, GL_READ_FRAMEBUFFER, \
     GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_FRONT, GL_SAMPLES, GL_COLOR_ATTACHMENT2, glDrawBuffers, \
-    GL_UNSIGNED_BYTE, glBindTexture, glTexImage2DMultisample, GL_TEXTURE_2D_MULTISAMPLE
+    GL_UNSIGNED_BYTE, glBindTexture, glTexImage2DMultisample, GL_TEXTURE_2D_MULTISAMPLE, GL_RGBA
 from OpenGL.GL import glBindFramebuffer, GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE
 from OpenGL.raw.GL.VERSION.GL_1_0 import GL_RGB
 from OpenGL.raw.GL.VERSION.GL_1_4 import GL_DEPTH_COMPONENT32
@@ -72,17 +72,13 @@ class G_Buffer:
         self.framebuffer = glGenFramebuffers(1)
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 
-        self.position_tex = Texture(size=[self.width, self.height], format=GL_RGB)
-        texture.bind(self.position_tex)
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.position_tex.texType, self.position_tex.slot,
-                               0)
+        self.position_tex = Texture(size=[self.width, self.height], format=GL_RGBA)
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.position_tex.texType, self.position_tex.slot,0)
 
-        self.normal_tex = Texture(size=[self.width, self.height], format=GL_RGB)
-        texture.bind(self.normal_tex)
+        self.normal_tex = Texture(size=[self.width, self.height], format=GL_RGBA)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, self.normal_tex.texType, self.normal_tex.slot, 0)
 
-        self.albedo_tex = Texture(size=[self.width, self.height])
-        texture.bind(self.albedo_tex)
+        self.albedo_tex = Texture(size=[self.width, self.height], format=GL_RGBA)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, self.albedo_tex.texType, self.albedo_tex.slot, 0)
 
         # depth renderbuffer
@@ -247,11 +243,11 @@ def blit_col_0(source, target):
         GL_COLOR_BUFFER_BIT, GL_NEAREST)
 
 
-def blit_to_default(source):
+def blit_to_default(source, index):
     GL.glBindFramebuffer(GL_READ_FRAMEBUFFER, source.framebuffer)
     GL.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
 
-    GL.glReadBuffer(GL_COLOR_ATTACHMENT0)
+    GL.glReadBuffer(GL_COLOR_ATTACHMENT0+index)
     GL.glDrawBuffer(GL_FRONT)
 
     GL.glBlitFramebuffer(
@@ -261,6 +257,7 @@ def blit_to_default(source):
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
     glBindRenderbuffer(GL_RENDERBUFFER, 0)
+
 
 
 

@@ -42,7 +42,7 @@ def set_up_scene_entities(scene):
 
     cube = Cube()
     cube.set_position([0,0,-3])
-    cube.material.set_tex_diffuse(Texture_Manager().createNewTexture("/res/images/box.png"))
+    #cube.material.set_tex_diffuse(Texture_Manager().createNewTexture("/res/images/box.png"))
 
     scene.add_entities([cube, p])
 
