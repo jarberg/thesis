@@ -20,7 +20,7 @@ void main() {
     mat4 pv_mat = projection*v_matrix;
 
     g_pos = obj_transform*vec4(a_Position,1);
-    Normal = normal_matrix*inNormal;
+    Normal = mat3(obj_transform)*inNormal;
     TexCoords = InTexCoords;
     gl_Position = pv_mat*obj_transform*vec4(a_Position,1);
 }

@@ -229,7 +229,7 @@ class Model(Transform):
 
         self.VAO = glGenVertexArrays(1)
         glBindVertexArray(self.VAO)
-        self.buffers["vertex_pos"] .bind_vertex_attribute("a_Position", flatten(self.vertexArray, data_type=numpy.float32), 3, GL_FLOAT, 0)
+        self.buffers["vertex_pos"] .bind_vertex_attribute("a_Position", flatten(self.vertexArray), 3, GL_FLOAT, 0)
         if normal:
             self.buffers["normal"].bind_vertex_attribute("inNormal", flatten(self.normalArray), 3, GL_FLOAT, 0)
         if coords:

@@ -36,9 +36,8 @@ def update_persp_event(w, h):
 def set_up_scene_entities(scene):
 
     p = Plane()
-    p.set_scale([2,2,2])
-    p.set_position([0,0,-1])
-
+    p.set_position([3,0,0])
+    p.set_rotation([-45, 0, 0])
 
     cube = Cube()
     cube.set_position([0,0,-3])

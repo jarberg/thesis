@@ -90,7 +90,7 @@ class Renderer:
         loc2 = glGetUniformLocation(currProgram, "norm")
         glUniform1i(loc2, buffer.normal_tex.slot)
         loc3 = glGetUniformLocation(currProgram, "albedo")
-        glUniform1i(loc3, buffer.normal_tex.slot)
+        glUniform1i(loc3, buffer.albedo_tex.slot)
 
         glUniformMatrix4fv(glGetUniformLocation(currProgram, "obj_transform"), 1, False,
                            flatten(self.quad.getTransform()))

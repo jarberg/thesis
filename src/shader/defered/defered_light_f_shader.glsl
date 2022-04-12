@@ -21,5 +21,5 @@ void main() {
        ret = d*(5/(dist*dist));
     }
 
-    fragCol = texture2D(pos, TexCoords);
+    fragCol = texture2D(albedo, TexCoords);
 }
