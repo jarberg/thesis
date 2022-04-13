@@ -13,14 +13,14 @@ layout(location = 5) uniform mat3 normal_matrix;
 
 
 out vec2 TexCoords;
-out vec4 g_pos;
+out vec3 g_pos;
 out vec3 Normal;
 
 void main() {
     mat4 pv_mat = projection*v_matrix;
 
-    g_pos = obj_transform*vec4(a_Position,1);
-    Normal = mat3(obj_transform)*inNormal;
+    g_pos = (obj_transform*vec4(a_Position,1)).xyz;
+    Normal = normal_matrix/determinant(normal_matrix)*inNormal;
     TexCoords = InTexCoords;
     gl_Position = pv_mat*obj_transform*vec4(a_Position,1);
 }

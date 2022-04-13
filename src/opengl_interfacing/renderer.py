@@ -4,8 +4,9 @@ import numpy
 from OpenGL import GL
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
     GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_LINES, \
-    glDepthFunc, GL_ALWAYS, GL_LESS, glUniform1f
+    glDepthFunc, GL_ALWAYS, GL_LESS, glUniform1f, glUniform3fv
 
+from opengl_interfacing import texture
 from opengl_interfacing.framebuffer import G_Buffer
 from utils.objectUtils import flatten, flatten_list
 from utils.objects import Plane
@@ -85,13 +86,19 @@ class Renderer:
 
     def light_draw(self, buffer: G_Buffer):
         currProgram = GL.glGetIntegerv(GL_CURRENT_PROGRAM)
+        cam = self.currScene.get_current_camera()
+        texture.bind(buffer.position_tex)
+        texture.bind(buffer.normal_tex)
+        texture.bind(buffer.albedo_tex)
+
         loc1 = glGetUniformLocation(currProgram, "pos")
         glUniform1i(loc1, buffer.position_tex.slot)
         loc2 = glGetUniformLocation(currProgram, "norm")
         glUniform1i(loc2, buffer.normal_tex.slot)
         loc3 = glGetUniformLocation(currProgram, "albedo")
         glUniform1i(loc3, buffer.albedo_tex.slot)
-
+        v_loc = glGetUniformLocation(currProgram, "viewPos")
+        glUniform3fv(v_loc, 1, flatten(cam.eye))
         glUniformMatrix4fv(glGetUniformLocation(currProgram, "obj_transform"), 1, False,
                            flatten(self.quad.getTransform()))
 
@@ -156,14 +163,16 @@ def _set_animator_attributes(obj):
 
 def _set_obj_mat_attributes(obj):
     mat = obj.get_material()
+    program = GL.glGetIntegerv(GL_CURRENT_PROGRAM)
 
-    b_tex_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse_b")
+    b_tex_loc = glGetUniformLocation(program, "tex_diffuse_b")
     if b_tex_loc != -1:
         glUniform1i(b_tex_loc, mat.tex_diffuse_b)
-    tex_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "tex_diffuse")
+    tex_loc = glGetUniformLocation(program, "tex_diffuse")
     if tex_loc != -1 and mat.tex_diffuse_b:
-        slot = mat.get_diffuse()
-        glUniform1i(tex_loc, slot)
+        tex = mat.get_diffuse()
+        texture.bind(tex)
+        glUniform1i(tex_loc, tex.slot)
 
 def _set_obj_transform_attributes(obj):
     t_loc = glGetUniformLocation(GL.glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform")

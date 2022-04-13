@@ -2,17 +2,16 @@ import time
 
 from OpenGL import GL
 from OpenGL.GLUT import glutInit, GLUT_RGBA, GLUT_DEPTH, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT
-from OpenGL.raw.GL.VERSION.GL_1_0 import GL_DEPTH_TEST, glEnable, glDisable, GL_CULL_FACE, glFlush, glViewport
-from OpenGL.raw.GL.VERSION.GL_2_0 import glUseProgram
 from OpenGL.GLUT import glutInitDisplayMode, glutInitWindowSize, glutInitWindowPosition, glutCreateWindow, \
     glutReshapeFunc, glutDisplayFunc, glutIdleFunc, glutMainLoop, glutGet
+from OpenGL.raw.GL.VERSION.GL_1_0 import GL_DEPTH_TEST, glEnable, glDisable, GL_CULL_FACE, glFlush, glViewport
+from OpenGL.raw.GL.VERSION.GL_2_0 import glUseProgram
 
-
-from opengl_interfacing.framebuffer import G_Buffer, clear_framebuffer, blit_col_0, blit_to_default
+from opengl_interfacing.framebuffer import G_Buffer, clear_framebuffer, blit_to_default
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.renderer import Renderer
-from opengl_interfacing.texture import Texture_Manager
-from utils.objects import Cube, ImagePlane, Plane
+from opengl_interfacing.texture import createNewTexture
+from utils.objects import Cube, Plane
 from utils.scene import Scene
 
 width, height = 200, 200
@@ -36,13 +35,15 @@ def update_persp_event(w, h):
 def set_up_scene_entities(scene):
 
     p = Plane()
-    p.set_position([3,0,0])
-    p.set_rotation([-45, 0, 0])
-
+    p.set_position([2, 0, 0.5])
+    p.set_rotation([0, 0, 90])
+    p.set_scale([1000, 1000, 1000])
     cube = Cube()
-    cube.set_position([0,0,-3])
-    #cube.material.set_tex_diffuse(Texture_Manager().createNewTexture("/res/images/box.png"))
+    cube.set_position([0,0.5,0])
+    cube.material.set_tex_diffuse(createNewTexture("/res/images/box.png"))
 
+    cube2 = Cube()
+    cube2.set_position([0, 0.5, 1])
     scene.add_entities([cube, p])
 
 
@@ -97,7 +98,7 @@ def fps_update():
 
     if tim != 0:
         time_per_frame = tim
-        # print("FPS: ", 1 / tim)
+        print("FPS: ", 1 / tim)
 
 
 def render():

@@ -16,32 +16,13 @@ from utils.objectUtils import get_opengl_format, is_mipmapable
 
 class Texture_Manager:
     _instance = None
-
+    txtDict = {}
     def __new__(class_, *args, **kwargs):
         if not isinstance(class_._instance, class_):
             class_._instance = object.__new__(class_, *args, **kwargs)
         return class_._instance
 
-    def __init__(self):
-        self.txtDict = {}
 
-    def createNewTexture(self, path):
-        pos_tex = self.txtDict.get(path, None)
-        if pos_tex:
-           return pos_tex
-        else:
-            root = constants.ROOT_DIR
-            wholepath = os.path.abspath(root + path).replace("\\", "/")
-            im = Image.open(fp=wholepath)
-            im_data = numpy.array(im.getdata())
-
-            image_format = get_opengl_format(im.format)
-
-            im_mipmap = is_mipmapable(im.size[0], im.size[1])
-            tex = Texture(size=[im.size[0], im.size[1]], data=im_data, mipmap=im_mipmap, format=image_format)
-            self._register(path, tex)
-
-            return tex
 
 
     def _register(self, path, tex):
@@ -50,30 +31,39 @@ class Texture_Manager:
     def _unregister(self):
         pass
 
+def createNewTexture(path):
+
+    root = constants.ROOT_DIR
+    wholepath = os.path.abspath(root + path).replace("\\", "/")
+    im = Image.open(fp=wholepath)
+    im_data = numpy.array(im.getdata())
+
+    image_format = get_opengl_format(im.format)
+
+    im_mipmap = is_mipmapable(im.size[0], im.size[1])
+    tex = Texture(size=[im.size[0], im.size[1]], data=im_data, mipmap=im_mipmap, format=image_format)
+
+    return tex
 
 class Texture:
 
-    def __init__(self, size=None, data=None, mipmap=False, repeat=False, format=GL_RGBA):
+    def __init__(self, size=None, data=None, mipmap=False, repeat=False, format=GL_RGBA, secondFormat=None):
 
         self.mipmap = mipmap
         self.repeat = repeat
         self.genMipmap = False
         self.texType = GL_TEXTURE_2D
         self.format = format
+        self.secondFormat = secondFormat or format
         self.slot = glGenTextures(1)
         GL.glActiveTexture(GL.GL_TEXTURE0 + self.slot)
         GL.glBindTexture(GL_TEXTURE_2D, self.slot)
 
-        if size:
-            self.width = size[0]
-            self.height = size[1]
 
-        if data is None and size:
-            GL.glTexImage2D(self.texType, 0, self.format, self.width, self.height, 0, self.format, GL_UNSIGNED_BYTE,
-                            None)
-        else:
-            GL.glTexImage2D(self.texType, 0, self.format, self.width, self.height, 0, self.format, GL_UNSIGNED_BYTE,
-                            data)
+        self.width = size[0]
+        self.height = size[1]
+
+        GL.glTexImage2D(self.texType, 0, self.secondFormat, self.width, self.height, 0, self.format, GL_UNSIGNED_BYTE, data)
 
         bind(self)
 
@@ -121,7 +111,7 @@ class Texture2dMS:
         self.texType = GL_TEXTURE_2D_MULTISAMPLE
         self.slot = glGenTextures(1)
         GL.glActiveTexture(GL.GL_TEXTURE0 + self.slot)
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, self.slot)
+        glBindTexture(self.texType, self.slot)
 
         self.width = size[0]
         self.height = size[1]

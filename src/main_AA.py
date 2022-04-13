@@ -8,10 +8,9 @@ from PIL import Image, ImageOps
 from opengl_interfacing.camera import Camera
 from opengl_interfacing.framebuffer import FrameBuffer_Tex_MS
 from opengl_interfacing.initshader import initShaders
-from opengl_interfacing.renderer import  Renderer
+from opengl_interfacing.renderer import Renderer
 from utils.objects import ImagePlane, Cube
 from utils.scene import Scene
-from utils.objectUtils import flatten, perspective
 
 width, height = 400, 400
 aspectRatio = width / height
@@ -83,7 +82,7 @@ def init():
     t.set_position([0.5, 0, -1])
     t.set_scale([-1, 1, 1])
     t.set_rotation([-45, 0, 0])
-    t2 = ImagePlane("/res/images/body_05.png")
+    t2 = ImagePlane("/res/images/box.png")
     t2.set_position([-0.5, 0, -1])
     t2.set_rotation([45, 0, 0])
 

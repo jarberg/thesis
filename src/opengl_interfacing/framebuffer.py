@@ -4,7 +4,8 @@ from OpenGL.GL import GL_FRAMEBUFFER, glBindRenderbuffer, GL_RENDERBUFFER, GL_DE
     glClearColor, glClear, GL_COLOR_BUFFER_BIT, \
     GL_DEPTH_BUFFER_BIT, GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, glFramebufferTexture2D, GL_READ_FRAMEBUFFER, \
     GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_FRONT, GL_SAMPLES, GL_COLOR_ATTACHMENT2, glDrawBuffers, \
-    GL_UNSIGNED_BYTE, glBindTexture, glTexImage2DMultisample, GL_TEXTURE_2D_MULTISAMPLE, GL_RGBA
+    GL_UNSIGNED_BYTE, glBindTexture, glTexImage2DMultisample, GL_TEXTURE_2D_MULTISAMPLE, GL_RGBA, GL_RGBA16F, GL_RG16F, \
+    GL_RGBA32F
 from OpenGL.GL import glBindFramebuffer, GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE
 from OpenGL.raw.GL.VERSION.GL_1_0 import GL_RGB
 from OpenGL.raw.GL.VERSION.GL_1_4 import GL_DEPTH_COMPONENT32
@@ -72,13 +73,13 @@ class G_Buffer:
         self.framebuffer = glGenFramebuffers(1)
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 
-        self.position_tex = Texture(size=[self.width, self.height], format=GL_RGBA)
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.position_tex.texType, self.position_tex.slot,0)
+        self.position_tex = Texture(size=[self.width, self.height], format=GL_RGBA, secondFormat=GL_RGBA32F)
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.position_tex.texType, self.position_tex.slot, 0)
 
-        self.normal_tex = Texture(size=[self.width, self.height], format=GL_RGBA)
+        self.normal_tex = Texture(size=[self.width, self.height], format=GL_RGBA, secondFormat=GL_RGBA32F)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, self.normal_tex.texType, self.normal_tex.slot, 0)
 
-        self.albedo_tex = Texture(size=[self.width, self.height], format=GL_RGBA)
+        self.albedo_tex = Texture(size=[self.width, self.height], format=GL_RGBA, secondFormat=GL_RGBA32F)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, self.albedo_tex.texType, self.albedo_tex.slot, 0)
 
         # depth renderbuffer
@@ -129,7 +130,7 @@ class G_Buffer:
 
         for tex in [self.albedo_tex, self.normal_tex, self.position_tex]:
             glBindTexture(tex.texType, tex.slot)
-            GL.glTexImage2D(tex.texType, 0, tex.format, self.width, self.height, 0, tex.format, GL_UNSIGNED_BYTE, None)
+            GL.glTexImage2D(tex.texType, 0, tex.secondFormat, self.width, self.height, 0, tex.format, GL_UNSIGNED_BYTE, None)
 
         GL.glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
         GL.glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT, self.width, self.height)

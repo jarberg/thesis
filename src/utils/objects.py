@@ -477,7 +477,7 @@ class Material:
 
     def get_diffuse(self):
         if self.tex_diffuse_b:
-            return self.tex_diffuse.slot
+            return self.tex_diffuse
         else:
             return self.diffuse_color
 
@@ -521,7 +521,16 @@ class ImagePlane(Plane):
     def __init__(self, path=None, size=None):
         super().__init__()
         if path:
-            Texture_Manager().createNewTexture(path)
+            root = constants.ROOT_DIR
+            wholepath = os.path.abspath(root + path).replace("\\", "/")
+            im = Image.open(fp=wholepath)
+            im_data = numpy.array(im.getdata())
+
+            image_format = get_opengl_format(im.format)
+
+            im_mipmap = is_mipmapable(im.size[0], im.size[1])
+            tex = Texture(size=[im.size[0], im.size[1]], data=im_data, mipmap=im_mipmap, format=image_format)
+            self.material.set_tex_diffuse(tex)
         else:
             im_mipmap = is_mipmapable(size[0], size[1])
             self.material.set_tex_diffuse(Texture(size=[size[0], size[1]]))
