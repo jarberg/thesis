@@ -47,11 +47,12 @@ def createNewTexture(path):
 
 class Texture:
 
-    def __init__(self, size=None, data=None, mipmap=False, repeat=False, format=GL_RGBA, secondFormat=None):
+    def __init__(self, size=None, data=None, mipmap=False, repeat=False, format=GL_RGBA, dataType=GL_UNSIGNED_BYTE, secondFormat=None):
 
         self.mipmap = mipmap
         self.repeat = repeat
         self.genMipmap = False
+        self.dataType = dataType
         self.texType = GL_TEXTURE_2D
         self.format = format
         self.secondFormat = secondFormat or format
@@ -63,7 +64,7 @@ class Texture:
         self.width = size[0]
         self.height = size[1]
 
-        GL.glTexImage2D(self.texType, 0, self.secondFormat, self.width, self.height, 0, self.format, GL_UNSIGNED_BYTE, data)
+        GL.glTexImage2D(self.texType, 0, self.secondFormat, self.width, self.height, 0, self.format, self.dataType, data)
 
         bind(self)
 

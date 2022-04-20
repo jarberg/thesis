@@ -21,7 +21,7 @@ from utils.objectUtils import flatten
 from utils.objects import Cube, Plane
 from utils.scene import Scene
 
-width, height = 1200, 1200
+width, height = 400, 400
 aspectRatio = width / height
 deferred_program = None
 postProgram = None
@@ -88,7 +88,7 @@ def lights(amount):
 
 def init():
     global start_time, fps_counter, counter, lightcount,lightssob
-    global renderer, deferred_program, lightProgram, buffer, currScene, av_start_time, height
+    global renderer, deferred_program, lightProgram, forward_program, buffer, currScene, av_start_time, height
     counter = 0
     lightcount = 0
     start_time = time.time()
@@ -112,12 +112,10 @@ def init():
     glutDisplayFunc(render)
     glutIdleFunc(render)
 
-    forward_program = initShaders("/shader/vertex-shader.glsl", "/shader/fragment-shader.glsl")
-    deferred_program = initShaders("/shader/defered/defered_v_shader.glsl", "/shader/defered/defered_f_shader.glsl")
-    lightProgram = initShaders("/shader/defered/defered_light_v_shader.glsl",
-                               "/shader/defered/defered_light_f_shader.glsl")
+    forward_program = initShaders("/shader/forward/vertex-shader.glsl", "/shader/forward/fragment-shader.glsl")
 
-    glUseProgram(deferred_program)
+
+    glUseProgram(forward_program)
 
     buffer = G_Buffer([width, height])
 
@@ -131,14 +129,14 @@ def init():
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightssob)
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, lightssob)
 
-    glUseProgram(lightProgram)
+    glUseProgram(forward_program)
     light = lights(100)
     data = flatten(light)
 
     glBufferData(GL_SHADER_STORAGE_BUFFER, data.nbytes, data=data, usage=GL_STATIC_DRAW)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 
-    lightsplusminus(0)
+    #lightsplusminus(0)
     currScene.inputMan.set_plusminus_callback(lightsplusminus)
 
     cam = currScene.get_current_camera()
@@ -150,23 +148,12 @@ def init():
     glutMainLoop()
 
 def lightsplusminus(num):
-    global lightcount,lightssob
+    global lightcount,lightssob, forward_program
     lightcount += num
     lightcount = max(lightcount, 0)
 
-    #glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightssob)
-    #glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, lightssob)
-    #glUseProgram(lightProgram)
-    #light = lights(lightcount)
-    #data = flatten(light)
-    #glBufferData(GL_SHADER_STORAGE_BUFFER, data.nbytes, data=data, usage=GL_STATIC_DRAW)
-    #glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 
-
-    #slot = glGetUniformLocation(lightProgram, "lights")
-    #size = len(light)
-    #glUniform3fv(slot, size, data)
-    slot2 = glGetUniformLocation(lightProgram, "lightnum")
+    slot2 = glGetUniformLocation(forward_program, "lightnum")
     glUniform1i(slot2, 4*(lightcount+1)*(lightcount+1))
 
 
@@ -198,15 +185,15 @@ def fps_update():
 def render():
     global renderer, buffer, deferred_program, lightProgram, cube, bbj, joint, joint2, cam
 
-    buffer.bind()
-    glUseProgram(deferred_program)
-    #clear_framebuffer()
+    #buffer.bind()
+    #glUseProgram(deferred_program)
+    clear_framebuffer()
     renderer.draw()
 
-    buffer.unbind()
+    #buffer.unbind()
 
-    glUseProgram(lightProgram)
-    renderer.light_draw(buffer)
+    #glUseProgram(lightProgram)
+    #renderer.light_draw(buffer)
 
     #blit_to_default(buffer,2)
     glFlush()

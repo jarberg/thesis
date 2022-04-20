@@ -21,7 +21,7 @@ from utils.objectUtils import flatten_list, Matrix, flatten
 
 width, height = 200, 200
 aspectRatio = width / height
-program = None
+deferred_program = None
 postProgram = None
 window = None
 
@@ -53,7 +53,7 @@ def init():
     global start_time
     global fps_counter
 
-    global renderer, joint_list, program,time_per_frame, lightProgram, jointProgram, animator, currScene,test_ssbo
+    global renderer, joint_list, deferred_program,time_per_frame, lightProgram, jointProgram, animator, currScene,test_ssbo
 
     time_per_frame = 0
     fps_counter = 0
@@ -148,7 +148,7 @@ def fps_update():
 
 
 def render():
-    global renderer, debugRender,anim,  GPU, buffer, program, lightProgram, start_time,  joint_list, currScene
+    global renderer, debugRender,anim,  GPU, buffer, deferred_program, lightProgram, start_time,  joint_list, currScene
     start_time = time.time()
 
     clear_framebuffer()

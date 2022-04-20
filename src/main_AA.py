@@ -14,7 +14,7 @@ from utils.scene import Scene
 
 width, height = 400, 400
 aspectRatio = width / height
-program = None
+deferred_program = None
 postProgram = None
 window = None
 count = 0
@@ -36,7 +36,7 @@ def init():
     global start_time
     global fps_counter
     global post
-    global program
+    global deferred_program
     global postProgram
     global t
     global t2
@@ -105,13 +105,6 @@ def set_samples(samples):
     post.set_samples(samples)
     post.resize()
 
-def save_current_framebuffer_as_png(bufferid):
-    glPixelStorei(GL_PACK_ALIGNMENT, 1)
-    GL.glBindFramebuffer(GL_READ_FRAMEBUFFER, bufferid)
-    data = glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE)
-    image = Image.frombytes("RGBA", (width, height), data)
-    image = ImageOps.flip(image)  # in my case image is flipped top-bottom for some reason
-    image.save('glutout.png', 'PNG')
 
 
 def fps_update():
@@ -145,6 +138,9 @@ def render():
     clear_framebuffer()
     glUseProgram(program)
     renderer.draw()
+
+
+
     post.unbind()
     renderer.postDraw(postProgram, post.texture, post)
     glFlush()

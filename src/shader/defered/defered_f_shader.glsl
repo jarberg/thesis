@@ -1,4 +1,4 @@
-#version 330
+#version 430 core
 #extension GL_ARB_explicit_uniform_location : enable
 #extension GL_ARB_explicit_attrib_location : enable
 
@@ -13,7 +13,7 @@ in vec3 Normal;
 
 uniform int tex_diffuse_b;
 uniform sampler2D tex_diffuse;
-uniform sampler2D texture_specular1;
+uniform sampler2D texture_specular;
 
 void main() {
     // store the fragment position vector in the first gbuffer texture
@@ -29,5 +29,4 @@ void main() {
         // store specular intensity in gAlbedoSpec's alpha component
         gAlbedoSpec.a = 1;
     }
-
 }

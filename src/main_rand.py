@@ -13,7 +13,7 @@ from utils.objects import Cube, ImagePlane
 
 width, height = 800, 800
 aspectRatio = width / height
-program = None
+deferred_program = None
 postProgram = None
 window = None
 count = 0

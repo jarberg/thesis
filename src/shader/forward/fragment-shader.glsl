@@ -1,9 +1,5 @@
-#version 450
-
-struct Light {
-    vec3 Position;
-    vec3 Color;
-};
+#version 430
+precision mediump float;
 
 float lambert(vec3 N, vec3 L){
   vec3 nrmN = normalize(N);
@@ -21,34 +17,39 @@ float attenuation(vec3 light, vec3 pos){
     return max((1 / (c+a*dist+b*dist*dist)), 0);
 }
 
+in vec3 a_pos;
+in vec3 normal;
+in vec2 OutTexCoords;
+
 layout(std430, binding = 3) buffer lightBuffer{
     vec4 data_SSBO[];
 };
 
-uniform sampler2D pos;
-uniform sampler2D norm;
-uniform sampler2D albedo;
-
-in vec2 TexCoords;
-uniform vec3 viewPos;
-
-const int MAX_LIGHTS = 1500;
+const int MAX_LIGHTS = 500;
 uniform vec3 lights[MAX_LIGHTS];
 uniform int lightnum;
+uniform int tex_diffuse_b;
+uniform sampler2D tex_diffuse;
 
-out vec4 fragCol;
+
+out vec4 FragColor;
 
 
-void main(){
-    // retrieve data from G-buffer
-    vec3 FragPos = texture(pos, TexCoords).xyz;
-    vec3 Normal = texture(norm, TexCoords).xyz;
-    vec3 Albedo = texture(albedo, TexCoords).rgb;
+void main() {
+
+    vec4 Albedo;
+    if(tex_diffuse_b == 1){
+        Albedo = texture2D(tex_diffuse, OutTexCoords);
+    }
+    else{
+        Albedo = vec4(1,1,1,1);
+    }
+    vec3 FragPos = a_pos;
+    vec3 Normal = normal;
 
     float attenu;
     float angle;
     vec3 lighting = vec3(0);
-
 
 
     for(int i =0; i<lightnum ;i++){
@@ -56,8 +57,10 @@ void main(){
         vec3 lightDir = light-FragPos;
         attenu = attenuation(light, FragPos);
         angle = lambert(normalize(Normal), lightDir);
-        lighting += 10*angle*attenu;
+        lighting += Albedo.xyz*10*angle*attenu;
     }
 
-    fragCol = vec4(Albedo*lighting, 1);
+    FragColor = vec4(lighting, 1);
 }
+
+
