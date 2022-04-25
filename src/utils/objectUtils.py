@@ -6,6 +6,58 @@ from OpenGL.raw.GL.VERSION.GL_1_0 import GL_RGB, GL_RGBA
 from constants import PI, EPISLON_LEN
 
 
+def triangle(a, b, c, VList, NList):
+
+    VList.append(b)
+    VList.append(a)
+    VList.append(c)
+
+    NList.append(Vector(b[0],b[1],b[2]))
+    NList.append(Vector(a[0],a[1],a[2]))
+    NList.append(Vector(c[0],c[1],c[2]))
+
+
+def divideTriangle(a, b, c, count, VList, NList):
+    if (count > 0):
+        ab = normalize(mix(a, b, 0.5), True)
+        ac = normalize(mix(a, c, 0.5), True)
+        bc = normalize(mix(b, c, 0.5), True)
+        divideTriangle(a, ab, ac, count - 1, VList, NList)
+        divideTriangle(ab, b, bc, count - 1, VList, NList)
+        divideTriangle(bc, c, ac, count - 1, VList, NList)
+        divideTriangle(ab, bc, ac, count - 1, VList, NList)
+
+    else:
+        triangle(a, b, c, VList, NList)
+
+
+def tetrahedron(a, b, c, d, divisions):
+    n = divisions
+    normalList = []
+    vertexList = []
+    divideTriangle(a, b, c, n,vertexList, normalList)
+    divideTriangle(d, c, b, n,vertexList, normalList)
+    divideTriangle(a, d, b, n,vertexList, normalList)
+    divideTriangle(a, c, d, n,vertexList, normalList)
+    return vertexList, normalList
+
+
+def mix( u, v, s ):
+
+
+    if  type(s).__name__  not in [int.__name__, float.__name__]:
+         raise Exception("mix: the last paramter " + s + " must be a number")
+
+    if len(u) != len(v):
+        raise Exception("vector dimension mismatch")
+
+    result = []
+    for i in range(len(u)):
+        result.append( (1.0 - s) * u[i] + s * v[i] )
+
+    return result
+
+
 class Vector:
 
     def __init__(self, *args):
@@ -475,8 +527,11 @@ def flatten_list(list_obj, transposes=True, data_type=numpy.float32):
             ret = transpose(obj)
             for each in ret:
                 res.append(each)
+        if type(obj).__name__ == "Transform":
+            for each in transpose(obj.m):
+                res.append(each)
         else:
-            ret = obj
+            res = obj
 
     return numpy.array(res, dtype=data_type)
 
@@ -1149,8 +1204,7 @@ def get_pointLight_radius(pointLight):
     const = attenuation.const
     exp = attenuation.exp
 
-    ret = (-linear + math.sqrt(linear * linear - 4 * exp * (const - colour_range * maxchannel * intensity))) / 2 * exp
+    det = linear*linear - 4 * exp * (const - colour_range * maxchannel * intensity)
+    ret = (-linear + math.sqrt(det)) / (2 * exp)
     return ret
-
-
 

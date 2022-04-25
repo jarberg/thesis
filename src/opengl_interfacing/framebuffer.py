@@ -141,6 +141,76 @@ class G_Buffer:
             glBindFramebuffer(GL_FRAMEBUFFER, 0)
             glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
+class L_Buffer:
+    def __init__(self, size):
+
+        self.width = size[0]
+        self.height = size[1]
+        self.bound = False
+
+        self.framebuffer = glGenFramebuffers(1)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+
+        self.raddiance_tex = Texture(size=[self.width, self.height], format=GL_RGBA, dataType=GL_FLOAT, secondFormat=GL_RGBA16F)
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.raddiance_tex.texType, self.raddiance_tex.slot, 0)
+
+        # depth renderbuffer
+        self.renderbuffer = glGenRenderbuffers(1)
+        GL.glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
+        GL.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, self.width, self.height)
+        GL.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.renderbuffer)
+
+        glDrawBuffers(1, [GL_COLOR_ATTACHMENT0])
+
+        check_status()
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+
+    def bind(self):
+        if self.bound:
+            return
+        currentViewport = GL.glGetIntegerv(GL_VIEWPORT)
+        self.unbindWidth = currentViewport[2]
+        self.unbindHeight = currentViewport[3]
+
+        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+        glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
+
+        GL.glViewport(0, 0, self.width, self.height)
+
+        clear_framebuffer([0,0,0,0])
+
+        self.bound = True
+
+    def unbind(self):
+        if not self.bound:
+            return
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+        GL.glViewport(0, 0, self.unbindWidth, self.unbindHeight)
+
+        self.bound = False
+
+        clear_framebuffer([0,0,0,0])
+
+    def resize(self, w=None, h=None):
+        if w and h:
+            self.width = w
+            self.height = h
+        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+
+        for tex in [self.raddiance_tex]:
+            glBindTexture(tex.texType, tex.slot)
+            GL.glTexImage2D(tex.texType, 0, tex.secondFormat, self.width, self.height, 0, tex.format, tex.dataType, None)
+
+        GL.glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
+        GL.glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT, self.width, self.height)
+
+        if not self.bound:
+            glBindFramebuffer(GL_FRAMEBUFFER, 0)
+            glBindRenderbuffer(GL_RENDERBUFFER, 0)
+
 
 class FrameBuffer_Tex_MS:
     def __init__(self, width, height, samples=0):

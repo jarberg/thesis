@@ -33,7 +33,7 @@ def update_persp_event(w, h):
     post.resize(w,  h)
 
 def init():
-    global start_time
+    global start_time, program
     global fps_counter
     global post
     global deferred_program

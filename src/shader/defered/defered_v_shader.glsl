@@ -11,7 +11,6 @@ layout(location = 3) uniform mat4 obj_transform;
 layout(location = 4) uniform mat4 v_matrix;
 layout(location = 5) uniform mat3 normal_matrix;
 
-
 out vec2 TexCoords;
 out vec3 g_pos;
 out vec3 Normal;
