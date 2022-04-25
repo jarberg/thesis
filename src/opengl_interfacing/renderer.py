@@ -111,7 +111,7 @@ class Renderer:
 
 
         glBindVertexArray(parentObj.VAO)
-        glDrawElementsInstanced(parentObj.renderType, len(parentObj.indices), GL_UNSIGNED_BYTE, None, self.lightAmount)
+        glDrawElementsInstanced(parentObj.renderType, len(parentObj.indices), GL_UNSIGNED_SHORT, None, self.lightAmount)
         self.lightBuffer.unbind()
         blit_to_default(self.lightBuffer, 0)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)

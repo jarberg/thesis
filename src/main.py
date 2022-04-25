@@ -173,7 +173,7 @@ def fps_update():
                txt = txt.replace(".", ",")
                file2.writelines(txt)
                file2.close()
-            lightsplusminus(1)
+            #lightsplusminus(1)
             #print("FPS: ",   counter/(time.time() - av_start_time))
             counter = 0
 
