@@ -1,9 +1,28 @@
 import math
 from typing import Union
-
-from OpenGL.raw.GL.VERSION.GL_1_0 import GL_RGB, GL_RGBA
-
 from constants import PI, EPISLON_LEN
+
+
+
+def calc_normal_from_points(p0, p1, p2):
+    v1 = Vector(p1) - Vector(p0)
+    v2 = Vector(p2) - Vector(p0)
+    n = cross(v1, v2)
+    return n
+
+
+def set_bind_transform_from_self(joint):
+    joint.localBindTransform = joint.getTransform()
+    for child in joint.children:
+        set_bind_transform_from_self(child)
+
+
+def calcInverseBindTransform(joint, parentBindTransform):
+    joint.localBindTransform = parentBindTransform * joint.localBindTransform
+    joint.inverseBindTransform = inverse(joint.localBindTransform)
+
+    for child in joint.children:
+        child.calcInverseBindTransform(joint.localBindTransform)
 
 
 def triangle(a, b, c, VList, NList):
@@ -1169,18 +1188,8 @@ def quat_2_euler(q: Quaternion):
     return degrees(heading), degrees(attitude), degrees(bank)
 
 
-def get_opengl_format(format):
-    if format == "JPEG":
-        return GL_RGB
-    elif format == "PNG":
-        return GL_RGBA
-    else:
-        return GL_RGB
-
-
 def is_mipmapable(x, y):
     return x == y
-
 
 
 def within_radius(position, light):

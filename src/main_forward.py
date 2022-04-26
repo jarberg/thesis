@@ -16,9 +16,10 @@ from PIL import Image, ImageOps
 from opengl_interfacing.framebuffer import G_Buffer, clear_framebuffer
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.renderer import Renderer
+from opengl_interfacing.sceneObjects import Plane, Cube
 from opengl_interfacing.texture import createNewTexture
 from utils.objectUtils import flatten
-from utils.objects import Cube, Plane
+
 from utils.scene import Scene
 
 width, height = 400, 400
@@ -122,7 +123,7 @@ def init():
     currScene = Scene()
 
     set_up_scene_entities(currScene)
-    renderer = Renderer(currScene)
+    renderer = Renderer(currScene, [width, height])
 
     lightssob = glGenBuffers(1)
 
@@ -183,19 +184,11 @@ def fps_update():
 
 
 def render():
-    global renderer, buffer, deferred_program, lightProgram, cube, bbj, joint, joint2, cam
+    global renderer
 
-    #buffer.bind()
-    #glUseProgram(deferred_program)
     clear_framebuffer()
     renderer.draw()
 
-    #buffer.unbind()
-
-    #glUseProgram(lightProgram)
-    #renderer.light_draw(buffer)
-
-    #blit_to_default(buffer,2)
     glFlush()
 
     fps_update()

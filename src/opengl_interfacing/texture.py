@@ -11,7 +11,8 @@ from OpenGL.GL.framebufferobjects import glGenerateMipmap
 from PIL import Image
 
 import constants
-from utils.objectUtils import get_opengl_format, is_mipmapable
+from opengl_interfacing.utils import get_opengl_format
+from utils.objectUtils import  is_mipmapable
 
 
 class Texture_Manager:

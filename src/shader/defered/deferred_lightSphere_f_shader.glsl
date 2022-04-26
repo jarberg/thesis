@@ -20,11 +20,11 @@ uniform int height;
 out vec4 outColor;
 float attenuation(vec3 light, vec3 pos){
     float dist = distance(pos,light);
-    float inten = 1;
-    float a = 0;
-    float b = 3;
+    float inten = 50;
+    float a = 1;
+    float b = 50;
     float c = 1;
-    return max((inten / (c+a*dist+b*dist*dist)), 0);
+    return max((inten / (c+a*dist+b*dist*dist)-0.01), 0);
 }
 void main() {
     float ret = 0;

@@ -75,10 +75,10 @@ class G_Buffer:
         self.framebuffer = glGenFramebuffers(1)
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 
-        self.position_tex = Texture(size=[self.width, self.height], format=GL_RGBA, dataType=GL_FLOAT, secondFormat=GL_RGBA16F)
+        self.position_tex = Texture(size=[self.width, self.height], format=GL_RGBA, dataType=GL_FLOAT, secondFormat=GL_RGBA32F)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.position_tex.texType, self.position_tex.slot, 0)
 
-        self.normal_tex = Texture(size=[self.width, self.height], format=GL_RGBA, dataType=GL_FLOAT, secondFormat=GL_RGBA16F)
+        self.normal_tex = Texture(size=[self.width, self.height], format=GL_RGBA, dataType=GL_FLOAT, secondFormat=GL_RGBA32F)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, self.normal_tex.texType, self.normal_tex.slot, 0)
 
         self.albedo_tex = Texture(size=[self.width, self.height], format=GL_RGBA)
@@ -330,8 +330,6 @@ def blit_to_default(source, index):
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
     glBindRenderbuffer(GL_RENDERBUFFER, 0)
-
-
 
 
 def clear_framebuffer(color=None):
