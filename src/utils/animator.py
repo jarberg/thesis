@@ -4,7 +4,7 @@ from math import floor, ceil, sqrt
 
 from utils.objectUtils import Matrix, Vector, quaternion_to_matrix, Quaternion, \
     dot, matrix_to_quaternion, length, det4
-from utils.objects import Joint, Transform
+from utils.objects import Transform
 
 global time_per_frame
 
@@ -83,7 +83,7 @@ def calculateCurrentAnimationPose(animator):
     progression = calculateProgression(animator, frames)
     return interpolatePoses(frames[0], frames[1], progression)
 
-def applyPoseToJoints(animator, curPose: OrderedDict, rootJoint: Joint, parentTransform):
+def applyPoseToJoints(animator, curPose: OrderedDict, rootJoint, parentTransform):
     curLocalTransform = curPose.get(rootJoint.name)
     curTransform = parentTransform * curLocalTransform
     final = curTransform*rootJoint.inverseBindTransform

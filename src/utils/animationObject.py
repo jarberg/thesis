@@ -2,10 +2,9 @@ from collections import OrderedDict
 
 from OpenGL.raw.GL.VERSION.GL_1_0 import GL_TRIANGLE_STRIP
 
-from opengl_interfacing.animator import KeyFrame, Animation, Animator, calculateCurrentAnimationPose, applyPoseToJoints, \
-    getPreviousAndNextFrames, calculateProgression, interpolatePoses
+from opengl_interfacing.sceneObjects import IndicedModel, Animated_model, Joint
+from utils.animator import KeyFrame, Animation, Animator
 from utils.objectUtils import Matrix
-from utils.objects import Joint, IndicedModel, Animated_model
 
 
 def get_transformDict(joints):

@@ -10,7 +10,7 @@ uniform mat4 projection;
 uniform mat4 obj_transform;
 uniform mat3 normal_matrix;
 uniform mat4 v_matrix;
-
+uniform int lightnum;
 
 out vec2 OutTexCoords;
 out vec3 a_pos;

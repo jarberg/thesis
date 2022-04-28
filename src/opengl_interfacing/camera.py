@@ -31,8 +31,8 @@ class Camera(Transform):
             self.pMatrix = flatten(perspective(self.fovy, self.aspect, self.near, self.far))
 
 
-    def update_pMatrix(self):
-        aspect = get_aspect_ratio()
+    def update_pMatrix(self, aspect = None):
+        aspect = aspect or get_aspect_ratio()
         if self.aspect != aspect:
             self.aspect = aspect
             self.pMatrix = flatten(perspective(self.fovy, self.aspect, self.near, self.far))

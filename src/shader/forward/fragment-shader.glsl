@@ -1,5 +1,10 @@
 #version 430
+#extension GL_ARB_explicit_uniform_location : enable
+#extension GL_ARB_explicit_attrib_location : enable
+
 precision mediump float;
+const int MAX_LIGHTS = 500;
+
 
 float lambert(vec3 N, vec3 L){
   vec3 nrmN = normalize(N);
@@ -10,24 +15,22 @@ float lambert(vec3 N, vec3 L){
 
 float attenuation(vec3 light, vec3 pos){
     float dist = distance(pos,light);
-    float inten = 20;
+    float inten = 50;
     float a = 1;
-    float b = 2;
+    float b = 50;
     float c = 1;
-    return max((1 / (c+a*dist+b*dist*dist)), 0);
+    return max((inten / (c+a*dist+b*dist*dist)-0.01), 0);
 }
-
 in vec3 a_pos;
 in vec3 normal;
 in vec2 OutTexCoords;
 
 layout(std430, binding = 3) buffer lightBuffer{
-    vec4 data_SSBO[];
+    mat4 data_lightBuffer[];
 };
 
-const int MAX_LIGHTS = 500;
-uniform vec3 lights[MAX_LIGHTS];
-uniform int lightnum;
+layout(location = 4)uniform int lightnum;
+
 uniform int tex_diffuse_b;
 uniform sampler2D tex_diffuse;
 
@@ -49,18 +52,17 @@ void main() {
 
     float attenu;
     float angle;
-    vec3 lighting = vec3(0);
+    float lighting = 0;
 
-
-    for(int i =0; i<lightnum ;i++){
-        vec3 light = data_SSBO[i].xyz;
-        vec3 lightDir = light-FragPos;
-        attenu = attenuation(light, FragPos);
+    for(int i=0; i<lightnum ;i++){
+        vec3 light_pos = data_lightBuffer[i][3].xyz;
+        vec3 lightDir = light_pos-FragPos;
+        attenu = attenuation(light_pos, FragPos);
         angle = lambert(normalize(Normal), lightDir);
-        lighting += Albedo.xyz*10*angle*attenu;
+        lighting += angle*attenu;
     }
 
-    FragColor = vec4(lighting, 1);
+    FragColor = vec4(Albedo.xyz*lighting, 1);
 }
 
 

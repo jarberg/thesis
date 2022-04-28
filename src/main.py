@@ -1,35 +1,24 @@
 import math
-import time
 
-from OpenGL.GL import glViewport
-from OpenGL.GLUT import glutInit, GLUT_RGBA, GLUT_DEPTH, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT
+from OpenGL.GLUT import glutInit, GLUT_RGBA, GLUT_DEPTH
 from OpenGL.GLUT import glutInitDisplayMode, glutInitWindowSize, glutInitWindowPosition, glutCreateWindow, \
-    glutReshapeFunc, glutDisplayFunc, glutIdleFunc, glutMainLoop, glutGet
+    glutReshapeFunc, glutDisplayFunc, glutIdleFunc, glutMainLoop
 
 from opengl_interfacing.buffer import ShaderStorageBufferObject
-from opengl_interfacing.framebuffer import clear_framebuffer
 from opengl_interfacing.renderer import Renderer
 from opengl_interfacing.sceneObjects import Plane, Cube
 from opengl_interfacing.texture import createNewTexture
-from opengl_interfacing.utils import lightsplusminus
 from utils.objects import Transform, PointLight, Attenuation
 from utils.scene import Scene
 
-width, height = 400, 400
+width, height = 1200, 1200
 aspectRatio = width / height
-deferred_program = None
-postProgram = None
 window = None
 
 global renderer
 
 
 def init():
-    global start_time, counter, lightcount, start_time, currScene
-    global renderer, deferred_program, height
-
-    counter = 0
-    lightcount = 0
 
     glutInit()
     glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH)
@@ -38,15 +27,14 @@ def init():
 
     window = glutCreateWindow("Opengl Window In Python")
 
-    glutReshapeFunc(update_persp_event)
-
     currScene = Scene()
     renderer = Renderer(currScene, [width, height])
 
-    glutDisplayFunc(renderer.deferred_lightPass_render)
-    glutIdleFunc(renderer.deferred_lightPass_render)
+    glutReshapeFunc(renderer.resize)
+    glutDisplayFunc(renderer.forward)
+    glutIdleFunc(renderer.forward)
 
-    set_up_scene_entities(currScene)
+    set_up_scene_entities(currScene, renderer)
 
     reset_test_file()
     renderer.resize(width, height)
@@ -54,21 +42,13 @@ def init():
     glutMainLoop()
 
 
-def update_persp_event(w, h):
-    global renderer, currScene
-    glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
-    currScene.get_current_camera().update_pMatrix()
-    renderer.resize(w, h)
-
-    clear_framebuffer([0, 0, 0, 1])
-
 
 def reset_test_file():
     file2 = open(r"test_{}.txt".format(height), "w+")
     file2.close()
 
 
-def set_up_scene_entities(scene):
+def set_up_scene_entities(scene, renderer):
     p = Plane()
     p.set_rotation([0, 0, 90])
     p.set_scale([1000, 1000, 1000])
@@ -76,9 +56,8 @@ def set_up_scene_entities(scene):
     cubelist = cubes(0)
     cubelist.append(p)
 
-
     scene.add_entities(cubelist)
-    lightlist = lights(20)
+    lightlist = lights(100)
 
     renderer.lightAmount = 0
     scene.add_lights(lightlist)
@@ -87,7 +66,7 @@ def set_up_scene_entities(scene):
     ssbo.add_data(lightlist)
 
     cam = scene.get_current_camera()
-    cam.radius = 1
+    cam.radius = 800
     cam.updateHorizontal(0)
     cam.updateVertical(89.5)
 

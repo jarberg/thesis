@@ -1,6 +1,6 @@
 import time
 
-from utils.objects import Cube, ImagePlane
+from opengl_interfacing.sceneObjects import Cube
 from utils.scene import Scene
 
 global debug, GPU

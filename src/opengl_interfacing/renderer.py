@@ -6,12 +6,13 @@ from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL
     GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_LINES, \
     glDepthFunc, GL_ALWAYS, GL_LESS, glUniform1f, glUniform3fv, glDrawElementsInstanced, GL_UNSIGNED_SHORT, \
     glUseProgram, glBlendFunc, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, glEnable, GL_CULL_FACE, glDisable, \
-    glCullFace, GL_BACK, GL_FRONT, GL_BLEND, GL_DEPTH_TEST, glGetIntegerv, glFlush
+    glCullFace, GL_BACK, GL_FRONT, GL_BLEND, GL_DEPTH_TEST, glGetIntegerv, glFlush, glViewport
 
 from opengl_interfacing import texture
 from opengl_interfacing.framebuffer import G_Buffer, L_Buffer, blit_to_default, clear_framebuffer
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.sceneObjects import Plane, Sphere
+from opengl_interfacing.utils import get_window_width, get_window_height
 from utils.general import fps_update
 from utils.objectUtils import flatten, flatten_list
 
@@ -20,38 +21,54 @@ from utils.objectUtils import flatten, flatten_list
 class Renderer:
 
     def __init__(self, currScene, size):
-        self.forwardProgram = initShaders("/shader/vertex-shader.glsl",
-                                          "/shader/fragment-shader.glsl")
+        self.forwardProgram = initShaders("/shader/forward/vertex-shader.glsl",
+                                          "/shader/forward/fragment-shader.glsl")
         self.deferred_program = initShaders("/shader/defered/defered_v_shader.glsl",
                                             "/shader/defered/defered_f_shader.glsl")
         self.lightProgram = initShaders("/shader/defered/defered_light_v_shader.glsl",
                                         "/shader/defered/defered_light_f_shader.glsl")
+        self.lightSphereShader = initShaders("/shader/defered/deferred_lightSphere_v_shader.glsl",
+                                             "/shader/defered/deferred_lightSphere_f_shader.glsl")
 
         glUseProgram(self.deferred_program)
 
         self.currScene = currScene
+        self.width = size[0]
+        self.height = size[1]
         self.quad = Plane()
         self.quad.set_rotation([180, 0, 0])
         self.lightSphere = Sphere()
-        self.lightSphere.instanceListCount = 500
-
-        self.lightSphereShader = initShaders("/shader/defered/deferred_lightSphere_v_shader.glsl",
-                                             "/shader/defered/deferred_lightSphere_f_shader.glsl")
 
         self.lightBuffer = L_Buffer([size[0], size[1]])
         self.GBuffer = G_Buffer([size[0], size[1]])
 
         _set_window_properties(size[0], size[1])
-        self.lightAmount = 10
+        self.lightAmount = 0
 
     def resize(self, w, h):
+        glViewport(0, 0, get_window_width(), get_window_height())
+
+        self.currScene.get_current_camera().update_pMatrix(w/h)
         self.lightBuffer.resize(w, h)
         self.GBuffer.resize(w, h)
+        self.width = w
+        self.height = h
         _set_window_properties(w, h)
 
+        clear_framebuffer([0, 0, 0, 1])
+
     def forward(self):
+        clear_framebuffer([0,0,0,1])
+
         glUseProgram(self.forwardProgram)
+        light_num_slot = glGetUniformLocation(self.forwardProgram, "lightnum")
+        if light_num_slot > 0:
+            glUniform1i(light_num_slot,  self.lightAmount)
         self.draw()
+
+        glFlush()
+
+        fps_update(self.height, self)
 
     def deferred_render(self):
         glEnable(GL_CULL_FACE)
@@ -74,7 +91,7 @@ class Renderer:
 
         glFlush()
 
-        fps_update(self.lightAmount)
+        fps_update()
 
     def deferred_lightPass_render(self):
         glEnable(GL_CULL_FACE)
@@ -95,7 +112,7 @@ class Renderer:
 
         glFlush()
 
-        fps_update(self.lightAmount, renderer=self)
+        fps_update( renderer=self)
 
     def draw(self):
         _set_cam_attributes(self.currScene.get_current_camera())

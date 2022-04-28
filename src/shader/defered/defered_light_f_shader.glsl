@@ -39,13 +39,12 @@ float lambert(vec3 N, vec3 L){
 
 float attenuation(vec3 light, vec3 pos){
     float dist = distance(pos,light);
-    float inten = 1;
+    float inten = 50;
     float a = 1;
-    float b = 1;
+    float b = 50;
     float c = 1;
-    return max((1 / (c+a*dist+b*dist*dist)), 0);
+    return max((inten / (c+a*dist+b*dist*dist)-0.01), 0);
 }
-
 
 layout(std430, binding = 3) buffer lightBuffer{
     vec4 data_lightBuffer[];
@@ -76,8 +75,6 @@ void main(){
     vec3 Normal = texture(norm, TexCoords).xyz;
     vec3 Albedo = texture(albedo, TexCoords).rgb;
 
-
-
     float attenu;
     float angle;
     vec3 lighting = vec3(0);
@@ -92,12 +89,6 @@ void main(){
         angle = lambert(normalize(Normal), lightDir);
         lighting += 10*angle*attenu;
     }
-
-    vec3 light = vec3(0,5,0);
-    vec3 lightDir = light-FragPos;
-    attenu = attenuation(light, FragPos);
-    angle = lambert(normalize(Normal), lightDir);
-    lighting += 100*angle*attenu;
 
     fragCol = vec4(Albedo*lighting, 1);
 }

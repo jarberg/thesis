@@ -1,6 +1,7 @@
 from OpenGL.GL import glVertexAttribPointer, glBindBuffer, GL_ARRAY_BUFFER, glEnableVertexAttribArray, GL_RGB, GL_RGBA, \
     glGetUniformLocation, glUniform1i, glPixelStorei, GL_PACK_ALIGNMENT, glBindFramebuffer, GL_READ_FRAMEBUFFER, \
-    glReadPixels
+    glReadPixels, glGetIntegerv, GL_CURRENT_PROGRAM, glGetAttribLocation, GL_INT, glVertexAttribIPointer, GL_FLOAT, \
+    glBindVertexArray
 from OpenGL.raw.GLUT import glutGet, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT
 
 
@@ -31,11 +32,32 @@ def initAttributeVariable(a_attribute, buffer, size, var_type, offset=0, step=0)
     glEnableVertexAttribArray(a_attribute)
 
 
-def lightsplusminus(num, renderer):
-    num+=1
-    lightcount = max(num, 0)
-    res = min(max(4 * (lightcount + 1) * (lightcount + 1), 0), len(renderer.currScene.lights))
+
+def bind_vertex_attribute(buffer, name, data=None, data_len=3, data_type=GL_FLOAT, offset=0, VAO=None):
+    if VAO:
+        glBindVertexArray(VAO)
+    buffer.bind()
+    buffer.add_data(data)
+    attributeSlot = get_attribute_location(name)
+    if attributeSlot >= 0:
+        if data_type == GL_INT:
+            glVertexAttribIPointer(attributeSlot, data_len, data_type, offset, None)
+        elif data_type == GL_FLOAT:
+            glVertexAttribPointer(attributeSlot, data_len, data_type, False, offset, None)
+
+        glEnableVertexAttribArray(attributeSlot)
+        buffer.attributes[name] = attributeSlot
+
+
+def get_attribute_location(name):
+    program = glGetIntegerv(GL_CURRENT_PROGRAM)
+    return glGetAttribLocation(program, name)
+
+
+def lightsplusminus(lightCounter, renderer):
+    lightCounter+=0.001
+    #lightcount = max(lightCounter, 0)
+    res = int(len(renderer.currScene.lights)*lightCounter)#min(max(4 * (lightcount + 1) * (lightcount + 1), 0), len(renderer.currScene.lights))
     renderer.lightAmount = res
-    slot2 = glGetUniformLocation(renderer.lightProgram, "lightnum")
-    if slot2 >0:
-        glUniform1i(slot2, res)
+
+    return lightCounter
