@@ -67,7 +67,7 @@ def set_up_scene_entities(scene, renderer, boxes=0, lightsnum=1):
     ssbo.add_data(lightlist)
 
     cam = scene.get_current_camera()
-    cam.radius = 100
+    cam.radius = 20
     cam.updateHorizontal(0)
     cam.updateVertical(89.5)
 

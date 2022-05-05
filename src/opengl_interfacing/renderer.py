@@ -39,7 +39,7 @@ class Renderer:
         self.GBuffer = G_Buffer([size[0], size[1]])
 
         _set_window_properties(size[0], size[1])
-        self.lightAmount = 10
+        self.lightAmount = 1
 
     def resize(self, w, h):
         glViewport(0, 0, get_window_width(), get_window_height())
