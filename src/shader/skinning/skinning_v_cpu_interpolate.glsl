@@ -18,8 +18,6 @@ uniform mat4 projection;
 uniform mat4 obj_transform;
 uniform mat4 v_matrix;
 
-
-
 out vec3 normals;
 out vec3 pos;
 

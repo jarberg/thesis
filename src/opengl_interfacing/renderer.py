@@ -1,35 +1,20 @@
-from random import randrange
-
 import numpy
-
-from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
-    GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_LINES, \
-    glDepthFunc, GL_ALWAYS, GL_LESS, glUniform1f, glUniform3fv, glDrawElementsInstanced, GL_UNSIGNED_SHORT, \
-    glUseProgram, glBlendFunc, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, glEnable, GL_CULL_FACE, glDisable, \
-    glCullFace, GL_BACK, GL_FRONT, GL_BLEND, GL_DEPTH_TEST, glGetIntegerv, glFlush, glViewport
+from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, glUniform1i, \
+    GL_CURRENT_PROGRAM, glBindVertexArray, glUniformMatrix3fv, GL_LINES, \
+    glDepthFunc, GL_ALWAYS, GL_LESS, glUniform1f, glUseProgram, glGetIntegerv, glFlush, glViewport
 
 from opengl_interfacing import texture
-from opengl_interfacing.framebuffer import G_Buffer, L_Buffer, blit_to_default, clear_framebuffer
+from opengl_interfacing.framebuffer import G_Buffer, L_Buffer, clear_framebuffer
 from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.sceneObjects import Plane, Sphere
 from opengl_interfacing.utils import get_window_width, get_window_height
 from utils.general import fps_update
-
-from utils.objectUtils import flatten, flatten_list
-
+from utils.objectUtils import flatten
 
 
 class Renderer:
 
     def __init__(self, currScene, size):
-        self.forwardProgram = initShaders("/shader/forward/vertex-shader.glsl",
-                                          "/shader/forward/fragment-shader.glsl")
-        self.deferred_program = initShaders("/shader/defered/defered_v_shader.glsl",
-                                            "/shader/defered/defered_f_shader.glsl")
-        self.lightProgram = initShaders("/shader/defered/defered_light_v_shader.glsl",
-                                        "/shader/defered/defered_light_f_shader.glsl")
-        self.lightSphereShader = initShaders("/shader/defered/deferred_lightSphere_v_shader.glsl",
-                                             "/shader/defered/deferred_lightSphere_f_shader.glsl")
 
         self.skinningProgram = initShaders("/shader/skinning/skinning_v_cpu_interpolate.glsl", "/shader/skinning/skinning_f.glsl")
         self.jointProgram = initShaders("/shader/debug/joint_v_shader.glsl", "/shader/debug/joint_f_shader.glsl")
@@ -61,115 +46,6 @@ class Renderer:
 
         clear_framebuffer([0, 0, 0, 1])
 
-    def forward(self):
-        clear_framebuffer([0,0,0,1])
-
-        glUseProgram(self.forwardProgram)
-        light_num_slot = glGetUniformLocation(self.forwardProgram, "lightnum")
-        if light_num_slot > 0:
-            glUniform1i(light_num_slot,  self.lightAmount)
-        self.draw()
-
-        glFlush()
-
-        fps_update(self.height, self)
-
-    def deferred_render(self):
-        glEnable(GL_CULL_FACE)
-        glCullFace(GL_BACK)
-
-        glDisable(GL_BLEND)
-        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LESS)
-
-        self.GBuffer.bind()
-        glUseProgram(self.deferred_program)
-
-        self.draw()
-
-        self.GBuffer.unbind()
-
-        glUseProgram(self.lightProgram)
-        self.light_draw()
-
-        glFlush()
-
-        fps_update()
-
-    def deferred_lightPass_render(self):
-        glEnable(GL_CULL_FACE)
-        glCullFace(GL_BACK)
-        glDisable(GL_BLEND)
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LESS)
-
-        glUseProgram(self.deferred_program)
-        clear_framebuffer([0,0,0,1])
-
-        self.GBuffer.bind()
-        self.draw()
-        self.GBuffer.unbind()
-
-        self._instance_light_draw(self.lightSphere)
-        blit_to_default(self.lightBuffer, 0)
-
-        glFlush()
-
-        fps_update(renderer=self)
-
-    def draw(self):
-        _set_cam_attributes(self.currScene.get_current_camera())
-
-        for obj in self.currScene.get_entity_list():
-            _set_obj_mat_attributes(obj)
-            _set_normalMatrix_attribute(obj)
-            _set_obj_transform_attributes(obj)
-            obj.draw()
-
-    def _instance_light_draw(self, parentObj):
-        glUseProgram(self.lightSphereShader)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_ONE, GL_ONE)
-        glEnable(GL_CULL_FACE)
-        glCullFace(GL_FRONT)
-        glDepthFunc(GL_ALWAYS)
-
-        self.lightBuffer.bind()
-        _set_cam_attributes(self.currScene.get_current_camera())
-
-        loc1 = glGetUniformLocation(self.lightSphereShader, "geoPosRender")
-        glUniform1i(loc1, self.GBuffer.position_tex.slot)
-        loc2 = glGetUniformLocation(self.lightSphereShader, "geoNormRender")
-        glUniform1i(loc2, self.GBuffer.normal_tex.slot)
-
-        glBindVertexArray(parentObj.VAO)
-        glDrawElementsInstanced(parentObj.renderType, len(parentObj.indices), GL_UNSIGNED_SHORT, None, self.lightAmount)
-        self.lightBuffer.unbind()
-
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glDepthFunc(GL_LESS)
-        glCullFace(GL_BACK)
-
-    def light_draw_cubes(self, buffer: G_Buffer):
-        currProgram = glGetIntegerv(GL_CURRENT_PROGRAM)
-        cam = self.currScene.get_current_camera()
-        texture.bind(buffer.position_tex)
-        texture.bind(buffer.normal_tex)
-        texture.bind(buffer.albedo_tex)
-
-        loc1 = glGetUniformLocation(currProgram, "pos")
-        glUniform1i(loc1, buffer.position_tex.slot)
-        loc2 = glGetUniformLocation(currProgram, "norm")
-        glUniform1i(loc2, buffer.normal_tex.slot)
-        loc3 = glGetUniformLocation(currProgram, "albedo")
-        glUniform1i(loc3, buffer.albedo_tex.slot)
-        v_loc = glGetUniformLocation(currProgram, "viewPos")
-        glUniform3fv(v_loc, 1, flatten(cam.eye))
-        glUniformMatrix4fv(glGetUniformLocation(currProgram, "obj_transform"), 1, False,
-                           flatten(self.quad.getTransform()))
-
-        self.quad.draw()
 
     def skinning_draw(self):
 
@@ -234,60 +110,6 @@ class Renderer:
             glDrawArrays(GL_LINES, 0, obj.get_vertexArray_len())
 
         glDepthFunc(GL_LESS)
-
-    def light_draw(self):
-        currProgram = glGetIntegerv(GL_CURRENT_PROGRAM)
-        cam = self.currScene.get_current_camera()
-        texture.bind(self.GBuffer.position_tex)
-        texture.bind(self.GBuffer.normal_tex)
-        texture.bind(self.GBuffer.albedo_tex)
-
-        loc1 = glGetUniformLocation(currProgram, "pos")
-        glUniform1i(loc1, self.GBuffer.position_tex.slot)
-        loc2 = glGetUniformLocation(currProgram, "norm")
-        glUniform1i(loc2, self.GBuffer.normal_tex.slot)
-        loc3 = glGetUniformLocation(currProgram, "albedo")
-        glUniform1i(loc3, self.GBuffer.albedo_tex.slot)
-        v_loc = glGetUniformLocation(currProgram, "viewPos")
-        glUniform3fv(v_loc, 1, flatten(cam.eye))
-        glUniformMatrix4fv(glGetUniformLocation(currProgram, "obj_transform"), 1, False,
-                           flatten(self.quad.getTransform()))
-
-        self.quad.draw()
-
-    def postDraw(self, program, tex, postBuffer):
-        glUseProgram(program)
-
-        loc = glGetUniformLocation(program, "screencapture")
-        if loc != -1:
-            glUniform1i(loc, tex.slot)
-
-        glUniform1i(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "viewport_width"), postBuffer.width)
-        glUniform1i(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "viewport_height"), postBuffer.height)
-        glUniform1i(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "samples"), postBuffer.get_samples())
-
-        glUniformMatrix4fv(3, 1, False, flatten(self.quad.getTransform()))
-
-        glBindVertexArray(self.quad.VAO)
-        glDrawArrays(GL_TRIANGLES, 0, len(self.quad.vertexArray))
-
-    def randDraw(self, objects, program, fps):
-        glUseProgram(program)
-        v = []
-        for i in range(4):
-            v.append([])
-            for j in range(4):
-                v[i].append(randrange(-1, 1))
-                v[i].append(randrange(-1, 1))
-
-        glUniform1fv(glGetUniformLocation(program, "timeI"), 1, fps / 10000000)
-        loc = glGetUniformLocation(program, "vectors")
-        vv = flatten(v)
-        glUniform2fv(loc, vv.nbytes, vv)
-
-        for obj in objects:
-            glBindVertexArray(obj.VAO)
-            glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
 
 
 def _set_cam_attributes(cam):
