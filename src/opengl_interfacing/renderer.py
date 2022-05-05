@@ -9,7 +9,7 @@ from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.sceneObjects import Plane, Sphere
 from opengl_interfacing.utils import get_window_width, get_window_height
 from utils.general import fps_update
-from utils.objectUtils import flatten
+from utils.objectUtils import flatten, flatten_list
 
 
 class Renderer:
@@ -130,7 +130,7 @@ def _set_animator_attributes(obj):
             trans = []
             for k in range(len(animator.curPoseList)):
                 trans.append(animator.curPoseList[k])
-            transforms = flatten(trans)
+            transforms = flatten_list(trans)
             glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"),
                                len(animator.curPoseList),
                                False, transforms)

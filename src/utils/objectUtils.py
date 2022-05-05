@@ -546,7 +546,7 @@ def flatten_list(list_obj, transposes=True, data_type=numpy.float32):
             ret = transpose(obj)
             for each in ret:
                 res.append(each)
-        if type(obj).__name__ == "Transform":
+        elif type(obj).__name__ == "Transform":
             for each in transpose(obj.m):
                 res.append(each)
         else:

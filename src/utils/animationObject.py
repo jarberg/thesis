@@ -15,7 +15,6 @@ def get_transformDict(joints):
     return odict
 
 
-
 def setup_test_anim_CPU(bones, model):
     key1 = KeyFrame(get_transformDict(bones), 0)
 
