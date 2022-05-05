@@ -26,19 +26,15 @@ class Renderer:
         self.lightSphereShader = initShaders("/shader/defered/deferred_lightSphere_v_shader.glsl",
                                              "/shader/defered/deferred_lightSphere_f_shader.glsl")
 
-        glUseProgram(self.deferred_program)
-
         self.currScene = currScene
         self.width = size[0]
         self.height = size[1]
-        self.quad = Plane()
-        self.quad.set_rotation([180, 0, 0])
-        self.lightSphere = Sphere()
+
 
         self.lightBuffer = L_Buffer([size[0], size[1]])
         self.GBuffer = G_Buffer([size[0], size[1]])
 
-        _set_window_properties(size[0], size[1])
+
         self.lightAmount = 1
 
     def resize(self, w, h):
@@ -49,14 +45,15 @@ class Renderer:
         self.GBuffer.resize(w, h)
         self.width = w
         self.height = h
-        _set_window_properties(w, h)
+        set_window_properties(w, h)
 
         clear_framebuffer([0, 0, 0, 1])
 
     def forward(self):
-        clear_framebuffer([0,1,0,1])
+        clear_framebuffer([0,0,0,1])
+        #glDisable(GL_CULL_FACE)
+        #glCullFace(GL_FRONT)
 
-        glUseProgram(self.forwardProgram)
         light_num_slot = glGetUniformLocation(self.forwardProgram, "lightnum")
         if light_num_slot > 0:
             glUniform1i(light_num_slot,  self.lightAmount)
@@ -72,7 +69,7 @@ class Renderer:
         glCullFace(GL_BACK)
 
         glDisable(GL_BLEND)
-        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
 
@@ -101,7 +98,7 @@ class Renderer:
         glDepthFunc(GL_LESS)
 
         glUseProgram(self.deferred_program)
-        clear_framebuffer([0,0,0,1])
+        clear_framebuffer([0,1,0,1])
 
         self.GBuffer.bind()
         self.draw()
@@ -109,7 +106,7 @@ class Renderer:
 
 
         self._instance_light_draw(self.lightSphere)
-        #blit_to_default(self.lightBuffer, 0)
+        blit_to_default(self.lightBuffer, 0)
 
         glFlush()
 
@@ -143,6 +140,8 @@ class Renderer:
         glUniform1i(loc1, self.GBuffer.position_tex.slot)
         loc2 = glGetUniformLocation(self.lightSphereShader, "geoNormRender")
         glUniform1i(loc2, self.GBuffer.normal_tex.slot)
+        loc3 = glGetUniformLocation(self.lightSphereShader, "geoColRender")
+        glUniform1i(loc3, self.GBuffer.albedo_tex.slot)
 
         glBindVertexArray(parentObj.VAO)
         glDrawElementsInstanced(parentObj.renderType, len(parentObj.indices), GL_UNSIGNED_SHORT, None, self.lightAmount)
@@ -193,6 +192,16 @@ class Renderer:
 
         self.quad.draw()
 
+    def add_renderObjectUtils(self):
+        add_postQuad(self)
+        addLightSphere(self)
+
+def add_postQuad(renderer):
+    renderer.quad = Plane()
+    renderer.quad.set_rotation([180, 0, 0])
+
+def addLightSphere(renderer):
+    renderer.lightSphere = Sphere()
 
 def _set_cam_attributes(cam):
     if cam:
@@ -206,7 +215,7 @@ def _set_cam_attributes(cam):
 
 
 
-def _set_window_properties(w, h):
+def set_window_properties(w, h):
     program = glGetIntegerv(GL_CURRENT_PROGRAM)
 
     glUniform1i(glGetUniformLocation(program, "width"), w)

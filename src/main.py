@@ -3,9 +3,11 @@ import math
 from OpenGL.GLUT import glutInit, GLUT_RGBA, GLUT_DEPTH
 from OpenGL.GLUT import glutInitDisplayMode, glutInitWindowSize, glutInitWindowPosition, glutCreateWindow, \
     glutReshapeFunc, glutDisplayFunc, glutIdleFunc, glutMainLoop
+from OpenGL.raw.GL.VERSION.GL_1_0 import glDepthFunc, GL_LESS, GL_DEPTH_TEST, glEnable
+from OpenGL.raw.GL.VERSION.GL_2_0 import glUseProgram
 
 from opengl_interfacing.buffer import ShaderStorageBufferObject
-from opengl_interfacing.renderer import Renderer
+from opengl_interfacing.renderer import Renderer, set_window_properties
 from opengl_interfacing.sceneObjects import Plane, Cube
 from opengl_interfacing.texture import createNewTexture
 from utils.objects import Transform, PointLight, Attenuation
@@ -29,19 +31,37 @@ def init():
 
     currScene = Scene()
     renderer = Renderer(currScene, [width, height])
+    set_render_type(renderer, 1)
 
     glutReshapeFunc(renderer.resize)
-    glutDisplayFunc(renderer.deferred_render)
-    glutIdleFunc(renderer.deferred_render)
 
     set_up_scene_entities(currScene, renderer, boxes=0, lightsnum=1)
 
-    reset_test_file()
+    #reset_test_file()
     renderer.resize(width, height)
 
     glutMainLoop()
 
 
+def set_render_type(renderer, type=0):
+    if type==0:
+        glutDisplayFunc(renderer.forward)
+        glutIdleFunc(renderer.forward)
+        glUseProgram(renderer.forwardProgram)
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LESS)
+
+    elif type==1:
+        glutDisplayFunc(renderer.deferred_render)
+        glutIdleFunc(renderer.deferred_render)
+        glUseProgram(renderer.deferred_program)
+    elif type==2:
+        glutDisplayFunc(renderer.deferred_lightPass_render)
+        glutIdleFunc(renderer.deferred_lightPass_render)
+        glUseProgram(renderer.deferred_program)
+
+    renderer.add_renderObjectUtils()
+    set_window_properties(width, height)
 
 def reset_test_file():
     file2 = open(r"test_{}.txt".format(height), "w+")
