@@ -11,7 +11,7 @@ from opengl_interfacing.texture import createNewTexture
 from utils.objects import Transform, PointLight, Attenuation
 from utils.scene import Scene
 
-width, height = 1200, 1200
+width, height = 400, 400
 aspectRatio = width / height
 window = None
 
@@ -31,10 +31,10 @@ def init():
     renderer = Renderer(currScene, [width, height])
 
     glutReshapeFunc(renderer.resize)
-    glutDisplayFunc(renderer.forward)
-    glutIdleFunc(renderer.forward)
+    glutDisplayFunc(renderer.deferred_render)
+    glutIdleFunc(renderer.deferred_render)
 
-    set_up_scene_entities(currScene, renderer)
+    set_up_scene_entities(currScene, renderer, boxes=0, lightsnum=1)
 
     reset_test_file()
     renderer.resize(width, height)
@@ -48,16 +48,16 @@ def reset_test_file():
     file2.close()
 
 
-def set_up_scene_entities(scene, renderer):
+def set_up_scene_entities(scene, renderer, boxes=0, lightsnum=1):
     p = Plane()
     p.set_rotation([0, 0, 90])
     p.set_scale([1000, 1000, 1000])
 
-    cubelist = cubes(0)
+    cubelist = cubes(boxes)
     cubelist.append(p)
 
     scene.add_entities(cubelist)
-    lightlist = lights(100)
+    lightlist = lights(lightsnum)
 
     renderer.lightAmount = 0
     scene.add_lights(lightlist)
@@ -66,7 +66,7 @@ def set_up_scene_entities(scene, renderer):
     ssbo.add_data(lightlist)
 
     cam = scene.get_current_camera()
-    cam.radius = 800
+    cam.radius = 100
     cam.updateHorizontal(0)
     cam.updateVertical(89.5)
 

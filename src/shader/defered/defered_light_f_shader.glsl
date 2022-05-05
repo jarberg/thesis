@@ -79,11 +79,8 @@ void main(){
     float angle;
     vec3 lighting = vec3(0);
 
-    int[3] pos = squash_pos(FragPos);
-    Cube cubelist=cubes[pos[0]][pos[1]][pos[2]];
-
-    for(int i =0; i<cubelist.length ;i++){
-        vec3 light = data_lightBuffer[cubelist.lightIDs[i]].xyz;
+    for(int i =0; i<lightnum ;i++){
+        vec3 light = data_lightBuffer[i].xyz;
         vec3 lightDir = light-FragPos;
         attenu = attenuation(light, FragPos);
         angle = lambert(normalize(Normal), lightDir);

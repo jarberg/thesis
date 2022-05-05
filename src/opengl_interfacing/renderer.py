@@ -1,10 +1,7 @@
-from random import randrange
-
 import numpy
-
-from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glDrawArrays, GL_TRIANGLES, glUniform1i, \
-    GL_CURRENT_PROGRAM, glBindVertexArray, glUniform1fv, glUniform2fv, glUniformMatrix3fv, GL_LINES, \
-    glDepthFunc, GL_ALWAYS, GL_LESS, glUniform1f, glUniform3fv, glDrawElementsInstanced, GL_UNSIGNED_SHORT, \
+from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glUniform1i, \
+    GL_CURRENT_PROGRAM, glBindVertexArray, glUniformMatrix3fv, glDepthFunc, GL_ALWAYS, GL_LESS, glUniform1f, \
+    glUniform3fv, glDrawElementsInstanced, GL_UNSIGNED_SHORT, \
     glUseProgram, glBlendFunc, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, glEnable, GL_CULL_FACE, glDisable, \
     glCullFace, GL_BACK, GL_FRONT, GL_BLEND, GL_DEPTH_TEST, glGetIntegerv, glFlush, glViewport
 
@@ -14,8 +11,7 @@ from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.sceneObjects import Plane, Sphere
 from opengl_interfacing.utils import get_window_width, get_window_height
 from utils.general import fps_update
-from utils.objectUtils import flatten, flatten_list
-
+from utils.objectUtils import flatten
 
 
 class Renderer:
@@ -43,7 +39,7 @@ class Renderer:
         self.GBuffer = G_Buffer([size[0], size[1]])
 
         _set_window_properties(size[0], size[1])
-        self.lightAmount = 0
+        self.lightAmount = 10
 
     def resize(self, w, h):
         glViewport(0, 0, get_window_width(), get_window_height())
@@ -58,7 +54,7 @@ class Renderer:
         clear_framebuffer([0, 0, 0, 1])
 
     def forward(self):
-        clear_framebuffer([0,0,0,1])
+        clear_framebuffer([0,1,0,1])
 
         glUseProgram(self.forwardProgram)
         light_num_slot = glGetUniformLocation(self.forwardProgram, "lightnum")
@@ -91,7 +87,7 @@ class Renderer:
 
         glFlush()
 
-        fps_update()
+        fps_update(renderer=self)
 
     def deferred_lightPass_render(self):
         glEnable(GL_CULL_FACE)
@@ -167,60 +163,6 @@ class Renderer:
 
         self.quad.draw()
 
-    def skinning_draw(self):
-
-        _set_cam_attributes(self.currScene.get_current_camera())
-
-        for obj in self.currScene.get_entity_list():
-            if self.currScene.GPU:
-                _set_animator_attributes(obj)
-            else:
-                _set_animator_attributes(obj)
-
-            _set_obj_mat_attributes(obj)
-            _set_normalMatrix_attribute(obj)
-            _set_obj_transform_attributes(obj)
-            _set_obj_skin_attributes(obj)
-
-            obj.draw()
-
-    def debug_draw(self):
-
-        _set_cam_attributes(self.currScene.get_current_camera())
-
-        glUniform1i(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 1)
-        glDepthFunc(GL_ALWAYS)
-
-        for obj in self.currScene.get_entity_list():
-            _set_animator_attributes(obj)
-            _set_obj_transform_attributes(obj)
-            _set_obj_skin_attributes(obj)
-
-            obj.draw(True)
-
-        glUniform1i(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 0)
-        glDepthFunc(GL_LESS)
-
-    def joint_draw(self):
-        cam = self.currScene.get_current_camera()
-        glDepthFunc(GL_ALWAYS)
-        glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False,
-                           cam.pMatrix)
-        glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "v_matrix"), 1, False,
-                           flatten(cam._getTransform()), False)
-
-        for obj in self.currScene.get_joints():
-            if len(self.currScene.animators[0].curPoseList) > 0 and False:
-                glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1,
-                                   False, flatten(animator.curPoseList[obj.id]))
-            else:
-                glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1,
-                                   False, flatten(obj.getTransform()))
-
-            glBindVertexArray(obj.getVAO())
-            glDrawArrays(GL_LINES, 0, obj.get_vertexArray_len())
-
-        glDepthFunc(GL_LESS)
 
     def light_draw(self):
         currProgram = glGetIntegerv(GL_CURRENT_PROGRAM)
@@ -242,40 +184,6 @@ class Renderer:
 
         self.quad.draw()
 
-    def postDraw(self, program, tex, postBuffer):
-        glUseProgram(program)
-
-        loc = glGetUniformLocation(program, "screencapture")
-        if loc != -1:
-            glUniform1i(loc, tex.slot)
-
-        glUniform1i(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "viewport_width"), postBuffer.width)
-        glUniform1i(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "viewport_height"), postBuffer.height)
-        glUniform1i(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "samples"), postBuffer.get_samples())
-
-        glUniformMatrix4fv(3, 1, False, flatten(self.quad.getTransform()))
-
-        glBindVertexArray(self.quad.VAO)
-        glDrawArrays(GL_TRIANGLES, 0, len(self.quad.vertexArray))
-
-    def randDraw(self, objects, program, fps):
-        glUseProgram(program)
-        v = []
-        for i in range(4):
-            v.append([])
-            for j in range(4):
-                v[i].append(randrange(-1, 1))
-                v[i].append(randrange(-1, 1))
-
-        glUniform1fv(glGetUniformLocation(program, "timeI"), 1, fps / 10000000)
-        loc = glGetUniformLocation(program, "vectors")
-        vv = flatten(v)
-        glUniform2fv(loc, vv.nbytes, vv)
-
-        for obj in objects:
-            glBindVertexArray(obj.VAO)
-            glDrawArrays(GL_TRIANGLES, 0, len(obj.vertexArray))
-
 
 def _set_cam_attributes(cam):
     if cam:
@@ -287,18 +195,6 @@ def _set_cam_attributes(cam):
         if v_loc != -1:
             glUniformMatrix4fv(v_loc, 1, False, flatten(cam._getTransform()), False)
 
-
-def _set_animator_attributes(obj):
-    if hasattr(obj, "animator"):
-        animator = obj.animator
-        if animator and len(animator.curPoseList) > 0:
-            trans = []
-            for k in range(len(animator.curPoseList)):
-                trans.append(animator.curPoseList[k])
-            transforms = flatten_list(trans)
-            glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"),
-                               len(animator.curPoseList),
-                               False, transforms)
 
 
 def _set_window_properties(w, h):
