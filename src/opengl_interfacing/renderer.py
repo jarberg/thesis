@@ -67,6 +67,7 @@ class Renderer:
         fps_update(self.height, self)
 
     def deferred_render(self):
+        glUseProgram(self.deferred_program)
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK)
 
@@ -76,13 +77,16 @@ class Renderer:
         glDepthFunc(GL_LESS)
 
         self.GBuffer.bind()
-        glUseProgram(self.deferred_program)
+
 
         self.draw()
 
         self.GBuffer.unbind()
 
         glUseProgram(self.lightProgram)
+        light_num_slot = glGetUniformLocation(self.lightProgram, "lightnum")
+        if light_num_slot > 0:
+            glUniform1i(light_num_slot,  self.lightAmount)
         self.light_draw()
 
         glFlush()
@@ -103,8 +107,9 @@ class Renderer:
         self.draw()
         self.GBuffer.unbind()
 
+
         self._instance_light_draw(self.lightSphere)
-        blit_to_default(self.lightBuffer, 0)
+        #blit_to_default(self.lightBuffer, 0)
 
         glFlush()
 
@@ -129,6 +134,10 @@ class Renderer:
 
         self.lightBuffer.bind()
         _set_cam_attributes(self.currScene.get_current_camera())
+
+        light_num_slot = glGetUniformLocation(self.lightSphereShader, "lightnum")
+        if light_num_slot > 0:
+            glUniform1i(light_num_slot, self.lightAmount)
 
         loc1 = glGetUniformLocation(self.lightSphereShader, "geoPosRender")
         glUniform1i(loc1, self.GBuffer.position_tex.slot)

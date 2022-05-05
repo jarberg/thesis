@@ -109,7 +109,7 @@ class G_Buffer:
 
         GL.glViewport(0, 0, self.width, self.height)
 
-        clear_framebuffer([0,0,0,0])
+        clear_framebuffer([0,1,0,1])
 
         self.bound = True
 
@@ -122,7 +122,7 @@ class G_Buffer:
 
         self.bound = False
 
-        clear_framebuffer([0,0,0,0])
+        clear_framebuffer([1,0,0,1])
 
     def resize(self, w=None, h=None):
         if w and h:

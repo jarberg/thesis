@@ -59,8 +59,9 @@ def set_up_scene_entities(scene, renderer, boxes=0, lightsnum=1):
     scene.add_entities(cubelist)
     lightlist = lights(lightsnum)
 
-    renderer.lightAmount = 0
+
     scene.add_lights(lightlist)
+    renderer.lightAmount = len(lightlist)
 
     ssbo = ShaderStorageBufferObject(bufferIndex=3)
     ssbo.add_data(lightlist)

@@ -58,6 +58,6 @@ def lightsplusminus(lightCounter, renderer):
     lightCounter+=0.001
     #lightcount = max(lightCounter, 0)
     res = int(len(renderer.currScene.lights)*lightCounter)#min(max(4 * (lightcount + 1) * (lightcount + 1), 0), len(renderer.currScene.lights))
-    renderer.lightAmount = len(renderer.currScene.lights)
+    renderer.lightAmount = 10
 
     return lightCounter
