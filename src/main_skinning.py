@@ -73,8 +73,6 @@ def init():
     GL.glEnable(GL.GL_BLEND)
     glEnable(GL_DEPTH_TEST)
 
-    #glDisable(GL_CULL_FACE)
-
 
     currScene = Scene()
 
@@ -87,65 +85,8 @@ def init():
     glutDisplayFunc(renderer.skinning_draw)
     glutIdleFunc(renderer.skinning_draw)
 
-    test_ssbo = glGenBuffers(1)
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, test_ssbo)
-    data = []
-
-    animator = currScene.animators[0]
-
-    for i in range(len(animator.animation.keyframes)):
-        for j, joint in enumerate(animator.animation.keyframes[i].transforms):
-            data.append(animator.animation.keyframes[i].transforms[joint])
-    data = flatten(data)
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, test_ssbo)
-    glBufferData(GL_SHADER_STORAGE_BUFFER, data.nbytes, data=data, usage=GL_STATIC_DRAW)
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
-
-
-    test3_ssbo = glGenBuffers(1)
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, test3_ssbo)
-
-    jointList = [-1, 0, 1, 2]
-
-    data2 = flatten(jointList)
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, test3_ssbo)
-    glBufferData(GL_SHADER_STORAGE_BUFFER, data2.nbytes, data=data2, usage=GL_STATIC_DRAW)
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
-
-
-    test2_ssbo = glGenBuffers(1)
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, test2_ssbo)
-    data2 = []
-    for i in range(len(animator.animation.keyframes)):
-        jointList = list(animator.animation.keyframes[i].transforms)
-        for j, joint in enumerate(jointList):
-            if j-1 >= 0:
-                parentName = jointList[j-1]
-                data2.append(animator.animation.keyframes[i].transforms[parentName])
-            else:
-                data2.append(Matrix())
-
-
-    data2 = flatten(data2)
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, test2_ssbo)
-    glBufferData(GL_SHADER_STORAGE_BUFFER, data2.nbytes, data=data2, usage=GL_STATIC_DRAW)
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 
     glutMainLoop()
-
-
-
-def fps_update():
-    global fps_counter
-    global start_time
-    global time_per_frame
-    tim = (time.time() - start_time)
-
-    if tim != 0:
-        time_per_frame = tim
-        #print("FPS: ", 1 / tim)
-
-
 
 
 

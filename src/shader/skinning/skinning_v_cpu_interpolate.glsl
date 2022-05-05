@@ -55,5 +55,3 @@ void main(){
         gl_Position = pv_mat*obj_transform*poos;
     }
 }
-
-

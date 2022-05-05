@@ -124,8 +124,8 @@ def interpolate(prevTransfrom: Transform, nexTransform: Transform, progression):
     quat3 = quat1 * (1 - progression) + quat2 * progression #slerp(quat1, quat2, progression, True)
 
     r = quaternion_to_matrix(quat3)
-    det = det4(r)
-    r /= det
+    #det = det4(r)
+    #r /= det
 
     sx, sy, sz = get_scale(prevTransfrom.m)
     sx1, sy1, sz1 = get_scale(nexTransform.m)

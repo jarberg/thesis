@@ -179,10 +179,8 @@ class Renderer:
         _set_cam_attributes(self.currScene.get_current_camera())
 
         for obj in self.currScene.get_entity_list():
-            if self.currScene.GPU:
-                _set_animator_attributes(obj)
-            else:
-                _set_animator_attributes(obj)
+
+            _set_animator_attributes(obj)
 
             _set_obj_mat_attributes(obj)
             _set_normalMatrix_attribute(obj)
@@ -194,14 +192,12 @@ class Renderer:
         if self.currScene.debug:
             self.debug_draw()
             glUseProgram(self.jointProgram)
-            self.joint_draw(self.currScene.animators[0])
+            self.joint_draw()
 
 
         glFlush()
 
         self.currScene.animators[0].update(fps_update())
-
-
 
 
     def debug_draw(self):
@@ -221,7 +217,7 @@ class Renderer:
         glUniform1i(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 0)
         glDepthFunc(GL_LESS)
 
-    def joint_draw(self, animator):
+    def joint_draw(self):
         cam = self.currScene.get_current_camera()
         glDepthFunc(GL_ALWAYS)
         glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False,
