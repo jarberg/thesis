@@ -22,9 +22,9 @@ class Scene:
     def add_entities(self, entity_list):
         for entity in entity_list:
             self.entities.append(entity)
-            cube = self.entity_cubes.get(entity, [])
-            cube.append(squash_pos(entity.get_position()))
-            self.entity_cubes[entity] = cube
+            #cube = self.entity_cubes.get(entity, [])
+            #cube.append(squash_pos(entity.get_position()))
+            #self.entity_cubes[entity] = cube
 
 
     def get_current_camera(self):

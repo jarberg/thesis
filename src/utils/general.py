@@ -24,13 +24,14 @@ def fps_update(height=1200, renderer=None):
 
             #print("FPS: ",   counter/(time.time() - av_start_time))
             counter = 0
-            lightCounter = lightsplusminus(lightCounter,renderer)
+            #lightCounter = lightsplusminus(lightCounter,renderer)
             av_start_time = time.time()
 
         time_per_frame = temp_time
         #print("FPS: ", 1 / tim)
 
     start_time = time.time()
+    return time_per_frame
 
 
 

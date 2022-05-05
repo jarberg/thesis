@@ -14,6 +14,7 @@ from opengl_interfacing.initshader import initShaders
 from opengl_interfacing.sceneObjects import Plane, Sphere
 from opengl_interfacing.utils import get_window_width, get_window_height
 from utils.general import fps_update
+
 from utils.objectUtils import flatten, flatten_list
 
 
@@ -30,7 +31,10 @@ class Renderer:
         self.lightSphereShader = initShaders("/shader/defered/deferred_lightSphere_v_shader.glsl",
                                              "/shader/defered/deferred_lightSphere_f_shader.glsl")
 
-        glUseProgram(self.deferred_program)
+        self.skinningProgram = initShaders("/shader/skinning/skinning_v_cpu_interpolate.glsl", "/shader/skinning/skinning_f.glsl")
+        self.jointProgram = initShaders("/shader/debug/joint_v_shader.glsl", "/shader/debug/joint_f_shader.glsl")
+
+        glUseProgram(self.skinningProgram)
 
         self.currScene = currScene
         self.width = size[0]
@@ -169,6 +173,12 @@ class Renderer:
 
     def skinning_draw(self):
 
+        clear_framebuffer()
+        glUseProgram(self.skinningProgram)
+
+
+
+
         _set_cam_attributes(self.currScene.get_current_camera())
 
         for obj in self.currScene.get_entity_list():
@@ -183,6 +193,18 @@ class Renderer:
             _set_obj_skin_attributes(obj)
 
             obj.draw()
+
+        if self.currScene.debug:
+            self.debug_draw()
+            glUseProgram(self.jointProgram)
+            self.joint_draw()
+
+
+        glFlush()
+        self.currScene.animators[0].update(fps_update())
+
+
+
 
     def debug_draw(self):
 
@@ -295,7 +317,7 @@ def _set_animator_attributes(obj):
             trans = []
             for k in range(len(animator.curPoseList)):
                 trans.append(animator.curPoseList[k])
-            transforms = flatten_list(trans)
+            transforms = flatten(trans)
             glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "jointTransforms"),
                                len(animator.curPoseList),
                                False, transforms)

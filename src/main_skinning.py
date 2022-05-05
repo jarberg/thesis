@@ -74,19 +74,18 @@ def init():
     glEnable(GL_DEPTH_TEST)
 
     #glDisable(GL_CULL_FACE)
-    glutDisplayFunc(render)
-    glutIdleFunc(render)
-
-    program = initShaders("/shader/skinning/skinning_v_cpu_interpolate.glsl", "/shader/skinning/skinning_f.glsl")
-    jointProgram = initShaders("/shader/debug/joint_v_shader.glsl", "/shader/debug/joint_f_shader.glsl")
-    glUseProgram(program)
 
 
     currScene = Scene()
+
+
+    renderer = Renderer(currScene=currScene, size=[width, height])
+    glUseProgram(renderer.skinningProgram)
+
     set_up_scene_entities(currScene)
 
-    renderer = Renderer(currScene=currScene)
-
+    glutDisplayFunc(renderer.skinning_draw)
+    glutIdleFunc(renderer.skinning_draw)
 
     test_ssbo = glGenBuffers(1)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, test_ssbo)
@@ -97,7 +96,7 @@ def init():
     for i in range(len(animator.animation.keyframes)):
         for j, joint in enumerate(animator.animation.keyframes[i].transforms):
             data.append(animator.animation.keyframes[i].transforms[joint])
-    data = flatten_list(data)
+    data = flatten(data)
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, test_ssbo)
     glBufferData(GL_SHADER_STORAGE_BUFFER, data.nbytes, data=data, usage=GL_STATIC_DRAW)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
@@ -127,7 +126,7 @@ def init():
                 data2.append(Matrix())
 
 
-    data2 = flatten_list(data2)
+    data2 = flatten(data2)
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, test2_ssbo)
     glBufferData(GL_SHADER_STORAGE_BUFFER, data2.nbytes, data=data2, usage=GL_STATIC_DRAW)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
@@ -147,25 +146,7 @@ def fps_update():
         #print("FPS: ", 1 / tim)
 
 
-def render():
-    global renderer, debugRender,anim,  GPU, buffer, deferred_program, lightProgram, start_time,  joint_list, currScene
-    start_time = time.time()
-
-    clear_framebuffer()
-    glUseProgram(program)
-
-    renderer.skinning_draw()
-
-    if currScene.debug:
-        renderer.debug_draw()
-        glUseProgram(jointProgram)
-        renderer.joint_draw()
 
 
-    currScene.update(time_per_frame)
-
-    glFlush()
-
-    fps_update()
 
 init()
