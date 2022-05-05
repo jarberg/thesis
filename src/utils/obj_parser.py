@@ -94,7 +94,6 @@ class ObjParser:
         ret = dirPath[0] +"\\"+ sp.getWord()
         return ret
 
-
 class StringParser:
 
     def __init__(self):
@@ -191,6 +190,7 @@ class OBJObject:
         self.name = _name
         self.faces = []
         self.numIndices = 0
+
 
 with ObjParser(r"res\models\charlie\charlie.obj") as parser:
     print(parser.objects[0].faces)

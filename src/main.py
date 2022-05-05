@@ -55,6 +55,7 @@ def set_render_type(renderer, type=0):
         glutDisplayFunc(renderer.deferred_render)
         glutIdleFunc(renderer.deferred_render)
         glUseProgram(renderer.deferred_program)
+
     elif type==2:
         glutDisplayFunc(renderer.deferred_lightPass_render)
         glutIdleFunc(renderer.deferred_lightPass_render)
