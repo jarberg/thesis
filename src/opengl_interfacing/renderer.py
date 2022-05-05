@@ -116,7 +116,7 @@ class Renderer:
 
         glFlush()
 
-        fps_update( renderer=self)
+        fps_update(renderer=self)
 
     def draw(self):
         _set_cam_attributes(self.currScene.get_current_camera())
@@ -176,9 +176,6 @@ class Renderer:
         clear_framebuffer()
         glUseProgram(self.skinningProgram)
 
-
-
-
         _set_cam_attributes(self.currScene.get_current_camera())
 
         for obj in self.currScene.get_entity_list():
@@ -197,10 +194,11 @@ class Renderer:
         if self.currScene.debug:
             self.debug_draw()
             glUseProgram(self.jointProgram)
-            self.joint_draw()
+            self.joint_draw(self.currScene.animators[0])
 
 
         glFlush()
+
         self.currScene.animators[0].update(fps_update())
 
 
@@ -223,7 +221,7 @@ class Renderer:
         glUniform1i(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "debug"), 0)
         glDepthFunc(GL_LESS)
 
-    def joint_draw(self):
+    def joint_draw(self, animator):
         cam = self.currScene.get_current_camera()
         glDepthFunc(GL_ALWAYS)
         glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "projection"), 1, False,
@@ -232,12 +230,9 @@ class Renderer:
                            flatten(cam._getTransform()), False)
 
         for obj in self.currScene.get_joints():
-            if len(self.currScene.animators[0].curPoseList) > 0 and False:
-                glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1,
-                                   False, flatten(animator.curPoseList[obj.id]))
-            else:
-                glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1,
-                                   False, flatten(obj.getTransform()))
+
+            glUniformMatrix4fv(glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "obj_transform"), 1,
+                               False, flatten(obj.getTransform()))
 
             glBindVertexArray(obj.getVAO())
             glDrawArrays(GL_LINES, 0, obj.get_vertexArray_len())

@@ -96,6 +96,8 @@ def applyPoseToJoints(animator, curPose: OrderedDict, rootJoint, parentTransform
         applyPoseToJoints(animator, curPose, child, curTransform)
 
 
+
+
 def interpolatePoses(prevFrame: KeyFrame, nexFrame: KeyFrame, progression: float):
     curPose = OrderedDict()
     for joint in prevFrame.getJointKeyFrames().keys():
