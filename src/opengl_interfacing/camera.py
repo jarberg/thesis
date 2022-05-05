@@ -38,9 +38,6 @@ class Camera(Transform):
             self.pMatrix = flatten(perspective(self.fovy, self.aspect, self.near, self.far))
 
     def update(self):
-        print(self.theta)
-        print(self.phi)
-        print(self.radius)
         self.mvMatrix = look_at(self.eye, self.at, self.up)
         self.ip_normal = normalize(self.at - self.eye)
         self.ip_x_axis = normalize(cross(self.ip_normal, self.up))

@@ -1,6 +1,6 @@
 import unittest
 from src.utils.objects import Vector, Transform
-from src.constants import *
+from utils.constants import *
 from tests.utils.stubs.objects import Stub_Matrix3, Stub_Matrix4
 
 

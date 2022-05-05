@@ -9,7 +9,7 @@ from OpenGL.GL import GL_CURRENT_PROGRAM, glGenVertexArrays, \
 from OpenGL.GL import GL_TRIANGLES
 from PIL import Image
 
-import constants
+from utils import constants
 from opengl_interfacing.buffer import AttributeBuffer
 from opengl_interfacing.texture import Texture
 from opengl_interfacing.utils import get_opengl_format, bind_vertex_attribute

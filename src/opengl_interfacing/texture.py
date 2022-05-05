@@ -10,7 +10,7 @@ from OpenGL.GL import GL_TEXTURE_2D, GL_UNSIGNED_BYTE, GL_REPEAT, GL_TEXTURE_WRA
 from OpenGL.GL.framebufferobjects import glGenerateMipmap
 from PIL import Image
 
-import constants
+from utils import constants
 from opengl_interfacing.utils import get_opengl_format
 from utils.objectUtils import  is_mipmapable
 

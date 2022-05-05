@@ -31,7 +31,7 @@ def init():
 
     currScene = Scene()
     renderer = Renderer(currScene, [width, height])
-    set_render_type(renderer, 1)
+    set_render_type(renderer, 2)
 
     glutReshapeFunc(renderer.resize)
 

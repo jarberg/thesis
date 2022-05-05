@@ -15,7 +15,8 @@ from OpenGL.GL import glGetProgramInfoLog
 from OpenGL.GL import GL_LINK_STATUS
 from OpenGL.GL import glLinkProgram
 
-import constants
+from utils import constants
+
 
 def loadFile(path):
     s = ""

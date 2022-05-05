@@ -1,4 +1,4 @@
-from src.constants import *
+from utils.constants import *
 from utils.objects import Material
 
 class ObjParser:

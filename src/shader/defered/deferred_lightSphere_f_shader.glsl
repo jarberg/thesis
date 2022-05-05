@@ -23,7 +23,7 @@ out vec4 outColor;
 
 float attenuation(vec3 light, vec3 pos){
     float dist = distance(pos,light);
-    float inten = 50;
+    float inten = 100;
     float a = 1;
     float b = 50;
     float c = 1;
