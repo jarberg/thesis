@@ -1,4 +1,5 @@
 import math
+import sys
 
 from OpenGL.GLUT import glutInit, GLUT_RGBA, GLUT_DEPTH
 from OpenGL.GLUT import glutInitDisplayMode, glutInitWindowSize, glutInitWindowPosition, glutCreateWindow, \
@@ -10,6 +11,7 @@ from opengl_interfacing.buffer import ShaderStorageBufferObject
 from opengl_interfacing.renderer import Renderer, set_window_properties
 from opengl_interfacing.sceneObjects import Plane, Cube
 from opengl_interfacing.texture import createNewTexture
+from utils.objectUtils import flatten_list
 from utils.objects import Transform, PointLight, Attenuation
 from utils.scene import Scene
 
@@ -20,7 +22,8 @@ window = None
 global renderer
 
 
-def init():
+def init(*args, **kwargs):
+    print(args, kwargs)
 
     glutInit()
     glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH)
@@ -85,7 +88,7 @@ def set_up_scene_entities(scene, renderer, boxes=0, lightsnum=1):
     renderer.lightAmount = len(lightlist)
 
     ssbo = ShaderStorageBufferObject(bufferIndex=3)
-    ssbo.add_data(lightlist)
+    ssbo.add_data(flatten_list(lightlist))
 
     cam = scene.get_current_camera()
     cam.radius = 20
@@ -123,4 +126,6 @@ def lights(amount):
     return lightlist
 
 
-init()
+
+if __name__ == "__main__" :
+    init(sys.argv[1:])

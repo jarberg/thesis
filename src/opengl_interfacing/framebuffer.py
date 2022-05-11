@@ -15,14 +15,12 @@ from opengl_interfacing.texture import Texture
 
 
 class FrameBuffer:
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
+    def __init__(self, size):
+        self.width = size[0]
+        self.height = size[1]
         self.bound = False
 
         self.framebuffer = glGenFramebuffers(1)
-
-        GL.glHint(GL_SAMPLES, 10)
 
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 

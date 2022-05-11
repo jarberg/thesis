@@ -1,5 +1,4 @@
 #version 450
-const int CUBE_SIZE = 5;
 const int MAX_LIGHTS = 500;
 
 struct Light {

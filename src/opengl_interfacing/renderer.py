@@ -51,10 +51,9 @@ class Renderer:
 
     def forward(self):
         clear_framebuffer([0,0,0,1])
-        #glDisable(GL_CULL_FACE)
-        #glCullFace(GL_FRONT)
 
         light_num_slot = glGetUniformLocation(self.forwardProgram, "lightnum")
+
         if light_num_slot > 0:
             glUniform1i(light_num_slot,  self.lightAmount)
         self.draw()
@@ -69,12 +68,10 @@ class Renderer:
         glCullFace(GL_BACK)
 
         glDisable(GL_BLEND)
-        #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
 
         self.GBuffer.bind()
-
 
         self.draw()
 
@@ -104,7 +101,6 @@ class Renderer:
         self.draw()
         self.GBuffer.unbind()
 
-
         self._instance_light_draw(self.lightSphere)
         blit_to_default(self.lightBuffer, 0)
 
@@ -115,11 +111,11 @@ class Renderer:
     def draw(self):
         _set_cam_attributes(self.currScene.get_current_camera())
 
-        for obj in self.currScene.get_entity_list():
-            _set_obj_mat_attributes(obj)
-            _set_normalMatrix_attribute(obj)
-            _set_obj_transform_attributes(obj)
-            obj.draw()
+        for entity in self.currScene.get_entity_list():
+            _set_obj_mat_attributes(entity)
+            _set_normalMatrix_attribute(entity)
+            _set_obj_transform_attributes(entity)
+            entity.draw()
 
     def _instance_light_draw(self, parentObj):
         glUseProgram(self.lightSphereShader)

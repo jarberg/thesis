@@ -1,19 +1,8 @@
 import os
 
-from OpenGL.GL import glCreateShader
-from OpenGL.GL import glCreateProgram
-from OpenGL.GL import glShaderSource
-from OpenGL.GL import glCompileShader
-from OpenGL.GL import glGetShaderInfoLog
-from OpenGL.GL import glGetShaderiv
-from OpenGL.GL import GL_COMPILE_STATUS
-from OpenGL.GL import GL_VERTEX_SHADER
-from OpenGL.GL import GL_FRAGMENT_SHADER
-from OpenGL.GL import glAttachShader
-from OpenGL.GL import glGetProgramiv
-from OpenGL.GL import glGetProgramInfoLog
-from OpenGL.GL import GL_LINK_STATUS
-from OpenGL.GL import glLinkProgram
+from OpenGL.GL import glCreateShader, glCreateProgram, glShaderSource, glCompileShader, glGetShaderInfoLog, \
+    glGetShaderiv, GL_COMPILE_STATUS, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glAttachShader, \
+    glGetProgramiv, glGetProgramInfoLog, GL_LINK_STATUS, glLinkProgram, GL_GEOMETRY_SHADER
 
 from utils import constants
 
@@ -41,13 +30,21 @@ def _getShader(shaderName, type):
     return shader
 
 
-def initShaders(vShaderName, fShaderName):
+def initShaders(vShaderName=None, fShaderName=None, gShaderName=None):
     program = glCreateProgram()
-    vertexShader = _getShader(vShaderName, GL_VERTEX_SHADER)
-    fragmentShader = _getShader(fShaderName, GL_FRAGMENT_SHADER)
 
-    glAttachShader(program, vertexShader)
-    glAttachShader(program, fragmentShader)
+    if vShaderName:
+        vertexShader = _getShader(vShaderName, GL_VERTEX_SHADER)
+        glAttachShader(program, vertexShader)
+
+    if gShaderName:
+        geometryShader = _getShader(fShaderName, GL_GEOMETRY_SHADER)
+        glAttachShader(program, geometryShader)
+
+    if fShaderName:
+        fragmentShader = _getShader(fShaderName, GL_FRAGMENT_SHADER)
+        glAttachShader(program, fragmentShader)
+
 
     glLinkProgram(program)
     linked = glGetProgramiv(program, GL_LINK_STATUS)
