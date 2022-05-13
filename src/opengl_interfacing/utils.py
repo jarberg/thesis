@@ -38,15 +38,16 @@ def bind_vertex_attribute(buffer, name, data=None, data_len=3, data_type=GL_FLOA
         glBindVertexArray(VAO)
     buffer.bind()
     buffer.add_data(data)
-    attributeSlot = get_attribute_location(name)
-    if attributeSlot >= 0:
-        if data_type == GL_INT:
-            glVertexAttribIPointer(attributeSlot, data_len, data_type, offset, None)
-        elif data_type == GL_FLOAT:
-            glVertexAttribPointer(attributeSlot, data_len, data_type, False, offset, None)
+    if name:
+        attributeSlot = get_attribute_location(name)
+        if attributeSlot >= 0:
+            if data_type == GL_INT:
+                glVertexAttribIPointer(attributeSlot, data_len, data_type, offset, None)
+            elif data_type == GL_FLOAT:
+                glVertexAttribPointer(attributeSlot, data_len, data_type, False, offset, None)
 
-        glEnableVertexAttribArray(attributeSlot)
-        buffer.attributes[name] = attributeSlot
+            glEnableVertexAttribArray(attributeSlot)
+            buffer.attributes[name] = attributeSlot
 
 
 def get_attribute_location(name):

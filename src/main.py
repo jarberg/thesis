@@ -83,7 +83,6 @@ def set_up_scene_entities(scene, renderer, boxes=0, lightsnum=1):
     scene.add_entities(cubelist)
     lightlist = lights(lightsnum)
 
-
     scene.add_lights(lightlist)
     renderer.lightAmount = len(lightlist)
 

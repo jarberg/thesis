@@ -89,15 +89,15 @@ class Model(Transform):
 
         self.VAO = glGenVertexArrays(1)
         glBindVertexArray(self.VAO)
-        self.buffers["vertex_pos"].bind_vertex_attribute("a_Position", flatten(self.vertexArray), 3, GL_FLOAT, 0)
+        bind_vertex_attribute(self.buffers["vertex_pos"], "a_Position", flatten(self.vertexArray), 3, GL_FLOAT, 0)
         if normal:
-            self.buffers["normal"].bind_vertex_attribute("inNormal", flatten(self.normalArray), 3, GL_FLOAT, 0)
+            bind_vertex_attribute(self.buffers["normal"], "inNormal", flatten(self.normalArray), 3, GL_FLOAT, 0)
         if coords:
-            self.buffers["tex_coords"].bind_vertex_attribute("InTexCoords", flatten(self.coordArray), 2, GL_FLOAT, 0)
+            bind_vertex_attribute(self.buffers["tex_coords"], "InTexCoords", flatten(self.coordArray), 2, GL_FLOAT, 0)
         if influences:
-            self.buffers["influ_indices"].bind_vertex_attribute("in_joint_indices", flatten(self.windices), 4, GL_FLOAT,
+            bind_vertex_attribute(self.buffers["influ_indices"], "in_joint_indices", flatten(self.windices), 4, GL_FLOAT,
                                                                 0)
-            self.buffers["influ_weights"].bind_vertex_attribute("in_weights", flatten(self.weights), 4, GL_FLOAT, 0)
+            bind_vertex_attribute(self.buffers["influ_weights"], "in_weights", flatten(self.weights), 4, GL_FLOAT, 0)
 
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)
@@ -207,7 +207,8 @@ class IndicedModel(Transform):
                                                                 0)
             bind_vertex_attribute(self.buffers["influ_weights"], "in_weights", flatten(self.weights), 4, GL_FLOAT, 0)
 
-        self.buffers["indices"].bind(flatten(self.indices, data_type=numpy.uint16))
+        bind_vertex_attribute(self.buffers["indices"],None, flatten(self.indices, data_type=numpy.uint16))
+        #self.buffers["indices"].bind(flatten(self.indices, data_type=numpy.uint16))
 
     def _add_vertex(self, vertex: list):
         self.vertexArray.append(vertex)
