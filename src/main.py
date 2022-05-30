@@ -11,11 +11,12 @@ from opengl_interfacing.buffer import ShaderStorageBufferObject
 from opengl_interfacing.renderer import Renderer, set_window_properties
 from opengl_interfacing.sceneObjects import Plane, Cube
 from opengl_interfacing.texture import createNewTexture
+from utils.general import wait
 from utils.objectUtils import flatten_list
 from utils.objects import Transform, PointLight, Attenuation
 from utils.scene import Scene
 
-width, height = 400, 400
+width, height = 800, 800
 aspectRatio = width / height
 window = None
 
@@ -34,15 +35,16 @@ def init(*args, **kwargs):
 
     currScene = Scene()
     renderer = Renderer(currScene, [width, height])
-    set_render_type(renderer, 2)
+    set_render_type(renderer, 0)
 
     glutReshapeFunc(renderer.resize)
 
-    set_up_scene_entities(currScene, renderer, boxes=0, lightsnum=1)
+    set_up_scene_entities(currScene, renderer, boxes=0, lightsnum=100)
 
-    #reset_test_file()
+    reset_test_file()
     renderer.resize(width, height)
 
+    wait(2)
     glutMainLoop()
 
 
@@ -60,9 +62,15 @@ def set_render_type(renderer, type=0):
         glUseProgram(renderer.deferred_program)
 
     elif type==2:
+        glutDisplayFunc(renderer.deferred_lightPass_instance_render)
+        glutIdleFunc(renderer.deferred_lightPass_instance_render)
+        glUseProgram(renderer.deferred_program)
+
+    elif type==3:
         glutDisplayFunc(renderer.deferred_lightPass_render)
         glutIdleFunc(renderer.deferred_lightPass_render)
         glUseProgram(renderer.deferred_program)
+
 
     renderer.add_renderObjectUtils()
     set_window_properties(width, height)
@@ -84,13 +92,13 @@ def set_up_scene_entities(scene, renderer, boxes=0, lightsnum=1):
     lightlist = lights(lightsnum)
 
     scene.add_lights(lightlist)
-    renderer.lightAmount = len(lightlist)
+    renderer.lightAmount = 0
 
     ssbo = ShaderStorageBufferObject(bufferIndex=3)
     ssbo.add_data(flatten_list(lightlist))
 
     cam = scene.get_current_camera()
-    cam.radius = 20
+    cam.radius = 800
     cam.updateHorizontal(0)
     cam.updateVertical(89.5)
 

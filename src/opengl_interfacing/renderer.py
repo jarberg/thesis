@@ -25,6 +25,8 @@ class Renderer:
                                         "/shader/defered/defered_light_f_shader.glsl")
         self.lightSphereShader = initShaders("/shader/defered/deferred_lightSphere_v_shader.glsl",
                                              "/shader/defered/deferred_lightSphere_f_shader.glsl")
+        self.lightSphereInstanceShader = initShaders("/shader/defered/deferred_lightSphere_instance_v_shader.glsl",
+                                             "/shader/defered/deferred_lightSphere_instance_f_shader.glsl")
 
         self.currScene = currScene
         self.width = size[0]
@@ -85,9 +87,9 @@ class Renderer:
 
         glFlush()
 
-        fps_update(renderer=self)
+        fps_update(self.height, renderer=self)
 
-    def deferred_lightPass_render(self):
+    def deferred_lightPass_instance_render(self):
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK)
         glDisable(GL_BLEND)
@@ -106,7 +108,28 @@ class Renderer:
 
         glFlush()
 
-        fps_update( renderer=self)
+        fps_update(self.height, renderer=self)
+
+    def deferred_lightPass_render(self):
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_BACK)
+        glDisable(GL_BLEND)
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LESS)
+
+        glUseProgram(self.deferred_program)
+        clear_framebuffer([0,1,0,1])
+
+        self.GBuffer.bind()
+        self.draw()
+        self.GBuffer.unbind()
+
+        self._non_instance_light_draw(self.lightSphere)
+        blit_to_default(self.lightBuffer, 0)
+
+        glFlush()
+
+        fps_update(self.height, renderer=self)
 
     def draw(self):
         _set_cam_attributes(self.currScene.get_current_camera())
@@ -116,6 +139,40 @@ class Renderer:
             _set_normalMatrix_attribute(entity)
             _set_obj_transform_attributes(entity)
             entity.draw()
+
+    def _non_instance_light_draw(self, parentObj):
+        glUseProgram(self.lightSphereShader)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_ONE, GL_ONE)
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_FRONT)
+        glDepthFunc(GL_ALWAYS)
+
+        self.lightBuffer.bind()
+        _set_cam_attributes(self.currScene.get_current_camera())
+
+        light_num_slot = glGetUniformLocation(self.lightSphereShader, "lightnum")
+        if light_num_slot > 0:
+            glUniform1i(light_num_slot, self.lightAmount)
+
+        loc1 = glGetUniformLocation(self.lightSphereShader, "geoPosRender")
+        glUniform1i(loc1, self.GBuffer.position_tex.slot)
+        loc2 = glGetUniformLocation(self.lightSphereShader, "geoNormRender")
+        glUniform1i(loc2, self.GBuffer.normal_tex.slot)
+        loc3 = glGetUniformLocation(self.lightSphereShader, "geoColRender")
+        glUniform1i(loc3, self.GBuffer.albedo_tex.slot)
+
+        glBindVertexArray(parentObj.VAO)
+        loc4 = glGetUniformLocation(self.lightSphereShader, "light_id")
+        for lightnum in range(0, self.lightAmount):
+            glUniform1i(loc4, lightnum)
+            parentObj.draw()
+
+        self.lightBuffer.unbind()
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glDepthFunc(GL_LESS)
+        glCullFace(GL_BACK)
 
     def _instance_light_draw(self, parentObj):
         glUseProgram(self.lightSphereShader)
