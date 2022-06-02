@@ -90,6 +90,7 @@ class Renderer:
         fps_update(self.height, renderer=self)
 
     def deferred_lightPass_instance_render(self):
+
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK)
         glDisable(GL_BLEND)
@@ -175,7 +176,7 @@ class Renderer:
         glCullFace(GL_BACK)
 
     def _instance_light_draw(self, parentObj):
-        glUseProgram(self.lightSphereShader)
+        glUseProgram(self.lightSphereInstanceShader)
         glEnable(GL_BLEND)
         glBlendFunc(GL_ONE, GL_ONE)
         glEnable(GL_CULL_FACE)
