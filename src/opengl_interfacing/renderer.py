@@ -19,14 +19,14 @@ class Renderer:
     def __init__(self, currScene, size):
         self.forwardProgram = initShaders("/shader/forward/vertex-shader.glsl",
                                           "/shader/forward/fragment-shader.glsl")
-        self.deferred_program = initShaders("/shader/defered/defered_v_shader.glsl",
-                                            "/shader/defered/defered_f_shader.glsl")
-        self.lightProgram = initShaders("/shader/defered/defered_light_v_shader.glsl",
-                                        "/shader/defered/defered_light_f_shader.glsl")
-        self.lightSphereShader = initShaders("/shader/defered/deferred_lightSphere_v_shader.glsl",
-                                             "/shader/defered/deferred_lightSphere_f_shader.glsl")
-        self.lightSphereInstanceShader = initShaders("/shader/defered/deferred_lightSphere_instance_v_shader.glsl",
-                                             "/shader/defered/deferred_lightSphere_instance_f_shader.glsl")
+        self.deferred_program = initShaders("/shader/defered/v_shader.glsl",
+                                            "/shader/defered/f_shader.glsl")
+        self.lightProgram = initShaders("/shader/defered/light_v_shader.glsl",
+                                        "/shader/defered/light_f_shader.glsl")
+        self.lightSphereShader = initShaders("/shader/light volume/v_shader.glsl",
+                                             "/shader/light volume/f_shader.glsl")
+        self.lightSphereInstanceShader = initShaders("/shader/light volume instanced/v_shader.glsl",
+                                             "/shader/light volume instanced/f_shader.glsl")
 
         self.currScene = currScene
         self.width = size[0]
@@ -225,7 +225,6 @@ class Renderer:
 
         self.quad.draw()
 
-
     def light_draw(self):
         currProgram = glGetIntegerv(GL_CURRENT_PROGRAM)
         cam = self.currScene.get_current_camera()
@@ -250,12 +249,15 @@ class Renderer:
         add_postQuad(self)
         addLightSphere(self)
 
+
 def add_postQuad(renderer):
     renderer.quad = Plane()
     renderer.quad.set_rotation([180, 0, 0])
 
+
 def addLightSphere(renderer):
     renderer.lightSphere = Sphere()
+
 
 def _set_cam_attributes(cam):
     if cam:
@@ -266,7 +268,6 @@ def _set_cam_attributes(cam):
             glUniformMatrix4fv(p_loc, 1, False, cam.pMatrix)
         if v_loc != -1:
             glUniformMatrix4fv(v_loc, 1, False, flatten(cam._getTransform()), False)
-
 
 
 def set_window_properties(w, h):
@@ -308,25 +309,7 @@ def _set_obj_transform_attributes(obj):
         glUniformMatrix4fv(t_loc, 1, False, flatten(obj.getTransform()))
 
 
-def _set_obj_skin_attributes(obj):
-    skin_loc = glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "skinned")
-    if skin_loc != -1:
-        if hasattr(obj, "skinned"):
-            glUniform1i(skin_loc, obj.skinned)
-        else:
-            glUniform1i(skin_loc, 0)
-
-
 def _set_normalMatrix_attribute(obj):
     loc = glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "normal_matrix")
     if loc != -1:
         glUniformMatrix3fv(loc, 1, False, flatten(obj.get_normalMatrix()))
-
-
-def _set_GPU_animation_attributes(animator):
-    stamp_loc = glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "timestamp")
-    if stamp_loc > -1:
-        glUniform1f(stamp_loc, flatten(animator.animTime))
-    rowLength_loc = glGetUniformLocation(glGetIntegerv(GL_CURRENT_PROGRAM), "rowLength")
-    if rowLength_loc:
-        glUniform1i(rowLength_loc, flatten(len(animator.animation.keyframes[0].transforms), data_type=numpy.int16))
