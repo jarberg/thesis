@@ -27,7 +27,7 @@ class FrameBuffer:
         # depth renderbuffer
         self.renderbuffer = glGenRenderbuffers(1)
         GL.glBindRenderbuffer(GL_RENDERBUFFER, self.renderbuffer)
-        GL.glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT, width, height)
+        GL.glRenderbufferStorage(GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT, self.width, self.height)
         GL.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.renderbuffer)
 
         check_status()

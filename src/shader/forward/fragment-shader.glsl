@@ -15,7 +15,7 @@ float lambert(vec3 N, vec3 L){
 
 float attenuation(vec3 light, vec3 pos){
     float dist = distance(pos,light);
-    float inten = 50;
+    float inten = 100;
     float a = 1;
     float b = 50;
     float c = 1;
@@ -34,7 +34,6 @@ layout(location = 4)uniform int lightnum;
 uniform int tex_diffuse_b;
 uniform sampler2D tex_diffuse;
 
-
 out vec4 FragColor;
 
 
@@ -52,17 +51,17 @@ void main() {
 
     float attenu;
     float angle;
-    float lighting = 0;
+    vec3 lighting = vec3(0);
 
     for(int i=0; i<lightnum ;i++){
         vec3 light_pos = data_lightBuffer[i][3].xyz;
         vec3 lightDir = light_pos-FragPos;
         attenu = attenuation(light_pos, FragPos);
         angle = lambert(normalize(Normal), lightDir);
-        lighting += angle*attenu;
+        lighting += Albedo.xyz*angle*attenu;
     }
 
-    FragColor = vec4(Albedo.xyz*lighting, 1);
+    FragColor = vec4(lighting, 1);
 }
 
 

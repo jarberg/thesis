@@ -6,7 +6,6 @@ layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec4 gNormal;
 layout (location = 2) out vec4 gAlbedoSpec;
 
-
 in vec2 TexCoords;
 in vec3 g_pos;
 in vec3 Normal;

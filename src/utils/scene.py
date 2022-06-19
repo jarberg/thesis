@@ -1,12 +1,13 @@
 from opengl_interfacing.camera import Camera
 from utils import input_manager
+from utils.input_manager import Input_manager
 
 
 class Scene:
 
     def __init__(self, camera=None):
         self.camera = camera or Camera()
-        self.inputMan = input_manager.Input_manager(self)
+        self.inputMan = Input_manager(self)
         self.entities = []
         self.light_list = []
 

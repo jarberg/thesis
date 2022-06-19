@@ -54,8 +54,8 @@ void main(){
         vec3 lightDir = light-FragPos;
         attenu = attenuation(light, FragPos);
         angle = lambert(normalize(Normal), lightDir);
-        lighting += angle*attenu;
+        lighting += Albedo*angle*attenu;
     }
 
-    fragCol = vec4(Albedo*lighting, 1);
+    fragCol = vec4(lighting, 1);
 }

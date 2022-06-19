@@ -1,9 +1,9 @@
 import numpy
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glUniform1i, \
-    GL_CURRENT_PROGRAM, glBindVertexArray, glUniformMatrix3fv, glDepthFunc, GL_ALWAYS, GL_LESS, glUniform1f, \
+    GL_CURRENT_PROGRAM, glBindVertexArray, glUniformMatrix3fv, glDepthFunc, GL_ALWAYS, GL_LESS, \
     glUniform3fv, glDrawElementsInstanced, GL_UNSIGNED_SHORT, \
     glUseProgram, glBlendFunc, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, glEnable, GL_CULL_FACE, glDisable, \
-    glCullFace, GL_BACK, GL_FRONT, GL_BLEND, GL_DEPTH_TEST, glGetIntegerv, glFlush, glViewport
+    glCullFace, GL_BACK, GL_FRONT, GL_BLEND, GL_DEPTH_TEST, glGetIntegerv, glFlush, glViewport, glFinish
 
 from opengl_interfacing import texture
 from opengl_interfacing.framebuffer import G_Buffer, L_Buffer, blit_to_default, clear_framebuffer
@@ -31,11 +31,10 @@ class Renderer:
         self.currScene = currScene
         self.width = size[0]
         self.height = size[1]
-
-
+        self.quad = None
+        self.lightSphere = None
         self.lightBuffer = L_Buffer([size[0], size[1]])
         self.GBuffer = G_Buffer([size[0], size[1]])
-
 
         self.lightAmount = 1
 
@@ -52,7 +51,7 @@ class Renderer:
         clear_framebuffer([0, 0, 0, 1])
 
     def forward(self):
-        clear_framebuffer([0,0,0,1])
+        clear_framebuffer([0,1,0,1])
 
         light_num_slot = glGetUniformLocation(self.forwardProgram, "lightnum")
 
@@ -60,7 +59,7 @@ class Renderer:
             glUniform1i(light_num_slot,  self.lightAmount)
         self.draw()
 
-        glFlush()
+        glFinish()
 
         fps_update(self.height, self)
 
@@ -85,7 +84,7 @@ class Renderer:
             glUniform1i(light_num_slot,  self.lightAmount)
         self.light_draw()
 
-        glFlush()
+        glFinish()
 
         fps_update(self.height, renderer=self)
 
@@ -98,7 +97,6 @@ class Renderer:
         glDepthFunc(GL_LESS)
 
         glUseProgram(self.deferred_program)
-        clear_framebuffer([0,1,0,1])
 
         self.GBuffer.bind()
         self.draw()
@@ -119,13 +117,13 @@ class Renderer:
         glDepthFunc(GL_LESS)
 
         glUseProgram(self.deferred_program)
-        clear_framebuffer([0,1,0,1])
+        clear_framebuffer([0.03,0.03,0.03,1])
 
         self.GBuffer.bind()
         self.draw()
         self.GBuffer.unbind()
 
-        self._non_instance_light_draw(self.lightSphere)
+        self.light_volume_draw(self.lightSphere)
         blit_to_default(self.lightBuffer, 0)
 
         glFlush()
@@ -141,7 +139,7 @@ class Renderer:
             _set_obj_transform_attributes(entity)
             entity.draw()
 
-    def _non_instance_light_draw(self, parentObj):
+    def light_volume_draw(self, parentObj):
         glUseProgram(self.lightSphereShader)
         glEnable(GL_BLEND)
         glBlendFunc(GL_ONE, GL_ONE)
@@ -182,6 +180,7 @@ class Renderer:
         glEnable(GL_CULL_FACE)
         glCullFace(GL_FRONT)
         glDepthFunc(GL_ALWAYS)
+
 
         self.lightBuffer.bind()
         _set_cam_attributes(self.currScene.get_current_camera())
@@ -228,6 +227,7 @@ class Renderer:
     def light_draw(self):
         currProgram = glGetIntegerv(GL_CURRENT_PROGRAM)
         cam = self.currScene.get_current_camera()
+
         texture.bind(self.GBuffer.position_tex)
         texture.bind(self.GBuffer.normal_tex)
         texture.bind(self.GBuffer.albedo_tex)
@@ -240,6 +240,7 @@ class Renderer:
         glUniform1i(loc3, self.GBuffer.albedo_tex.slot)
         v_loc = glGetUniformLocation(currProgram, "viewPos")
         glUniform3fv(v_loc, 1, flatten(cam.eye))
+
         glUniformMatrix4fv(glGetUniformLocation(currProgram, "obj_transform"), 1, False,
                            flatten(self.quad.getTransform()))
 

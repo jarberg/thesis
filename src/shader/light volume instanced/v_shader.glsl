@@ -13,7 +13,6 @@ layout(std430, binding = 3) buffer lightBuffer{
 };
 out vec3 vertexPos;
 flat out int instanceID;
-flat out mat4 inverseProjView ;
 
 
 void main() {
@@ -22,5 +21,5 @@ void main() {
     gl_Position = pv_mat*data_lightBuffer[gl_InstanceID]*vec4(a_Position,1);
     instanceID = gl_InstanceID;
     vertexPos = (data_lightBuffer[gl_InstanceID]*vec4(a_Position,1)).xyz;
-    inverseProjView = inverse(pv_mat);
+
 }

@@ -61,7 +61,6 @@ class Texture:
         GL.glActiveTexture(GL.GL_TEXTURE0 + self.slot)
         GL.glBindTexture(GL_TEXTURE_2D, self.slot)
 
-
         self.width = size[0]
         self.height = size[1]
 

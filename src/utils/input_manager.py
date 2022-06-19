@@ -21,7 +21,7 @@ class Input_manager:
         self.plusminus = callback
 
     def buttons(self, key, x, y):
-        #print(key, x, y)
+
         currscene = self.currScene
 
         if key == b'd':
