@@ -24,7 +24,13 @@ float attenuation(vec3 light, vec3 pos){
     float a = 1;
     float b = 50;
     float c = 1;
-    return max((inten / (c+a*dist+b*dist*dist)-0.01), 0);
+    return inten / (c+a*dist+b*dist*dist);
+}
+float lambert(vec3 N, vec3 L){
+  vec3 nrmN = normalize(N);
+  vec3 nrmL = normalize(L);
+  float result = dot(nrmN, nrmL);
+  return max(result, 0.0);
 }
 
 void main() {
@@ -37,8 +43,8 @@ void main() {
 
     float atten = attenuation(transform[3].xyz, FragPos);
     vec3 dir = transform[3].xyz - FragPos;
-    float angle = max(dot(FragNorm, dir), 0);
+    float angle = lambert(FragNorm, dir);
 
-    float res = max(angle*atten, 0);
+    float res = angle*atten;
     outColor = vec4(FragAlbedo*res,1);
 }

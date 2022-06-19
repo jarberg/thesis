@@ -51,7 +51,7 @@ class Renderer:
         clear_framebuffer([0, 0, 0, 1])
 
     def forward(self):
-        clear_framebuffer([0,1,0,1])
+        clear_framebuffer([0,0,0,1])
 
         light_num_slot = glGetUniformLocation(self.forwardProgram, "lightnum")
 

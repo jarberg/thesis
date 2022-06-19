@@ -19,7 +19,7 @@ float attenuation(vec3 light, vec3 pos){
     float a = 1;
     float b = 50;
     float c = 1;
-    return max((inten / (c+a*dist+b*dist*dist)-0.01), 0);
+    return inten / (c+a*dist+b*dist*dist);
 }
 in vec3 a_pos;
 in vec3 normal;
@@ -57,7 +57,7 @@ void main() {
         vec3 light_pos = data_lightBuffer[i][3].xyz;
         vec3 lightDir = light_pos-FragPos;
         attenu = attenuation(light_pos, FragPos);
-        angle = lambert(normalize(Normal), lightDir);
+        angle = lambert(Normal, lightDir);
         lighting += Albedo.xyz*angle*attenu;
     }
 

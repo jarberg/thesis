@@ -42,6 +42,7 @@ def init(*args, **kwargs):
     render_type = int(argdict.get("-render", 2))
     cubes = int(argdict.get("-cubes", 0))
     lights = int(argdict.get("-lights", 10))
+
     resolution = int(argdict.get("-res", 400))
 
     print_render_type(render_type)
@@ -93,9 +94,6 @@ def set_render_type(renderer, type=0):
         glutIdleFunc(renderer.deferred_lightPass_instance_render)
         glUseProgram(renderer.deferred_program)
 
-
-
-
     renderer.add_renderObjectUtils()
     set_window_properties(width, height)
 
@@ -108,7 +106,7 @@ def reset_test_file():
 def set_up_scene_entities(scene, renderer, boxes=0, lightsnum=1):
     p = Plane()
     p.set_rotation([0, 0, 90])
-    p.set_scale([100000, 100000, 100000])
+    p.set_scale([10000, 10000, 10000])
 
     cubelist = cubes(boxes)
     cubelist.append(p)
@@ -125,7 +123,7 @@ def set_up_scene_entities(scene, renderer, boxes=0, lightsnum=1):
 
     cam = scene.get_current_camera()
     cam.radius = 10
-    cam.set_position([0,0,0])
+    cam.set_position([0, 0, 0])
     cam.updateHorizontal(0)
     cam.updateVertical(50)
 

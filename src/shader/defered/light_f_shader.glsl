@@ -19,13 +19,12 @@ float attenuation(vec3 light, vec3 pos){
     float a = 1;
     float b = 50;
     float c = 1;
-    return max((inten / (c+a*dist+b*dist*dist)-0.01), 0);
+    return inten / (c+a*dist+b*dist*dist);
 }
 
 layout(std430, binding = 3) buffer lightBuffer{
     mat4 data_lightBuffer[];
 };
-
 
 uniform sampler2D pos;
 uniform sampler2D norm;
@@ -33,10 +32,7 @@ uniform sampler2D albedo;
 
 in vec2 TexCoords;
 uniform vec3 viewPos;
-
-
 uniform int lightnum;
-
 out vec4 fragCol;
 
 void main(){
@@ -53,7 +49,7 @@ void main(){
         vec3 light = data_lightBuffer[i][3].xyz;
         vec3 lightDir = light-FragPos;
         attenu = attenuation(light, FragPos);
-        angle = lambert(normalize(Normal), lightDir);
+        angle = lambert(Normal, lightDir);
         lighting += Albedo*angle*attenu;
     }
 
