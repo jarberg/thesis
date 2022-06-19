@@ -1,7 +1,7 @@
 import decimal
 import os
 import sys
-ROOT_DIR = "{}/src".format(sys.path[1])
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__).split("utils")[0])
 
 EPSILON = 0.00000000001
 EPISLON_LEN = abs(decimal.Decimal(str(EPSILON)).as_tuple().exponent)

@@ -1,3 +1,4 @@
+import json
 import os
 
 import numpy
@@ -300,13 +301,13 @@ class Plane(IndicedModel):
             [1.0, 0.0],
             [0.0, 0.0],
         ]
-        normals = [[0, 0, -1],
-                   [0, 0, -1],
-                   [0, 0, -1],
-                   [0, 0, -1],
+        normals = [[0, 0, 1],
+                   [0, 0, 1],
+                   [0, 0, 1],
+                   [0, 0, 1],
                    ]
         indices = [
-            3, 1, 2, 0
+            2, 0, 3, 1
         ]
         super().__init__(vertexlist=plane, indices=indices, n_array=normals, coordArray=coordArray)
 
@@ -11970,34 +11971,35 @@ class ImagePlane(Plane):
             self.material.set_tex_diffuse(Texture(size=[size[0], size[1]]))
 
 
-class Animated_model:
-    def __init__(self, model, rootJoint, jointCount):
-        self.model = model
-        self.rootJoint = rootJoint
-        self.jointCount = jointCount
-        self.skinned = 1
-        self.animator = None
+def make_charlie():
 
-    def set_animator(self, animator):
-        self.animator = animator
+    f = open(constants.ROOT_DIR+"/res/models/charlie.txt")
+    data = json.load(f)
 
-    def draw(self, debug=False):
-        self.model.draw(debug=debug)
+    lists = [[], [], [], [], []]
 
-    def _update_transform(self):
-        self.model._update_transform()
+    for i in data["indices"]:
+        lists[1].append(int(data["indices"][i]))
+    for i, k in enumerate(data["vertex"]):
 
-    def get_normalMatrix(self):
-        return self.model.normalMatrix
+        if (i + 1) % 3 == 0 and i != 0:
+            ret = []
+            ret.append(float(data["vertex"][str(int(k) - 2)]))
+            ret.append(float(data["vertex"][str(int(k) - 1)]))
+            ret.append(float(data["vertex"][k]))
+            lists[0].append(ret)
 
-    def get_material(self):
-        return self.model.get_material()
+    for i, k in enumerate(data["normals"]):
 
-    def getTransform(self):
-        return self.model.getTransform()
+        if (i + 1) % 3 == 0 and i != 0:
+            ret = []
+            ret.append(float(data["normals"][str(int(k) - 2)]))
+            ret.append(float(data["normals"][str(int(k) - 1)]))
+            ret.append(float(data["normals"][k]))
+            lists[2].append(ret)
 
-    def getVAO(self):
-        return self.model.VAO
 
-    def get_vertexArray_len(self):
-        return self.model.get_vertexArray_len()
+    return IndicedModel(vertexlist=lists[0],
+                        indices=lists[1],
+                        n_array=lists[2],
+                        renderType=GL_TRIANGLES)

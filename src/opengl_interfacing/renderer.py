@@ -52,6 +52,13 @@ class Renderer:
 
     def forward(self):
         clear_framebuffer([0,0,0,1])
+        glDisable(GL_BLEND)
+
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LESS)
+
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_BACK)
 
         light_num_slot = glGetUniformLocation(self.forwardProgram, "lightnum")
 
@@ -154,6 +161,10 @@ class Renderer:
         if light_num_slot > 0:
             glUniform1i(light_num_slot, self.lightAmount)
 
+        texture.bind(self.GBuffer.normal_tex)
+        texture.bind(self.GBuffer.position_tex)
+        texture.bind(self.GBuffer.albedo_tex)
+
         loc1 = glGetUniformLocation(self.lightSphereShader, "geoPosRender")
         glUniform1i(loc1, self.GBuffer.position_tex.slot)
         loc2 = glGetUniformLocation(self.lightSphereShader, "geoNormRender")
@@ -188,6 +199,10 @@ class Renderer:
         light_num_slot = glGetUniformLocation(self.lightSphereShader, "lightnum")
         if light_num_slot > 0:
             glUniform1i(light_num_slot, self.lightAmount)
+
+        texture.bind(self.GBuffer.normal_tex)
+        texture.bind(self.GBuffer.position_tex)
+        texture.bind(self.GBuffer.albedo_tex)
 
         loc1 = glGetUniformLocation(self.lightSphereShader, "geoPosRender")
         glUniform1i(loc1, self.GBuffer.position_tex.slot)
@@ -253,7 +268,8 @@ class Renderer:
 
 def add_postQuad(renderer):
     renderer.quad = Plane()
-    renderer.quad.set_rotation([180, 0, 0])
+    renderer.quad.set_rotation([0, 0, 0])
+    renderer.quad.set_scale([1, 1, 1])
 
 
 def addLightSphere(renderer):

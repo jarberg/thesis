@@ -9,7 +9,7 @@ from OpenGL.raw.GL.VERSION.GL_2_0 import glUseProgram
 
 from opengl_interfacing.buffer import ShaderStorageBufferObject
 from opengl_interfacing.renderer import Renderer, set_window_properties
-from opengl_interfacing.sceneObjects import Plane, Cube
+from opengl_interfacing.sceneObjects import Plane, Cube, make_charlie
 from opengl_interfacing.texture import createNewTexture
 
 from utils.objectUtils import flatten_list
@@ -42,7 +42,7 @@ def init(*args, **kwargs):
     render_type = int(argdict.get("-render", 2))
     cubes = int(argdict.get("-cubes", 0))
     lights = int(argdict.get("-lights", 10))
-
+    charlie = bool(argdict.get("-charlie", False))
     resolution = int(argdict.get("-res", 400))
 
     print_render_type(render_type)
@@ -63,7 +63,7 @@ def init(*args, **kwargs):
 
     glutReshapeFunc(renderer.resize)
 
-    set_up_scene_entities(currScene, renderer, boxes=cubes, lightsnum=lights)
+    set_up_scene_entities(currScene, renderer, boxes=cubes, lightsnum=lights, charlie=charlie)
 
     #reset_test_file()
     renderer.resize(width, height)
@@ -103,14 +103,20 @@ def reset_test_file():
     file2.close()
 
 
-def set_up_scene_entities(scene, renderer, boxes=0, lightsnum=1):
+def set_up_scene_entities(scene, renderer, boxes=-1, lightsnum=1, charlie=False):
     p = Plane()
-    p.set_rotation([0, 0, 90])
+    p.set_rotation([0, 0, -90])
     p.set_scale([10000, 10000, 10000])
 
-    cubelist = cubes(boxes)
+    if boxes>=0:
+        cubelist = cubes(boxes)
+    else:
+        cubelist=[]
     cubelist.append(p)
-
+    if charlie:
+        char = make_charlie()
+        char.set_scale([0.05,0.05,0.05])
+        cubelist.append(char)
     scene.add_entities(cubelist)
     lightlist = lights(lightsnum)
 
@@ -122,10 +128,10 @@ def set_up_scene_entities(scene, renderer, boxes=0, lightsnum=1):
     ssbo.bind()
 
     cam = scene.get_current_camera()
-    cam.radius = 10
-    cam.set_position([0, 0, 0])
-    cam.updateHorizontal(0)
-    cam.updateVertical(50)
+    cam.radius = 5
+    cam.set_position([0, 2, 0])
+    cam.updateHorizontal(200)
+    cam.updateVertical(20)
 
 
 def cubes(amount):

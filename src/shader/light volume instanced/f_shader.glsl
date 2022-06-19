@@ -46,5 +46,5 @@ void main() {
     float angle = lambert(FragNorm, dir);
 
     float res = angle*atten;
-    outColor = vec4(FragAlbedo*res,1);
+    outColor = vec4(2*FragAlbedo*res,1);
 }
