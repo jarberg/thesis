@@ -58,7 +58,10 @@ def main(*args, **kwargs):
     window = glutCreateWindow("Opengl Window In Python")
 
     currScene = Scene()
+
     renderer = Renderer(currScene, [width, height])
+    currScene.inputMan.renderer = renderer
+    currScene.inputMan.change_render_method(set_render_type)
     set_render_type(renderer, render_type)
 
     glutReshapeFunc(renderer.resize)
