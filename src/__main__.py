@@ -36,7 +36,7 @@ def print_render_type(enum):
     if enum ==3:
         print("deferred rendering with batched light volumes")
 
-def init(*args, **kwargs):
+def main(*args, **kwargs):
     global width, height, aspectRatio
     argdict = Convert(args[0])
     render_type = int(argdict.get("-render", 2))
@@ -165,4 +165,4 @@ def lights(amount):
 
 
 if __name__ == "__main__" :
-    init(sys.argv[1:])
+    main(sys.argv[1:])

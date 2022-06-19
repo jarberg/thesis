@@ -1,8 +1,8 @@
 import math
 
-from src.utils.objectUtils import Matrix, get_pointLight_radius, \
+from utils.objectUtils import Matrix, get_pointLight_radius, \
     euler_to_matrix, det4
-from src.utils.objectUtils import Vector
+from utils.objectUtils import Vector
 
 
 class Transform:
