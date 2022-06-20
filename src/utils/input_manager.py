@@ -1,6 +1,7 @@
-from OpenGL.GLUT import glutKeyboardFunc, glutMotionFunc, glutMouseFunc
-from OpenGL.raw.GLUT import glutGet, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT
-
+from OpenGL.GLUT import glutKeyboardFunc, glutMotionFunc, glutMouseFunc, glutDisplayFunc
+from OpenGL.raw.GLUT import glutGet, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT, glutIdleFunc
+from OpenGL.GL import glUseProgram,glEnable,GL_DEPTH_TEST,glDepthFunc,GL_LESS
+from opengl_interfacing.renderer import Renderer
 from utils.objectUtils import Vector
 
 
@@ -11,7 +12,7 @@ class Input_manager:
         self.dragx_start = 0
         self.dragy_start = 0
         self.currScene = currScene
-
+        self.renderer = None
         glutKeyboardFunc(self.buttons)
         glutMotionFunc(self.mouseControl)
         glutMouseFunc(self.on_click)
@@ -19,6 +20,9 @@ class Input_manager:
 
     def set_plusminus_callback(self, callback):
         self.plusminus = callback
+
+    def change_render_method(self, callback):
+        self.render_method = callback
 
     def buttons(self, key, x, y):
 
@@ -34,6 +38,14 @@ class Input_manager:
             self.plusminus(-1)
         if key == b'p':
             self.currScene.play = not self.currScene.play
+        if key == b'1':
+            self.render_method(self.renderer, 0)
+        if key == b'2':
+            self.render_method(self.renderer, 1)
+        if key == b'3':
+            self.render_method(self.renderer, 2)
+        if key == b'4':
+            self.render_method(self.renderer, 3)
 
     def on_click(self, button, state, x, y):
 

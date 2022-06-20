@@ -313,11 +313,11 @@ def _set_obj_mat_attributes(obj):
     b_tex_loc = glGetUniformLocation(program, "tex_diffuse_b")
     if b_tex_loc != -1:
         glUniform1i(b_tex_loc, mat.tex_diffuse_b)
-    tex_loc = glGetUniformLocation(program, "tex_diffuse")
-    if tex_loc != -1 and mat.tex_diffuse_b:
-        tex = mat.get_diffuse()
-        texture.bind(tex)
-        glUniform1i(tex_loc, tex.slot)
+        tex_loc = glGetUniformLocation(program, "tex_diffuse")
+        if tex_loc != -1 and mat.tex_diffuse_b:
+            tex = mat.get_diffuse()
+            texture.bind(tex)
+            glUniform1i(tex_loc, tex.slot)
 
 
 def _set_obj_transform_attributes(obj):
