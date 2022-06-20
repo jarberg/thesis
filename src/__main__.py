@@ -109,7 +109,7 @@ def reset_test_file():
 def set_up_scene_entities(scene, renderer, boxes=-1, lightsnum=1, charlie=False):
     p = Plane()
     p.set_rotation([0, 0, -90])
-    p.set_scale([10000, 10000, 10000])
+    p.set_scale([100, 100, 100])
 
     if boxes>=0:
         cubelist = cubes(boxes)
