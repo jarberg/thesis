@@ -39,13 +39,13 @@ def print_render_type(enum):
 def main(*args, **kwargs):
     global width, height, aspectRatio
     argdict = Convert(args[0])
-    render_type = int(argdict.get("-render", 2))
-    cubes = int(argdict.get("-cubes", 0))
-    lights = int(argdict.get("-lights", 10))
-    charlie = bool(argdict.get("-charlie", False))
+    render_type = int(argdict.get("-render", 0))
+    cubes = int(argdict.get("-cubes", -1))
+    lights = int(argdict.get("-lights", 1))
+    charlie = bool(argdict.get("-charlie", True))
     resolution = int(argdict.get("-res", 400))
 
-    print_render_type(render_type)
+
 
     width, height = resolution, resolution
     aspectRatio = width / height
@@ -75,6 +75,7 @@ def main(*args, **kwargs):
 
 
 def set_render_type(renderer, type=0):
+    print_render_type(type)
     if type==0:
         glutDisplayFunc(renderer.forward)
         glutIdleFunc(renderer.forward)
@@ -109,7 +110,7 @@ def reset_test_file():
 def set_up_scene_entities(scene, renderer, boxes=-1, lightsnum=1, charlie=False):
     p = Plane()
     p.set_rotation([0, 0, -90])
-    p.set_scale([500, 500, 500])
+    p.set_scale([200, 200, 200])
 
     if boxes>=0:
         cubelist = cubes(boxes)
@@ -153,7 +154,7 @@ def cubes(amount):
 def lights(amount):
     lightlist = []
 
-    light = PointLight(intensity=50, attenuation=Attenuation(const=1, linear=3, exp=50))
+    light = PointLight(intensity=100, attenuation=Attenuation(const=1, linear=3, exp=50))
 
     r = light.radius
     a = min((math.sqrt(amount / 2) * 4 + 1), 7)
